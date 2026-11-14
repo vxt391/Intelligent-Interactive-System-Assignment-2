@@ -4,7 +4,7 @@ const OPTIONS = [
   { value: 'unsure', label: 'Not sure' },
 ];
 
-export default function FeedbackDraft({ items, onRate, onRemove }) {
+export default function FeedbackDraft({ items, onRate, onRemove, onConfirm }) {
   const ratedCount = items.filter((item) => item.sentiment !== null).length;
 
   return (
@@ -57,7 +57,34 @@ export default function FeedbackDraft({ items, onRate, onRemove }) {
         </div>
       )}
       <div className="feedback-draft-footer">
-        <span>Draft only · Preferences will be confirmed in Step 4.2.</span>
+        <div className="feedback-review-summary">
+          <strong>Review before confirming</strong>
+          {ratedCount > 0 ? (
+            <ul>
+              {items.filter((item) => item.sentiment !== null).map((item) => (
+                <li key={item.id}>
+                  <span className={`preference-sentiment preference-sentiment-${item.sentiment}`}>
+                    {item.sentiment === 'like' ? 'Like' : item.sentiment === 'avoid' ? 'Avoid' : 'Not sure'}
+                  </span>
+                  {item.label}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Select Like, Avoid or Not sure for at least one attribute.</p>
+          )}
+          <p>
+            Only rated attributes will be saved. Any unrated selections will remain in your draft.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="feedback-confirm-button"
+          disabled={ratedCount === 0}
+          onClick={onConfirm}
+        >
+          Confirm {ratedCount} {ratedCount === 1 ? 'preference' : 'preferences'}
+        </button>
       </div>
     </section>
   );

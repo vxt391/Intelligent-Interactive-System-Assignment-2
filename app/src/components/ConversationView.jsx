@@ -10,6 +10,7 @@ export default function ConversationView({
   onToggleDraftAttribute,
   onRateDraftAttribute,
   onRemoveDraftAttribute,
+  onConfirmDraftPreferences,
 }) {
   const feedRef = useRef(null);
 
@@ -49,7 +50,9 @@ export default function ConversationView({
                   ? 'You'
                   : message.role === 'recommendations'
                     ? 'Intenta · Design concepts'
-                    : 'Prototype notice'}
+                    : message.role === 'preferences-confirmed'
+                      ? 'Intenta · Preferences confirmed'
+                      : 'Prototype notice'}
               </span>
 
               {message.role === 'recommendations' ? (
@@ -61,7 +64,31 @@ export default function ConversationView({
                   onToggleDraftAttribute={onToggleDraftAttribute}
                   onRateDraftAttribute={onRateDraftAttribute}
                   onRemoveDraftAttribute={onRemoveDraftAttribute}
+                  onConfirmDraftPreferences={onConfirmDraftPreferences}
                 />
+              ) : message.role === 'preferences-confirmed' ? (
+                <div className="preference-confirmation" aria-label="Confirmed preference changes">
+                  <p className="preference-confirmation-intro">
+                    Your feedback has been confirmed and added to Current Intentions.
+                  </p>
+                  <ul className="preference-confirmation-list">
+                    {message.changes.map((change) => (
+                      <li key={change.id}>
+                        <span className={`preference-sentiment preference-sentiment-${change.sentiment}`}>
+                          {change.sentiment === 'like' ? 'Like' : change.sentiment === 'avoid' ? 'Avoid' : 'Not sure'}
+                        </span>
+                        <span>{change.label}</span>
+                        {change.previousSentiment && change.previousSentiment !== change.sentiment && (
+                          <span className="preference-previous">(previously {change.previousSentiment})</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="preference-confirmation-note">
+                    Only confirmed Like and Avoid preferences will guide later recommendation rounds.
+                    Not sure stays visible but does not constrain the results.
+                  </p>
+                </div>
               ) : (
                 <>
                   <p>{message.text}</p>
@@ -82,7 +109,7 @@ export default function ConversationView({
         <p className="conversation-compose-title">Continue exploring</p>
         {composer}
         <p className="conversation-compose-note">
-          Initial concepts are rule-based. Draft attribute feedback is available, but confirmation and follow-up recommendations arrive in later steps.
+          Initial concepts are rule-based. Confirmed preferences are now saved in this project; follow-up recommendations arrive in Milestone 5.
         </p>
       </div>
     </section>

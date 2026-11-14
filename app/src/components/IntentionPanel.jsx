@@ -1,3 +1,9 @@
+const GROUPS = [
+  { value: 'like', heading: 'Liked attributes', empty: 'No liked attributes yet.' },
+  { value: 'avoid', heading: 'Attributes to avoid', empty: 'No attributes to avoid yet.' },
+  { value: 'unsure', heading: 'Still exploring', empty: 'No unresolved attributes yet.' },
+];
+
 export default function IntentionPanel({ intentions, onClose }) {
   return (
     <aside
@@ -8,7 +14,7 @@ export default function IntentionPanel({ intentions, onClose }) {
       <div className="intention-panel-header">
         <div>
           <h2>Current Intentions</h2>
-          <p>Your confirmed design direction</p>
+          <p>What you've explicitly confirmed</p>
         </div>
         <button
           type="button"
@@ -32,25 +38,37 @@ export default function IntentionPanel({ intentions, onClose }) {
 
         <section className="intention-section">
           <h3>Confirmed preferences ({intentions.preferences.length})</h3>
-          {intentions.preferences.length > 0 ? (
-            <ul className="intention-preference-list">
-              {intentions.preferences.map((preference) => (
-                <li key={preference.id}>
-                  {preference.label} — {preference.sentiment}
-                </li>
-              ))}
-            </ul>
-          ) : (
+          {intentions.preferences.length === 0 && (
             <p className="intention-empty">
-              No preferences confirmed yet. You'll be able to review and confirm
-              individual design attributes in a later Phase 2 milestone.
+              No confirmed preferences yet. Select and rate attributes on the concepts,
+              then confirm them in the shared feedback area.
             </p>
           )}
+          {GROUPS.map((group) => {
+            const matches = intentions.preferences.filter((item) => item.sentiment === group.value);
+            return (
+              <div className="intention-group" key={group.value}>
+                <h4>{group.heading}</h4>
+                {matches.length > 0 ? (
+                  <ul className="intention-tags">
+                    {matches.map((item) => (
+                      <li key={item.id} className={`intention-tag intention-tag-${group.value}`}>
+                        {item.label}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="intention-empty">{group.empty}</p>
+                )}
+              </div>
+            );
+          })}
         </section>
 
         <p className="intention-footnote">
-          This panel will later let you revise preferences. Nothing is inferred
-          from your message without confirmation.
+          Only confirmed Like and Avoid feedback will influence future recommendation rounds.
+          Not sure keeps an attribute visible without treating it as a constraint.
+          Editing or removing confirmed preferences with Save Changes / Cancel arrives in Step 4.3.
         </p>
       </div>
     </aside>

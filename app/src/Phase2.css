@@ -955,11 +955,147 @@
   .feedback-draft-heading { flex-direction: column; }
 }
 
+/* Milestone 4.2 — confirmation and intention summary. */
+.feedback-draft-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 13px;
+}
 
-/* Milestone 4.1 UI polish:
-   Keep conversation content centred while moving
-   the scrollbar to the workspace boundary. */
+.feedback-review-summary {
+  padding: 13px;
+  border-radius: 10px;
+  background: #f8f6fc;
+  color: #685f73;
+}
 
+.feedback-review-summary strong {
+  display: block;
+  color: #453b52;
+  font-size: 12px;
+}
+
+.feedback-review-summary ul,
+.preference-confirmation-list {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.feedback-review-summary li,
+.preference-confirmation-list li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  color: #4d4655;
+  font-size: 12px;
+}
+
+.feedback-review-summary p {
+  margin: 8px 0 0 !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+  color: #827789 !important;
+}
+
+.preference-sentiment {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.preference-sentiment-like {
+  background: #e7f1e8;
+  color: #285b3c;
+}
+
+.preference-sentiment-avoid {
+  background: #faeceb;
+  color: #8b4540;
+}
+
+.preference-sentiment-unsure {
+  background: #eeeafa;
+  color: #584999;
+}
+
+.feedback-confirm-button {
+  align-self: flex-end;
+  padding: 10px 16px;
+  border-radius: 9px;
+  border: 1px solid #7664c5;
+  color: #fff;
+  background: #7664c5;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feedback-confirm-button:hover:not(:disabled) { background: #6251b1; }
+.feedback-confirm-button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.preference-confirmation-intro {
+  font-weight: 600;
+}
+
+.preference-previous {
+  color: #918897;
+  font-size: 11px;
+}
+
+.conversation-message .preference-confirmation-note {
+  font-size: 11px;
+  color: #8b8092;
+}
+
+.intention-group {
+  margin: 14px 0;
+}
+
+.intention-group h4 {
+  font-size: 11px;
+  color: #716678;
+  margin: 0 0 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+
+.intention-tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.intention-tag {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.intention-tag-like { background: #e7f1e8; color: #285b3c; }
+.intention-tag-avoid { background: #faeceb; color: #8b4540; }
+.intention-tag-unsure { background: #eeeafa; color: #584999; }
+
+/* Preserve the scrollbar improvement approved after Step 4.1.
+   The viewport stretches to the available workspace width while the
+   conversation and composer remain centred. */
 .phase2-primary {
   overflow: hidden;
 }
@@ -970,7 +1106,6 @@
   margin: 0;
 }
 
-/* Keep conversation messages centred */
 .conversation-feed > .conversation-heading,
 .conversation-feed > .conversation-row {
   width: 100%;
@@ -979,7 +1114,6 @@
   margin-right: auto;
 }
 
-/* Keep the composer aligned with the messages */
 .conversation-composer {
   width: 100%;
   max-width: 940px;

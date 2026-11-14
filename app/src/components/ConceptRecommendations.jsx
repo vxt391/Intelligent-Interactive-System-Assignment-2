@@ -17,6 +17,7 @@ export default function ConceptRecommendations({
   onToggleDraftAttribute,
   onRateDraftAttribute,
   onRemoveDraftAttribute,
+  onConfirmDraftPreferences,
 }) {
   const selected = recommendation.concepts.find((concept) => concept.id === selectedConceptId);
   const selectedIds = new Set(feedbackDraft.map((item) => item.id));
@@ -90,6 +91,7 @@ export default function ConceptRecommendations({
         items={feedbackDraft}
         onRate={onRateDraftAttribute}
         onRemove={onRemoveDraftAttribute}
+        onConfirm={() => onConfirmDraftPreferences(recommendation.messageId)}
       />
       <p className="recommendations-disclosure">{recommendation.disclosure}</p>
     </section>

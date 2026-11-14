@@ -9,6 +9,7 @@ import IntentionPanel from './components/IntentionPanel';
 import PromptAssistancePanel from './components/PromptAssistancePanel';
 import { suggestImprovedPrompt } from './utils/promptAssistance';
 import { buildInitialRecommendations, isBusinessCardRequest } from './utils/recommendations';
+import { mergeConfirmedPreferences } from './utils/preferenceManagement';
 import './App.css';
 import './Phase2.css';
 
@@ -25,7 +26,7 @@ function createProject(id) {
     nextMessageId: 1,
     intentions: {
       initialBrief: '',
-      preferences: [], // Confirmed attributes will be added in a later Phase 2 step.
+      preferences: [], // Only explicit confirmation writes to this list.
     },
     exploration: {
       strategy: 'new-directions',
@@ -156,8 +157,7 @@ function App() {
     );
   }
 
-  // Milestone 4.1: keep unconfirmed feedback in the active project only.
-  // Nothing in this draft updates intentions.preferences.
+  // Unconfirmed feedback remains separate from Current Intentions.
   function toggleDraftAttribute(recommendationMessageId, conceptId, attribute) {
     setProjects((current) =>
       current.map((project) => {
@@ -218,6 +218,46 @@ function App() {
             }
           : project
       )
+    );
+  }
+
+  // Milestone 4.2: save only explicitly rated items, and preserve unrated draft selections.
+  // This action is project-scoped. It never creates a new recommendation round.
+  function confirmDraftPreferences(recommendationMessageId) {
+    setProjects((current) =>
+      current.map((project) => {
+        if (project.id !== activeId) return project;
+        if (project.feedbackDraft.recommendationMessageId !== recommendationMessageId) {
+          return project;
+        }
+
+        const rated = project.feedbackDraft.items.filter((item) =>
+          ['like', 'avoid', 'unsure'].includes(item.sentiment)
+        );
+        if (rated.length === 0) return project;
+
+        const { preferences, changes } = mergeConfirmedPreferences(
+          project.intentions.preferences,
+          rated
+        );
+        const confirmation = {
+          id: project.nextMessageId,
+          role: 'preferences-confirmed',
+          changes, // Snapshot of this event; earlier messages are never rewritten.
+        };
+
+        return {
+          ...project,
+          intentions: { ...project.intentions, preferences },
+          // Unrated items remain selected and can be rated in a later batch.
+          feedbackDraft: {
+            ...project.feedbackDraft,
+            items: project.feedbackDraft.items.filter((item) => item.sentiment === null),
+          },
+          messages: [...project.messages, confirmation],
+          nextMessageId: project.nextMessageId + 1,
+        };
+      })
     );
   }
 
@@ -346,6 +386,7 @@ function App() {
                         onToggleDraftAttribute={toggleDraftAttribute}
                         onRateDraftAttribute={rateDraftAttribute}
                         onRemoveDraftAttribute={removeDraftAttribute}
+                        onConfirmDraftPreferences={confirmDraftPreferences}
                       />
                     )
                   ) : (

@@ -523,3 +523,17 @@ No automated browser-based end-to-end testing was performed.
 **Phase 2 — Milestone 4.2: Preference Confirmation**
 
 Implement explicit preference confirmation, update the Current Intentions panel and record confirmed preferences in conversation history.
+
+## Phase 2 — Milestone 4.2: Preference Confirmation and Intention Management
+
+**Date:** 14 November 2026  
+**Status:** Implemented and manually tested
+
+### 1. Implementation
+
+Extended the structured attribute-feedback functionality introduced in Milestone 4.1 by implementing explicit preference confirmation and integration with the Current Intentions panel.
+
+The implementation includes:
+
+- **Preference confirmation:** Users can confirm their selected design attributes after assigning Like, Avoid or Not Sure feedback.
+- **Partial confirmation:** Users can confirm only the attributes they have rated, without being required to provide feedback on every selected
