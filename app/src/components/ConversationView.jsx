@@ -1,7 +1,16 @@
 import { useEffect, useRef } from 'react';
 import ConceptRecommendations from './ConceptRecommendations';
 
-export default function ConversationView({ messages, composer, selectedConceptId, onSelectConcept }) {
+export default function ConversationView({
+  messages,
+  composer,
+  selectedConceptId,
+  onSelectConcept,
+  feedbackDraft,
+  onToggleDraftAttribute,
+  onRateDraftAttribute,
+  onRemoveDraftAttribute,
+}) {
   const feedRef = useRef(null);
 
   useEffect(() => {
@@ -48,6 +57,10 @@ export default function ConversationView({ messages, composer, selectedConceptId
                   recommendation={{ ...message, messageId: message.id }}
                   selectedConceptId={selectedConceptId}
                   onSelectConcept={onSelectConcept}
+                  feedbackDraft={feedbackDraft.recommendationMessageId === message.id ? feedbackDraft.items : []}
+                  onToggleDraftAttribute={onToggleDraftAttribute}
+                  onRateDraftAttribute={onRateDraftAttribute}
+                  onRemoveDraftAttribute={onRemoveDraftAttribute}
                 />
               ) : (
                 <>
@@ -69,7 +82,7 @@ export default function ConversationView({ messages, composer, selectedConceptId
         <p className="conversation-compose-title">Continue exploring</p>
         {composer}
         <p className="conversation-compose-note">
-          Initial business-card concepts use a rule-based simulation. Follow-up recommendations and preference feedback arrive in later milestones.
+          Initial concepts are rule-based. Draft attribute feedback is available, but confirmation and follow-up recommendations arrive in later steps.
         </p>
       </div>
     </section>

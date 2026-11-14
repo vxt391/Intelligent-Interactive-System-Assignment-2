@@ -446,3 +446,80 @@ The functionality will include:
 - Allowing users to revise or remove previously confirmed preferences.
 
 The distinction between selecting a complete design and confirming individual design attributes will remain central to the interaction design.
+
+## Phase 2 — Milestone 4.1: Attribute Selection and Draft Feedback
+
+**Date:** 14 November 2026  
+**Status:** Implemented and manually tested
+
+### 1. Implementation
+
+Extended the existing design recommendation interface to support structured attribute-level feedback.
+
+The implementation includes:
+
+- Selectable design-attribute chips displayed beneath each recommended concept.
+- Attribute selection across multiple design concepts.
+- A shared feedback draft area beneath the recommendations.
+- Like, Avoid and Not Sure feedback controls.
+- The ability to remove attributes from the feedback draft.
+- Project-specific draft feedback state.
+- Visual feedback indicating selected attributes.
+
+The implementation preserves the existing concept-selection functionality, conversation interface and prompt assistance.
+
+### 2. Design and Technical Decisions
+
+**Cross-concept attribute selection:** Users can combine characteristics from different recommendations without selecting a complete design. This supports expressing creative intentions at a more granular level.
+
+**Shared feedback area:** Rather than displaying multiple rating controls on every concept card, selected attributes are collected into one review area. This reduces visual clutter while supporting comparison across concepts.
+
+**Separation of draft and confirmed preferences:** Attribute selections and feedback remain drafts during this milestone. They do not yet update Current Intentions or influence design recommendations.
+
+**Project-specific state:** Feedback drafts are maintained separately for individual projects to prevent preferences being mixed between design sessions.
+
+**Interface refinement:** Adjusted the conversation layout CSS to move the vertical scrollbar closer to the workspace boundary while keeping the conversation content centred.
+
+### 3. AI Assistance and Student Contributions
+
+ChatGPT assisted with:
+
+- Translating the agreed interaction design into React components.
+- Implementing attribute chips and the shared feedback draft interface.
+- Developing reusable design-attribute identification logic.
+- Integrating draft feedback with existing project state.
+- Suggesting a CSS adjustment for the scrollbar positioning.
+- Providing manual testing guidance.
+
+The student:
+
+- Selected the cross-concept attribute feedback approach.
+- Approved the separation between draft and confirmed preferences.
+- Integrated the implementation into the existing React application.
+- Conducted manual testing in Google Chrome.
+- Identified the awkward scrollbar positioning and requested an improvement.
+- Applied the layout adjustment and confirmed that the result looked better.
+
+### 4. Manual Testing
+
+**Environment:** React + Vite application running locally in Google Chrome.
+
+Confirmed that the Milestone 4.1 interactions worked successfully, including attribute selection, draft feedback and compatibility with previously implemented functionality.
+
+The updated scrollbar positioning was also visually checked and approved.
+
+No automated browser-based end-to-end testing was performed.
+
+### 5. Known Limitations
+
+- Draft feedback cannot yet be confirmed and saved to Current Intentions.
+- Preferences do not yet influence subsequent recommendations.
+- Editing and removing confirmed preferences are not implemented.
+- Project data is stored in React memory and does not persist after refreshing the browser.
+- Additional accessibility and usability testing is required.
+
+### 6. Next Steps
+
+**Phase 2 — Milestone 4.2: Preference Confirmation**
+
+Implement explicit preference confirmation, update the Current Intentions panel and record confirmed preferences in conversation history.

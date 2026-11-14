@@ -1,4 +1,6 @@
 import BusinessCardPreview from './BusinessCardPreview';
+import FeedbackDraft from './FeedbackDraft';
+import { attributesForConcept } from '../utils/designAttributes';
 
 const TYPOGRAPHY_LABELS = { serif: 'Serif', sans: 'Sans-serif' };
 const LAYOUT_LABELS = {
@@ -7,8 +9,17 @@ const LAYOUT_LABELS = {
   dynamic: 'Dynamic',
 };
 
-export default function ConceptRecommendations({ recommendation, selectedConceptId, onSelectConcept }) {
+export default function ConceptRecommendations({
+  recommendation,
+  selectedConceptId,
+  onSelectConcept,
+  feedbackDraft,
+  onToggleDraftAttribute,
+  onRateDraftAttribute,
+  onRemoveDraftAttribute,
+}) {
   const selected = recommendation.concepts.find((concept) => concept.id === selectedConceptId);
+  const selectedIds = new Set(feedbackDraft.map((item) => item.id));
 
   return (
     <section className="recommendations" aria-label="Business card design recommendations">
@@ -43,6 +54,24 @@ export default function ConceptRecommendations({ recommendation, selectedConcept
                 >
                   {isSelected ? '✓ Selected · click to clear' : 'Select concept'}
                 </button>
+                <div className="concept-attribute-picker">
+                  <p>Select attributes to review:</p>
+                  <div className="concept-attribute-chips">
+                    {attributesForConcept(concept).map((attribute) => (
+                      <button
+                        type="button"
+                        key={attribute.id}
+                        className={`concept-attribute-chip ${selectedIds.has(attribute.id) ? 'is-chosen' : ''}`}
+                        aria-pressed={selectedIds.has(attribute.id)}
+                        aria-label={`${selectedIds.has(attribute.id) ? 'Remove' : 'Add'} ${attribute.label} ${selectedIds.has(attribute.id) ? 'from' : 'to'} feedback draft`}
+                        onClick={() => onToggleDraftAttribute(recommendation.messageId, concept.id, attribute)}
+                      >
+                        <span aria-hidden="true">{selectedIds.has(attribute.id) ? '✓' : '+'}</span>
+                        {attribute.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </article>
           );
@@ -56,6 +85,12 @@ export default function ConceptRecommendations({ recommendation, selectedConcept
           <p>No concept selected. Choosing a concept is optional, and does not confirm its individual attributes.</p>
         )}
       </div>
+
+      <FeedbackDraft
+        items={feedbackDraft}
+        onRate={onRateDraftAttribute}
+        onRemove={onRemoveDraftAttribute}
+      />
       <p className="recommendations-disclosure">{recommendation.disclosure}</p>
     </section>
   );

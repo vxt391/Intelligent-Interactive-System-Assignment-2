@@ -776,3 +776,213 @@
     min-height: 135px;
   }
 }
+
+
+/* Milestone 4.1 — selectable attributes and shared draft feedback only. */
+.concept-attribute-picker {
+  padding-top: 11px;
+  border-top: 1px solid #eee9f2;
+}
+
+.concept-attribute-picker > p {
+  margin: 0 0 9px !important;
+  font-size: 11px !important;
+  color: #706878 !important;
+  font-weight: 600;
+}
+
+.concept-attribute-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.concept-attribute-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  max-width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #e4deec;
+  border-radius: 20px;
+  background: #faf9fc;
+  color: #61596a;
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.concept-attribute-chip:hover {
+  background: #f0eafc;
+  border-color: #c2b5e6;
+}
+
+.concept-attribute-chip.is-chosen {
+  color: #56449e;
+  border-color: #b4a5e4;
+  background: #eeeafb;
+  font-weight: 600;
+}
+
+.feedback-draft {
+  margin-top: 19px;
+  padding: 18px;
+  border: 1px solid #e1dbe9;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.feedback-draft-heading,
+.feedback-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedback-draft-heading h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  color: #332c3b;
+}
+
+.feedback-draft-heading p,
+.feedback-draft-empty {
+  margin: 0 !important;
+  color: #77717c !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+.feedback-draft-count {
+  flex-shrink: 0;
+  color: #65568b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.feedback-draft-empty {
+  margin-top: 14px !important;
+  padding: 15px;
+  border-radius: 9px;
+  background: #f8f6fb;
+}
+
+.feedback-draft-items {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+  gap: 12px;
+}
+
+.feedback-draft-item {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f9f8fb;
+}
+
+.feedback-item-heading strong {
+  display: block;
+  color: #3b3343;
+  font-size: 12px;
+}
+
+.feedback-item-heading span {
+  display: block;
+  margin-top: 4px;
+  color: #928a99;
+  font-size: 10px;
+}
+
+.feedback-remove {
+  flex-shrink: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: #7d698c;
+  font-size: 11px;
+}
+
+.feedback-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.feedback-option {
+  border: 1px solid #ded8e5;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: white;
+  color: #645d6d;
+  font-size: 11px;
+}
+
+.feedback-option:hover {
+  border-color: #ac9aca;
+}
+
+.feedback-option-like {
+  background: #e7f1e8;
+  border-color: #9bbca0;
+  color: #285b3c;
+}
+
+.feedback-option-avoid {
+  background: #faeceb;
+  border-color: #e4aaa4;
+  color: #8b4540;
+}
+
+.feedback-option-unsure {
+  background: #eeeafa;
+  border-color: #bfafe1;
+  color: #584999;
+}
+
+.feedback-draft-footer {
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid #eeeaf1;
+  color: #8a8193;
+  font-size: 11px;
+}
+
+@media (max-width: 650px) {
+  .feedback-draft { padding: 12px; }
+  .feedback-draft-heading { flex-direction: column; }
+}
+
+
+/* Milestone 4.1 UI polish:
+   Keep conversation content centred while moving
+   the scrollbar to the workspace boundary. */
+
+.phase2-primary {
+  overflow: hidden;
+}
+
+.conversation-view {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+/* Keep conversation messages centred */
+.conversation-feed > .conversation-heading,
+.conversation-feed > .conversation-row {
+  width: 100%;
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Keep the composer aligned with the messages */
+.conversation-composer {
+  width: 100%;
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}

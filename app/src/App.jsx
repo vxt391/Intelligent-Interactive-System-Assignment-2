@@ -20,6 +20,7 @@ function createProject(id) {
     prompt: '',
     assistance: false,
     promptReview: null, // Only exists while the user reviews a suggested prompt.
+    feedbackDraft: { recommendationMessageId: null, items: [] },
     messages: [],
     nextMessageId: 1,
     intentions: {
@@ -155,6 +156,71 @@ function App() {
     );
   }
 
+  // Milestone 4.1: keep unconfirmed feedback in the active project only.
+  // Nothing in this draft updates intentions.preferences.
+  function toggleDraftAttribute(recommendationMessageId, conceptId, attribute) {
+    setProjects((current) =>
+      current.map((project) => {
+        if (project.id !== activeId) return project;
+        const recommendation = project.messages.find(
+          (message) => message.id === recommendationMessageId && message.role === 'recommendations'
+        );
+        if (!recommendation?.concepts.some((concept) => concept.id === conceptId)) return project;
+
+        const previous = project.feedbackDraft;
+        const items = previous.recommendationMessageId === recommendationMessageId
+          ? previous.items
+          : [];
+        const exists = items.some((item) => item.id === attribute.id);
+
+        return {
+          ...project,
+          feedbackDraft: {
+            recommendationMessageId,
+            items: exists
+              ? items.filter((item) => item.id !== attribute.id)
+              : [...items, { ...attribute, sourceConceptId: conceptId, sentiment: null }],
+          },
+        };
+      })
+    );
+  }
+
+  function rateDraftAttribute(attributeId, sentiment) {
+    if (!['like', 'avoid', 'unsure'].includes(sentiment)) return;
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === activeId
+          ? {
+              ...project,
+              feedbackDraft: {
+                ...project.feedbackDraft,
+                items: project.feedbackDraft.items.map((item) =>
+                  item.id === attributeId ? { ...item, sentiment } : item
+                ),
+              },
+            }
+          : project
+      )
+    );
+  }
+
+  function removeDraftAttribute(attributeId) {
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === activeId
+          ? {
+              ...project,
+              feedbackDraft: {
+                ...project.feedbackDraft,
+                items: project.feedbackDraft.items.filter((item) => item.id !== attributeId),
+              },
+            }
+          : project
+      )
+    );
+  }
+
   function handleComposerSubmit() {
     if (!activeProject) return;
     const original = activeProject.prompt.trim();
@@ -276,6 +342,10 @@ function App() {
                         composer={renderComposer(true)}
                         selectedConceptId={activeProject.exploration.selectedConceptId}
                         onSelectConcept={selectConcept}
+                        feedbackDraft={activeProject.feedbackDraft}
+                        onToggleDraftAttribute={toggleDraftAttribute}
+                        onRateDraftAttribute={rateDraftAttribute}
+                        onRemoveDraftAttribute={removeDraftAttribute}
                       />
                     )
                   ) : (
