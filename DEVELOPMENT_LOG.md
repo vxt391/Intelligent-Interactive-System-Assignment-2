@@ -235,3 +235,92 @@ Implement an interactive prompt-assistance workflow that allows users to:
 - Submit either the original or suggested prompt.
 
 The system should preserve the user's creative intentions and avoid silently modifying their requests.
+
+## Phase 2 — Milestone 2: Optional Prompt Assistance
+
+**Date:** 14 November 2026  
+**Status:** Implemented and manually tested
+
+### 1. Implementation
+
+Implemented an optional prompt-assistance workflow within the existing Intenta conversation interface.
+
+The functionality includes:
+
+- A prompt-assistance toggle allowing users to enable or disable assistance.
+- A review-before-submission interaction when assistance is enabled.
+- A comparison between the original prompt and a suggested improvement.
+- An editable suggested prompt.
+- Explicit options to submit either the original or suggested prompt.
+- The ability to return to editing without submitting.
+- Preservation of the original design brief and conversation history.
+- Independent prompt-review state for different projects.
+
+Prompt assistance uses a rule-based simulation rather than a real AI language model.
+
+### 2. Design and Technical Decisions
+
+**Review before submission:** The user must explicitly choose whether to submit the original or suggested prompt. This prevents the system from modifying creative intentions without user approval.
+
+**Editable suggestions:** Users can modify the suggested wording before submission, maintaining control over how their intentions are communicated.
+
+**Preservation of original intentions:** The system retains the original prompt even when a suggested version is submitted. This supports transparency and continuity.
+
+**Inline assistance interface:** The prompt-review panel is integrated into the existing creative workspace rather than opening a separate page.
+
+**Separation of concerns:** Prompt-assistance logic is organised into a utility module, separate from React interface components.
+
+### 3. AI Assistance and Student Contributions
+
+ChatGPT assisted with:
+
+- Implementing the approved prompt-assistance interaction.
+- Generating React components and supporting JavaScript logic.
+- Integrating the feature into the existing conversation interface.
+- Providing installation instructions and a manual testing checklist.
+
+The student:
+
+- Selected the review-before-submission interaction after discussing alternative designs.
+- Integrated the implementation into the existing React project.
+- Created the required utility folder.
+- Conducted manual testing in Google Chrome.
+- Reviewed the resulting interface and confirmed satisfaction with its appearance and functionality.
+
+### 4. Manual Testing
+
+**Environment:** React + Vite, Google Chrome.
+
+| Test Case                                                        | Result |
+| ---------------------------------------------------------------- | ------ |
+| Submit a prompt with assistance disabled                         | Passed |
+| Enable assistance and open the review panel without submitting   | Passed |
+| Display the original prompt without modification                 | Passed |
+| Edit the suggested prompt independently                          | Passed |
+| Submit an edited suggestion and view the original wording        | Passed |
+| Choose to submit the original prompt                             | Passed |
+| Return to editing without submitting                             | Passed |
+| Preserve unfinished prompt reviews when switching projects       | Passed |
+| Preserve the original initial design brief in Current Intentions | Passed |
+
+**Result:** All 9 manual test cases passed, as confirmed by the student.
+
+No automated end-to-end testing was performed.
+
+### 5. Known Limitations
+
+- Prompt assistance is simulated using predefined rules rather than a generative AI model.
+- The system cannot reliably interpret arbitrary natural-language requirements.
+- AI-generated visual recommendations are not yet implemented.
+- Project and conversation data are not persisted after a browser refresh.
+- Further usability and accessibility testing is required.
+
+### 6. Next Steps
+
+**Phase 2 — Milestone 3: Visual Design Recommendations**
+
+Implement three visually distinct business-card recommendations based on the submitted creative prompt.
+
+Each recommendation should include a design preview, a short explanation of its visual characteristics and an option for users to select a preferred concept.
+
+Preference feedback and subsequent recommendation strategies will be implemented incrementally in later milestones.
