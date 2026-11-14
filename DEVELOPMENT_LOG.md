@@ -536,4 +536,215 @@ Extended the structured attribute-feedback functionality introduced in Milestone
 The implementation includes:
 
 - **Preference confirmation:** Users can confirm their selected design attributes after assigning Like, Avoid or Not Sure feedback.
-- **Partial confirmation:** Users can confirm only the attributes they have rated, without being required to provide feedback on every selected
+- **Partial confirmation:** Users can confirm only the attributes they have rated, without being required to provide feedback on every selected attribute.
+- **Draft preservation:** Attributes that have not yet received feedback remain in the draft after other preferences are confirmed.
+- **Current Intentions updates:** Confirmed preferences are displayed in the appropriate categories: Liked Attributes, Attributes to Avoid and Still Exploring.
+- **Conversation feedback:** The system adds a confirmation message to the conversation history to acknowledge which preferences have been recorded.
+- **Preference conflict handling:** If users subsequently confirm a different status for the same attribute, the latest confirmed status replaces the previous one.
+- **Duplicate prevention:** Each design attribute maintains only one active preference status within a project.
+- **Project-specific intention state:** Confirmed preferences remain associated with their respective projects when users switch between projects or interaction modes.
+
+The implementation preserves the previously developed conversation interface, prompt-assistance workflow, visual design recommendations and attribute-selection functionality.
+
+### 2. Design and Technical Decisions
+
+**Explicit preference confirmation:** Users must deliberately confirm their feedback before it becomes part of their recorded creative intentions. This prevents the system from silently interpreting exploratory interactions as established preferences.
+
+**Separation of draft and confirmed feedback:** Draft selections are maintained separately from confirmed preferences. This allows users to experiment with different design attributes without immediately influencing the system's stored intention state.
+
+**Partial confirmation:** Users are not required to rate every selected attribute. This supports flexible exploration, particularly when users remain uncertain about some design characteristics.
+
+**Uncertainty representation:** The Not Sure status is preserved under Still Exploring rather than being interpreted as a positive or negative preference. This enables the system to distinguish between established decisions and unresolved creative intentions.
+
+**Transparent system feedback:** Confirmed preferences are displayed both in the Current Intentions panel and through confirmation messages in the conversation. This provides visibility into what the system has recorded.
+
+**Conflict resolution:** When an attribute receives a newly confirmed status, its previous active status is replaced. Earlier confirmation messages remain in the conversation history, preserving the progression of the user's decisions.
+
+**Incremental development:** Preference confirmation was implemented separately from editing previously confirmed preferences and generating subsequent recommendations, reducing implementation complexity and allowing individual interactions to be tested.
+
+### 3. AI Assistance and Student Contributions
+
+ChatGPT assisted with:
+
+- Translating the approved preference-confirmation interaction into React functionality.
+- Extending the project-specific state management.
+- Implementing logic for confirming preferences and handling conflicting feedback.
+- Integrating confirmed preferences with the Current Intentions panel.
+- Implementing confirmation messages within the conversation history.
+- Providing implementation instructions and a manual testing checklist.
+
+The student:
+
+- Selected the structured cross-concept feedback approach during the interaction-design discussions.
+- Approved explicit confirmation before feedback influences recorded intentions.
+- Integrated the new functionality into the existing React application.
+- Conducted manual testing in Google Chrome.
+- Verified that preference confirmation, intention updates and existing features behaved as expected.
+- Confirmed satisfaction with the implementation before proceeding.
+
+### 4. Manual Testing
+
+**Environment:** React + Vite application running locally in Google Chrome.
+
+| Test Case                                                                          | Result |
+| ---------------------------------------------------------------------------------- | ------ |
+| Verify existing recommendations, attribute chips and scrollbar layout              | Passed |
+| Confirm multiple liked attributes from different design concepts                   | Passed |
+| Display confirmed liked attributes in Current Intentions                           | Passed |
+| Record preference confirmation in conversation history                             | Passed |
+| Confirm an Avoid attribute and display it under Attributes to Avoid                | Passed |
+| Confirm a Not Sure attribute and display it under Still Exploring                  | Passed |
+| Preserve unrated draft attributes when confirming other preferences                | Passed |
+| Replace an existing preference status without creating duplicates                  | Passed |
+| Preserve confirmed preferences independently across projects and interaction modes | Passed |
+| Verify compatibility with prompt assistance and the original design brief          | Passed |
+
+**Result:** All 10 manual test cases passed, as confirmed by the student.
+
+No automated browser-based end-to-end testing was conducted during this milestone.
+
+### 5. Known Limitations
+
+- Users cannot yet directly edit or remove previously confirmed preferences through the Current Intentions panel.
+- Preference-aware generation of additional design recommendations is not yet implemented.
+- Confirmed preferences are recorded but do not yet influence subsequent design generation.
+- Recommendation behaviour remains rule-based rather than using a trained generative AI model.
+- Project information is stored in React state and does not persist after a browser refresh.
+- Formal usability and accessibility testing has not yet been conducted.
+
+### 6. Next Steps
+
+## Phase 2 — Milestone 4.3: Editing Confirmed Preferences
+
+**Date:** 14 November 2026  
+**Status:** Implemented and manually tested
+
+### 1. Implementation
+
+Extended the Current Intentions panel to allow users to edit and remove previously confirmed design preferences.
+
+The following functionality was implemented:
+
+- **Edit Preferences mode:** Users can enter an editing mode within the Current Intentions panel to review and modify confirmed preferences.
+- **Preference status modification:** Existing preferences can be changed between Like, Avoid and Not Sure.
+- **Preference removal:** Users can mark confirmed attributes for removal.
+- **Undo removal:** Users can restore attributes marked for removal before saving.
+- **Save Changes:** Multiple preference modifications can be applied together through an explicit save action.
+- **Cancel editing:** Users can discard unsaved modifications without affecting their previously confirmed intentions.
+- **Change detection:** The Save Changes action is disabled when no modifications have been made.
+- **Conversation feedback:** Successfully saved changes are recorded in the conversation history.
+- **Project-specific editing state:** Unfinished edits remain associated with their respective projects when users switch between projects or interaction modes.
+
+The implementation preserves the existing prompt-assistance workflow, visual design recommendations, attribute selection and preference confirmation functionality.
+
+### 2. Design and Technical Decisions
+
+**Explicit editing confirmation:** Users must select Save Changes before modifications affect their confirmed preferences. This follows the review-and-confirm approach introduced in earlier milestones, maintaining consistency throughout the application.
+
+**Separation of editing drafts and confirmed intentions:** Changes are maintained in a temporary editing state until saved. This prevents accidental modifications to the user's established creative intentions.
+
+**Reversible actions:** Users can undo a pending removal or cancel the entire editing process. These controls support user agency and reduce the consequences of accidental interactions.
+
+**Batch editing:** Users can modify or remove multiple preferences before saving, reducing the need for repeated confirmation actions.
+
+**Visible system feedback:** After saving changes, the Current Intentions panel displays the updated preferences, and a conversation message records the modification. This helps users understand what the system currently remembers.
+
+**Preservation of historical decisions:** Updating a preference changes its active status but does not remove earlier conversation records. This maintains a history of how the user's creative intentions evolved.
+
+**Project-specific state management:** Editing state is maintained separately for each project, preventing accidental changes to another project's preferences.
+
+### 3. Relevance to Intelligent Interactive Systems
+
+This milestone contributes to the research objective of supporting users in expressing and refining creative intentions.
+
+The implementation demonstrates several relevant interaction-design principles:
+
+- **User agency:** Users determine which preferences are recorded, revised or removed.
+- **Visibility of system state:** Confirmed preferences remain accessible through the Current Intentions panel.
+- **Reversibility:** Users can discard pending changes and undo removals before saving.
+- **Gulf of execution:** Explicit editing controls help users communicate intended changes without rewriting lengthy prompts.
+- **Gulf of evaluation:** Updated preference summaries and conversation messages help users understand the outcome of their actions.
+
+These interactions establish the foundation for preference-aware iterative recommendations in the next milestone.
+
+### 4. AI Assistance and Student Contributions
+
+**ChatGPT assisted with:**
+
+- Translating the approved editing workflow into React components.
+- Extending the Current Intentions panel with editing controls.
+- Implementing preference modification, removal and restoration logic.
+- Maintaining separation between editing drafts and confirmed preferences.
+- Integrating saved changes with conversation history.
+- Providing code-level validation and a manual testing checklist.
+
+**The student:**
+
+- Selected the Save Changes / Cancel interaction approach during the design discussions.
+- Approved the separation of confirmed preferences and unsaved edits.
+- Integrated the updated implementation into the existing React application.
+- Conducted manual testing in Google Chrome.
+- Verified the preference-editing interactions and compatibility with previously implemented features.
+- Confirmed that the functionality worked as expected before proceeding.
+
+### 5. Manual Testing
+
+**Environment:** React + Vite application running locally in Google Chrome.
+
+| Test Case                                                                                                                | Result |
+| ------------------------------------------------------------------------------------------------------------------------ | ------ |
+| Open Edit Preferences from the Current Intentions panel                                                                  | Passed |
+| Modify a preference without immediately changing its confirmed status                                                    | Passed |
+| Cancel editing and restore the previously confirmed preferences                                                          | Passed |
+| Modify one preference while marking another for removal                                                                  | Passed |
+| Undo a pending preference removal                                                                                        | Passed |
+| Save Changes and verify that Current Intentions updates                                                                  | Passed |
+| Record saved preference modifications in conversation history                                                            | Passed |
+| Disable Save Changes when no modifications are present                                                                   | Passed |
+| Preserve independent editing states when switching projects                                                              | Passed |
+| Verify compatibility with prompt assistance, design recommendations, attribute feedback and the updated scrollbar layout | Passed |
+
+**Result:** All 10 manual test cases passed, as confirmed by the student.
+
+The application was tested manually in Google Chrome. No automated browser-based end-to-end testing was conducted during this milestone.
+
+### 6. Known Limitations
+
+- Confirmed preferences are stored in React state and are not preserved after a browser refresh.
+- Preference editing is limited to attributes supported by the predefined design system.
+- Users cannot yet freely define arbitrary new design attributes through the editing panel.
+- Confirmed preferences do not yet influence subsequent recommendation rounds.
+- The recommendation mechanism remains a rule-based simulation rather than a trained generative AI model.
+- Formal accessibility and usability evaluations have not yet been conducted.
+
+### 7. Milestone Outcome
+
+Phase 2 — Milestone 4 is now functionally complete.
+
+The implemented workflow allows users to:
+
+1. Select design attributes across multiple recommendations.
+2. Provide Like, Avoid or Not Sure feedback.
+3. Review and confirm their preferences.
+4. View confirmed preferences in Current Intentions.
+5. Modify or remove previously confirmed preferences.
+6. Explicitly save or cancel changes.
+
+This provides a structured and reversible mechanism for expressing evolving creative intentions.
+
+### 8. Next Steps
+
+**Phase 2 — Milestone 5: Preference-Aware Iterative Exploration**
+
+The next milestone will connect confirmed preferences with subsequent design recommendations.
+
+Planned functionality includes:
+
+- Exploring new design directions using previously confirmed preferences.
+- Generating variations of a selected concept.
+- Applying positive and negative preferences to simulated recommendations.
+- Preserving uncertainty without treating it as a design constraint.
+- Explaining how recorded preferences influence recommendations.
+- Supporting continued exploration without losing earlier intentions.
+
+This milestone will demonstrate how Intenta adapts its recommendations as users' creative intentions evolve.
