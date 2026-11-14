@@ -52,6 +52,8 @@ export default function ConversationView({
                     ? 'Intenta · Design concepts'
                     : message.role === 'preferences-confirmed'
                       ? 'Intenta · Preferences confirmed'
+                      : message.role === 'preferences-edited'
+                        ? 'Intenta · Preferences updated'
                       : 'Prototype notice'}
               </span>
 
@@ -66,6 +68,32 @@ export default function ConversationView({
                   onRemoveDraftAttribute={onRemoveDraftAttribute}
                   onConfirmDraftPreferences={onConfirmDraftPreferences}
                 />
+              ) : message.role === 'preferences-edited' ? (
+                <div className="preference-confirmation" aria-label="Saved preference edits">
+                  <p className="preference-confirmation-intro">
+                    Your changes to Current Intentions have been saved.
+                  </p>
+                  <ul className="preference-confirmation-list">
+                    {message.changes.map((change) => (
+                      <li key={change.id}>
+                        {change.action === 'removed' ? (
+                          <span className="preference-sentiment preference-sentiment-removed">Removed</span>
+                        ) : (
+                          <span className={`preference-sentiment preference-sentiment-${change.sentiment}`}>
+                            {change.sentiment === 'like' ? 'Like' : change.sentiment === 'avoid' ? 'Avoid' : 'Not sure'}
+                          </span>
+                        )}
+                        <span>{change.label}</span>
+                        {change.action === 'updated' && (
+                          <span className="preference-previous">(previously {change.previousSentiment})</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="preference-confirmation-note">
+                    Earlier decisions remain in conversation history; Current Intentions shows the latest saved state.
+                  </p>
+                </div>
               ) : message.role === 'preferences-confirmed' ? (
                 <div className="preference-confirmation" aria-label="Confirmed preference changes">
                   <p className="preference-confirmation-intro">

@@ -9,7 +9,7 @@ import IntentionPanel from './components/IntentionPanel';
 import PromptAssistancePanel from './components/PromptAssistancePanel';
 import { suggestImprovedPrompt } from './utils/promptAssistance';
 import { buildInitialRecommendations, isBusinessCardRequest } from './utils/recommendations';
-import { mergeConfirmedPreferences } from './utils/preferenceManagement';
+import { mergeConfirmedPreferences, createPreferenceEdit, getPreferenceEditChanges, applyPreferenceEdits } from './utils/preferenceManagement';
 import './App.css';
 import './Phase2.css';
 
@@ -22,6 +22,7 @@ function createProject(id) {
     assistance: false,
     promptReview: null, // Only exists while the user reviews a suggested prompt.
     feedbackDraft: { recommendationMessageId: null, items: [] },
+    preferenceEdit: null, // Unsaved edits to already confirmed preferences, scoped to this project.
     messages: [],
     nextMessageId: 1,
     intentions: {
@@ -261,6 +262,82 @@ function App() {
     );
   }
 
+
+  // Milestone 4.3: begin a separate editing transaction. Nothing confirmed changes yet.
+  function beginPreferenceEdit() {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || project.preferenceEdit || project.intentions.preferences.length === 0) {
+        return project;
+      }
+      return {
+        ...project,
+        preferenceEdit: createPreferenceEdit(project.intentions.preferences),
+        ui: { ...project.ui, intentionsOpen: true },
+      };
+    }));
+  }
+
+  function changePreferenceEdit(attributeId, sentiment) {
+    if (!['like', 'avoid', 'unsure'].includes(sentiment)) return;
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || !project.preferenceEdit) return project;
+      return {
+        ...project,
+        preferenceEdit: {
+          ...project.preferenceEdit,
+          items: project.preferenceEdit.items.map((item) =>
+            item.id === attributeId ? { ...item, sentiment, removed: false } : item
+          ),
+        },
+      };
+    }));
+  }
+
+  function togglePreferenceRemoval(attributeId) {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || !project.preferenceEdit) return project;
+      return {
+        ...project,
+        preferenceEdit: {
+          ...project.preferenceEdit,
+          items: project.preferenceEdit.items.map((item) =>
+            item.id === attributeId ? { ...item, removed: !item.removed } : item
+          ),
+        },
+      };
+    }));
+  }
+
+  function cancelPreferenceEdit() {
+    setProjects((current) => current.map((project) =>
+      project.id === activeId ? { ...project, preferenceEdit: null } : project
+    ));
+  }
+
+  function savePreferenceEdit() {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || !project.preferenceEdit) return project;
+      const { preferences, changes } = applyPreferenceEdits(
+        project.intentions.preferences,
+        project.preferenceEdit
+      );
+      return {
+        ...project,
+        intentions: { ...project.intentions, preferences },
+        preferenceEdit: null,
+        // Save an immutable event in conversation history, without rewriting previous messages.
+        messages: changes.length
+          ? [...project.messages, {
+              id: project.nextMessageId,
+              role: 'preferences-edited',
+              changes,
+            }]
+          : project.messages,
+        nextMessageId: project.nextMessageId + (changes.length ? 1 : 0),
+      };
+    }));
+  }
+
   function handleComposerSubmit() {
     if (!activeProject) return;
     const original = activeProject.prompt.trim();
@@ -401,6 +478,14 @@ function App() {
                 {activeProject.ui.intentionsOpen && (
                   <IntentionPanel
                     intentions={activeProject.intentions}
+                    preferenceEdit={activeProject.preferenceEdit}
+                    pendingChanges={activeProject.preferenceEdit
+                      ? getPreferenceEditChanges(activeProject.preferenceEdit).length : 0}
+                    onBeginEdit={beginPreferenceEdit}
+                    onChangeEdit={changePreferenceEdit}
+                    onToggleRemoval={togglePreferenceRemoval}
+                    onSaveChanges={savePreferenceEdit}
+                    onCancelEdit={cancelPreferenceEdit}
                     onClose={() =>
                       updateProject({
                         ui: { ...activeProject.ui, intentionsOpen: false },
