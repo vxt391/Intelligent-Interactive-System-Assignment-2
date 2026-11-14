@@ -1,65 +1,119 @@
-
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import ProjectTabs from './components/ProjectTabs';
 import ModeSwitcher from './components/ModeSwitcher';
 import PromptComposer from './components/PromptComposer';
 import FeaturePlaceholder from './components/FeaturePlaceholder';
+import ConversationView from './components/ConversationView';
+import IntentionPanel from './components/IntentionPanel';
 import './App.css';
+import './Phase2.css';
 
-const createProject = (id) => ({
-  id,
-  name: `Project ${id}`,
-  mode: 'explore',
-  prompt: '',
-  assistance: false,
-  lastSubmittedPrompt: '',
-});
+function createProject(id) {
+  return {
+    id,
+    name: `Project ${id}`,
+    mode: 'explore',
+    prompt: '',
+    assistance: false,
+    messages: [],
+    nextMessageId: 1,
+    intentions: {
+      initialBrief: '',
+      preferences: [], // Confirmed attributes will be added in a later Phase 2 step.
+    },
+    exploration: {
+      strategy: 'new-directions',
+      selectedConceptId: null,
+      round: 0,
+      uncertaintyStreak: 0,
+      communitySuggestionDismissed: false,
+    },
+    ui: { intentionsOpen: false },
+  };
+}
 
 function App() {
   const [projects, setProjects] = useState([createProject(1)]);
   const [activeId, setActiveId] = useState(1);
-  const [page, setPage] = useState('home');
+  const nextProjectId = useRef(2);
 
-  const activeProject = projects.find((p) => p.id === activeId);
+  const activeProject = projects.find((project) => project.id === activeId);
 
   function updateProject(changes) {
-    setProjects((previous) =>
-      previous.map((project) =>
-        project.id === activeId
-          ? { ...project, ...changes }
-          : project
+    setProjects((current) =>
+      current.map((project) =>
+        project.id === activeId ? { ...project, ...changes } : project
       )
     );
   }
 
   function newProject() {
-    const id = Math.max(0, ...projects.map((p) => p.id)) + 1;
-    setProjects((previous) => [...previous, createProject(id)]);
+    const id = nextProjectId.current++;
+    setProjects((current) => [...current, createProject(id)]);
     setActiveId(id);
-    setPage('home');
   }
 
   function selectProject(id) {
     setActiveId(id);
-    setPage('home');
   }
 
   function closeProject(id) {
-    const remaining = projects.filter((p) => p.id !== id);
+    const remaining = projects.filter((project) => project.id !== id);
     setProjects(remaining);
-
     if (activeId === id) {
-      setActiveId(remaining.length ? remaining[0].id : null);
+      setActiveId(remaining.length > 0 ? remaining[0].id : null);
     }
   }
 
   function submitPrompt() {
-    if (!activeProject?.prompt.trim()) return;
+    setProjects((current) =>
+      current.map((project) => {
+        if (project.id !== activeId) return project;
 
-    updateProject({
-      lastSubmittedPrompt: activeProject.prompt.trim(),
-    });
+        const text = project.prompt.trim();
+        if (!text) return project;
+
+        const firstMessage = project.messages.length === 0;
+        const additions = [
+          { id: project.nextMessageId, role: 'user', text },
+        ];
+
+        if (firstMessage) {
+          additions.push({
+            id: project.nextMessageId + 1,
+            role: 'prototype',
+            text: 'Your design brief has been saved in this conversation. Simulated design recommendations will be added in the next Phase 2 milestone.',
+          });
+        }
+
+        return {
+          ...project,
+          prompt: '',
+          messages: [...project.messages, ...additions],
+          nextMessageId: project.nextMessageId + additions.length,
+          intentions: {
+            ...project.intentions,
+            initialBrief: project.intentions.initialBrief || text,
+          },
+        };
+      })
+    );
+  }
+
+  function renderComposer(compact = false) {
+    if (!activeProject) return null;
+    return (
+      <div className={compact ? 'compact-composer' : ''}>
+        <PromptComposer
+          prompt={activeProject.prompt}
+          assistance={activeProject.assistance}
+          onPromptChange={(prompt) => updateProject({ prompt })}
+          onAssistanceChange={(assistance) => updateProject({ assistance })}
+          onSubmit={submitPrompt}
+        />
+      </div>
+    );
   }
 
   return (
@@ -69,7 +123,7 @@ function App() {
         activeId={activeId}
         onNewProject={newProject}
         onSelectProject={selectProject}
-        onHome={() => setPage('home')}
+        onHome={() => updateProject({ mode: 'explore' })}
       />
 
       <div className="main-area">
@@ -81,7 +135,7 @@ function App() {
           onNew={newProject}
         />
 
-        <main className="workspace">
+        <main className="workspace phase2-workspace">
           {activeProject ? (
             <>
               <div className="workspace-toolbar">
@@ -89,48 +143,70 @@ function App() {
                   mode={activeProject.mode}
                   onChange={(mode) => updateProject({ mode })}
                 />
-                <span className="workspace-status">
-                  {activeProject.name} · Draft workspace
-                </span>
+                <div className="phase2-toolbar-right">
+                  <span className="workspace-status">
+                    {activeProject.name} · Draft workspace
+                  </span>
+                  <button
+                    type="button"
+                    className="intentions-toggle"
+                    aria-expanded={activeProject.ui.intentionsOpen}
+                    aria-controls="current-intentions-panel"
+                    onClick={() =>
+                      updateProject({
+                        ui: {
+                          ...activeProject.ui,
+                          intentionsOpen: !activeProject.ui.intentionsOpen,
+                        },
+                      })
+                    }
+                  >
+                    Current Intentions ({activeProject.intentions.preferences.length})
+                    <span aria-hidden="true">
+                      {activeProject.ui.intentionsOpen ? ' ×' : ' ☰'}
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              {activeProject.mode === 'explore' ? (
-                <section className="welcome-section">
-                  <div className="eyebrow">YOUR CREATIVE SPACE</div>
-                  <h1>What do you want to design today?</h1>
-                  <p className="welcome-description">
-                    Start with an idea, even if you're not sure
-                    about the details yet.
-                  </p>
-
-                  <PromptComposer
-                    prompt={activeProject.prompt}
-                    assistance={activeProject.assistance}
-                    onPromptChange={(prompt) => updateProject({ prompt })}
-                    onAssistanceChange={(assistance) =>
-                      updateProject({ assistance })
-                    }
-                    onSubmit={submitPrompt}
-                  />
-
-                  {activeProject.lastSubmittedPrompt && (
-                    <div className="submission-notice" role="status">
-                      <strong>Prompt received</strong>
-                      <p>{activeProject.lastSubmittedPrompt}</p>
-                      <small>
-                        Design recommendations will be introduced
-                        in Phase 2.
-                      </small>
-                    </div>
+              <div className="phase2-content">
+                <div className="phase2-primary">
+                  {activeProject.mode === 'explore' ? (
+                    activeProject.messages.length === 0 ? (
+                      <section className="welcome-section">
+                        <div className="eyebrow">YOUR CREATIVE SPACE</div>
+                        <h1>What do you want to design today?</h1>
+                        <p className="welcome-description">
+                          Start with an idea, even if you're not sure about the details yet.
+                        </p>
+                        {renderComposer()}
+                      </section>
+                    ) : (
+                      <ConversationView
+                        messages={activeProject.messages}
+                        composer={renderComposer(true)}
+                      />
+                    )
+                  ) : (
+                    <FeaturePlaceholder
+                      title="Direct Object Refinement"
+                      description="This workspace will let you select design objects and request precise changes."
+                      note="Interactive canvas and object markers arrive in Phase 4."
+                    />
                   )}
-                </section>
-              ) : (
-                <FeaturePlaceholder
-                  title="Direct Object Refinement"
-                  description="This workspace will let you select design objects and request precise changes."
-                  note="Interactive canvas and object markers arrive in Phase 4."
-                />
-              )}
+                </div>
+
+                {activeProject.ui.intentionsOpen && (
+                  <IntentionPanel
+                    intentions={activeProject.intentions}
+                    onClose={() =>
+                      updateProject({
+                        ui: { ...activeProject.ui, intentionsOpen: false },
+                      })
+                    }
+                  />
+                )}
+              </div>
             </>
           ) : (
             <FeaturePlaceholder
@@ -146,3 +222,4 @@ function App() {
 }
 
 export default App;
+

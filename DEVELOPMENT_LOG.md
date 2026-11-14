@@ -143,3 +143,95 @@ The interface was also visually inspected against the initial wireframe.
 ### 7. Next Steps
 
 Phase 2 will focus on AI-assisted idea exploration, including simulated prompt assistance, visual design recommendations, preference selection and iterative creative exploration.
+
+## Phase 2 — Milestone 1: Conversation Interface and State Management
+
+**Date:** 14 November 2026  
+**Status:** Implemented and manually tested
+
+### 1. Implementation
+
+Extended the Phase 1 application foundation to support a conversational design exploration workflow.
+
+The following functionality was implemented:
+
+- **Conversation interface:** After submitting the first creative prompt, the initial welcome screen transitions into a scrollable conversation interface.
+- **Conversation history:** User messages are displayed chronologically, allowing users to revisit previous inputs.
+- **Compact prompt composer:** Once the conversation begins, the prompt input is repositioned at the bottom of the conversation workspace.
+- **Current Intentions panel:** Introduced a collapsible right-side panel displaying the original design brief and current confirmed preferences.
+- **Project-specific state management:** Each project maintains its own conversation messages, prompt drafts, intentions and exploration state.
+- **Interaction continuity:** Users can switch between Explore Ideas and Refine Design, or between different projects, without losing their existing conversation state during the session.
+
+New React components were introduced to separate conversation rendering and intention management from the main application component.
+
+### 2. Design and Technical Decisions
+
+**Conversational interaction:** The interface transitions from a centrally positioned welcome screen to a conversation-based layout after the first prompt. This supports iterative communication and allows users to refer to earlier design decisions.
+
+**Collapsible intention summary:** A collapsible right-side panel was selected instead of an always-visible panel. This preserves space for future visual recommendations while allowing users to inspect their current creative intentions.
+
+**Separation of conversation history and current intentions:** Conversation history preserves previous interactions, while the intention summary is designed to represent the user's latest confirmed preferences. This distinction will become important when users revise their preferences.
+
+**Project-specific state:** React state was extended to maintain independent conversation and intention data for each project. This supports continuity when users switch between projects or interaction modes.
+
+**Incremental implementation:** AI-generated recommendations, prompt rewriting and preference feedback were intentionally excluded from this milestone. The conversation and state-management foundation was implemented first to reduce complexity and allow individual interactions to be tested.
+
+### 3. AI Assistance and Student Contributions
+
+ChatGPT assisted with:
+
+- Translating the approved interaction-design decisions into a React component structure.
+- Generating the conversation interface and collapsible intention panel.
+- Extending the application's state structure.
+- Providing implementation instructions and manual testing procedures.
+
+The student:
+
+- Developed the original wireframes and interaction requirements.
+- Selected a collapsible intention panel after comparing alternative layouts.
+- Approved the intended interaction flow before implementation.
+- Integrated the generated code into the existing React application.
+- Tested the functionality in Google Chrome and confirmed the expected behaviours.
+
+### 4. Manual Testing
+
+**Environment:** React + Vite application running locally in Google Chrome.
+
+| Test Case                                                                                                   | Result |
+| ----------------------------------------------------------------------------------------------------------- | ------ |
+| Submit an initial business-card prompt and transition from the welcome screen to the conversation interface | Passed |
+| Submit a second message and verify that it appears in the conversation history                              | Passed |
+| Open Current Intentions and verify that the original design brief is displayed                              | Passed |
+| Close and reopen the Current Intentions panel                                                               | Passed |
+| Switch between Explore Ideas and Refine Design without losing conversation history                          | Passed |
+| Create a second project with an independent, initially empty conversation                                   | Passed |
+| Return to the first project and verify that previous messages are preserved                                 | Passed |
+| Enter an unsent prompt, switch projects and return to verify that the draft is preserved                    | Passed |
+
+**Result:** All 8 manual test cases passed.
+
+The results were confirmed by the student after testing the application locally. No automated testing was performed during this milestone.
+
+### 5. Known Limitations
+
+- Conversation responses do not yet include AI-generated design recommendations.
+- Prompt assistance has not yet been implemented beyond its existing Phase 1 toggle.
+- Confirmed preference management and feedback interactions are not yet functional.
+- The Current Intentions panel provides the foundation for preference management, but attribute confirmation and editing will be implemented in a later milestone.
+- Project state is stored in React memory and is not preserved after a browser refresh.
+- The Community Gallery and direct object-linked refinement remain outside this milestone.
+- Formal accessibility and usability evaluations have not yet been conducted.
+
+### 6. Next Steps
+
+**Phase 2 — Milestone 2: Optional Prompt Assistance**
+
+Implement an interactive prompt-assistance workflow that allows users to:
+
+- View their original creative prompt.
+- Receive a simulated improvement suggestion.
+- Edit the suggested prompt.
+- Accept or reject the suggestion.
+- Submit either the original or suggested prompt.
+
+The system should preserve the user's creative intentions and avoid silently modifying their requests.

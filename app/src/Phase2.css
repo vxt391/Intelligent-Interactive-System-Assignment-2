@@ -1,0 +1,314 @@
+/* Phase 2, milestone 1: conversation and intention-panel layout only. */
+.phase2-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+  padding-bottom: 22px;
+}
+
+.phase2-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.intentions-toggle {
+  flex-shrink: 0;
+  border: 1px solid #e4dfeb;
+  background: #fff;
+  color: #574a84;
+  padding: 10px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.intentions-toggle:hover,
+.intentions-toggle[aria-expanded='true'] {
+  background: #f2effa;
+  border-color: #c7bce9;
+}
+
+.phase2-content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  gap: 22px;
+}
+
+.phase2-primary {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Phase 1 welcome screen remains the initial state. */
+.phase2-primary > .welcome-section {
+  flex-shrink: 0;
+}
+
+/* Conversation after the first submitted prompt. */
+.conversation-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+.conversation-feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 12px 24px;
+}
+
+.conversation-heading {
+  margin: 14px 0 34px;
+  text-align: center;
+}
+
+.conversation-heading h1 {
+  margin: 8px 0;
+  color: #29242e;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.conversation-heading p {
+  margin: 0;
+  color: #918a95;
+  font-size: 13px;
+}
+
+.conversation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.conversation-row.from-user {
+  justify-content: flex-end;
+}
+
+.conversation-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #eeeafb;
+  color: #7562bf;
+}
+
+.conversation-message {
+  width: fit-content;
+  max-width: min(85%, 650px);
+  padding: 14px 18px;
+  border: 1px solid #e9e5ea;
+  border-radius: 16px;
+  background: white;
+  text-align: left;
+}
+
+.from-user .conversation-message {
+  background: #f0ecfa;
+  border-color: #e6def9;
+}
+
+.conversation-speaker {
+  display: block;
+  margin-bottom: 7px;
+  color: #7561ad;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.conversation-message p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #4a4450;
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+.conversation-composer {
+  flex-shrink: 0;
+  border-top: 1px solid #eeebed;
+  padding: 16px 12px 0;
+  background: #fcfbfa;
+}
+
+.conversation-compose-title {
+  margin: 0 0 11px;
+  color: #766b83;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.compact-composer .prompt-textarea {
+  min-height: 62px;
+  margin: 15px 0 8px;
+  font-size: 14px;
+}
+
+.compact-composer .prompt-box {
+  border-radius: 15px;
+  padding: 14px 16px 12px;
+}
+
+.compact-composer .suggestion-chips {
+  display: none;
+}
+
+.conversation-compose-note {
+  margin: 9px 0 0;
+  color: #a49ca8;
+  font-size: 11px;
+}
+
+/* Collapsible right-side intentions panel. */
+.intention-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 305px;
+  min-height: 0;
+  border: 1px solid #e9e5ea;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.intention-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 20px;
+  border-bottom: 1px solid #eeebef;
+}
+
+.intention-panel-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.intention-panel-header p {
+  margin: 6px 0 0;
+  color: #99909e;
+  font-size: 12px;
+}
+
+.intention-close {
+  border: none;
+  background: transparent;
+  color: #827b8a;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.intention-panel-body {
+  overflow-y: auto;
+  padding: 18px 20px;
+}
+
+.intention-section {
+  margin-bottom: 26px;
+}
+
+.intention-section h3 {
+  margin: 0 0 12px;
+  color: #4d4555;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.intention-brief {
+  margin: 0;
+  padding: 13px;
+  border-radius: 11px;
+  background: #f8f6fa;
+  color: #615a68;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.intention-empty,
+.intention-footnote {
+  color: #9a929e;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.intention-preference-list {
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.intention-footnote {
+  padding-top: 15px;
+  border-top: 1px solid #eeebef;
+}
+
+@media (max-width: 1150px) {
+  .intention-panel {
+    flex-basis: 255px;
+  }
+  .phase2-content {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 850px) {
+  .phase2-toolbar-right .workspace-status {
+    display: none;
+  }
+  .phase2-content {
+    position: relative;
+  }
+  .intention-panel {
+    position: absolute;
+    z-index: 5;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: min(320px, 100%);
+    box-shadow: 0 14px 40px #30263b20;
+  }
+}
+
+@media (max-width: 650px) {
+  .phase2-workspace {
+    gap: 12px;
+  }
+  .phase2-toolbar-right {
+    gap: 0;
+  }
+  .intentions-toggle {
+    max-width: 136px;
+    padding: 8px;
+    font-size: 11px;
+  }
+  .conversation-feed {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .conversation-composer {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
