@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 export default function PromptAssistancePanel({
   original,
@@ -9,13 +10,66 @@ export default function PromptAssistancePanel({
   onBack,
 }) {
   const titleRef = useRef(null);
+  const dialogRef = useRef(null);
 
   useEffect(() => {
+    // A separate modal removes the long review form from the short,
+    // scrollable conversation composer. Restore focus on exit.
+    const previouslyFocused = document.activeElement;
+    const originalBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     titleRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      if (previouslyFocused?.isConnected && typeof previouslyFocused.focus === 'function') {
+        previouslyFocused.focus();
+      }
+    };
   }, []);
 
-  return (
-    <section className="prompt-review" aria-labelledby="prompt-review-title">
+  function handleDialogKeyDown(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      onBack();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+
+    const focusable = dialogRef.current?.querySelectorAll(
+      'button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])'
+    );
+    if (!focusable?.length) {
+      event.preventDefault();
+      titleRef.current?.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    const active = document.activeElement;
+
+    if (event.shiftKey && (active === first || active === titleRef.current)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && (active === last || active === titleRef.current)) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
+
+  return createPortal(
+    <div className="prompt-review-backdrop">
+      <div
+        className="prompt-review-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="prompt-review-title"
+        aria-describedby="prompt-review-description"
+        ref={dialogRef}
+        onKeyDown={handleDialogKeyDown}
+      >
+        <section className="prompt-review" aria-labelledby="prompt-review-title">
       <div className="prompt-review-heading">
         <div>
           <span className="eyebrow">OPTIONAL PROMPT ASSISTANCE</span>
@@ -23,10 +77,21 @@ export default function PromptAssistancePanel({
             Review your prompt before submitting
           </h2>
         </div>
-        <span className="prompt-review-badge">Rule-based simulation</span>
+        <div className="prompt-review-header-actions">
+          <span className="prompt-review-badge">Rule-based simulation</span>
+          <button
+            type="button"
+            className="prompt-review-close"
+            onClick={onBack}
+            aria-label="Close prompt review and return to editing"
+            title="Back to editing"
+          >
+            ×
+          </button>
+        </div>
       </div>
 
-      <p className="prompt-review-intro">
+      <p className="prompt-review-intro" id="prompt-review-description">
         Your original wording is preserved. The suggestion adds general design guidance,
         not new preferences. You can edit it or submit the original instead.
       </p>
@@ -66,6 +131,9 @@ export default function PromptAssistancePanel({
           </button>
         </div>
       </div>
-    </section>
+        </section>
+      </div>
+    </div>,
+    document.body
   );
 }

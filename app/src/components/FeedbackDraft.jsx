@@ -4,11 +4,11 @@ const OPTIONS = [
   { value: 'unsure', label: 'Not sure' },
 ];
 
-export default function FeedbackDraft({ items, onRate, onRemove, onConfirm }) {
+export default function FeedbackDraft({ recommendationMessageId, items, onRate, onRemove, onConfirm }) {
   const ratedCount = items.filter((item) => item.sentiment !== null).length;
 
   return (
-    <section className="feedback-draft" aria-label="Shared design attribute feedback">
+    <section className="feedback-draft" data-feedback-for={recommendationMessageId} aria-label="Shared design attribute feedback">
       <div className="feedback-draft-heading">
         <div>
           <h3>Your feedback draft</h3>
@@ -28,7 +28,7 @@ export default function FeedbackDraft({ items, onRate, onRemove, onConfirm }) {
               <div className="feedback-item-heading">
                 <div>
                   <strong>{item.label}</strong>
-                  <span>{item.category} · From {item.sourceConceptId.replace('concept-', '')}</span>
+                  <span>{item.category} · From {item.sourceConceptLabel || item.sourceConceptId.replace('concept-', '')}</span>
                 </div>
                 <button
                   type="button"

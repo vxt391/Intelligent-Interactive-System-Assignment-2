@@ -25,7 +25,9 @@ export default function ConceptRecommendations({
   return (
     <section className="recommendations" aria-label="Business card design recommendations">
       <p className="recommendations-intro">
-        Here are three possible business-card directions. You can select one as a starting point or leave all unselected.
+        {recommendation.source === 'new-directions'
+          ? `Round ${recommendation.round}: Three new directions using the latest confirmed preferences. Labels indicate which options match your Likes and which are exploratory.`
+          : 'Here are three possible business-card directions. You can select one as a starting point or leave all unselected.'}
       </p>
       <p className="recommendations-explanation">{recommendation.explanation}</p>
 
@@ -39,6 +41,7 @@ export default function ConceptRecommendations({
             >
               <BusinessCardPreview concept={concept} />
               <div className="concept-card-content">
+                {concept.direction && <span className={`concept-direction ${concept.direction === 'Exploratory' ? 'concept-direction-exploratory' : ''}`}>{concept.direction}</span>}
                 <h3>{String.fromCharCode(65 + index)}. {concept.name}</h3>
                 <p className="concept-rationale">{concept.rationale}</p>
                 <dl className="concept-details">
@@ -88,6 +91,7 @@ export default function ConceptRecommendations({
       </div>
 
       <FeedbackDraft
+        recommendationMessageId={recommendation.messageId}
         items={feedbackDraft}
         onRate={onRateDraftAttribute}
         onRemove={onRemoveDraftAttribute}

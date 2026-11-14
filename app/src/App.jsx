@@ -8,7 +8,7 @@ import ConversationView from './components/ConversationView';
 import IntentionPanel from './components/IntentionPanel';
 import PromptAssistancePanel from './components/PromptAssistancePanel';
 import { suggestImprovedPrompt } from './utils/promptAssistance';
-import { buildInitialRecommendations, isBusinessCardRequest } from './utils/recommendations';
+import { buildInitialRecommendations, buildNewDirectionRecommendations, isBusinessCardRequest } from './utils/recommendations';
 import { mergeConfirmedPreferences, createPreferenceEdit, getPreferenceEditChanges, applyPreferenceEdits } from './utils/preferenceManagement';
 import './App.css';
 import './Phase2.css';
@@ -21,7 +21,7 @@ function createProject(id) {
     prompt: '',
     assistance: false,
     promptReview: null, // Only exists while the user reviews a suggested prompt.
-    feedbackDraft: { recommendationMessageId: null, items: [] },
+    feedbackDrafts: {}, // Each recommendation round owns an independent unfinished draft.
     preferenceEdit: null, // Unsaved edits to already confirmed preferences, scoped to this project.
     messages: [],
     nextMessageId: 1,
@@ -32,6 +32,7 @@ function createProject(id) {
     exploration: {
       strategy: 'new-directions',
       selectedConceptId: null,
+      selectedConceptMessageId: null,
       round: 0,
       uncertaintyStreak: 0,
       communitySuggestionDismissed: false,
@@ -105,18 +106,22 @@ function App() {
             id: project.nextMessageId + 1,
             role: 'recommendations',
             ...recommendation,
+            round: 1,
+            source: 'initial',
+            briefForRecommendations: original,
           });
           newExploration = {
             ...project.exploration,
             round: 1,
             selectedConceptId: null,
+            selectedConceptMessageId: null,
           };
         } else {
           additions.push({
             id: project.nextMessageId + 1,
             role: 'prototype',
             text: hasRecommendations
-              ? 'Your follow-up has been saved. Generating further recommendation rounds or variations will be added in Milestone 5; the current concepts remain unchanged.'
+              ? 'Your follow-up is visible in the conversation, but free-form follow-up text does not yet change the design rules. Use Explore New Directions to generate another round based on confirmed preferences.'
               : 'This milestone currently illustrates business-card designs only. Your message is saved; submit a business-card request to view three simulated concepts.',
           });
         }
@@ -151,115 +156,166 @@ function App() {
           exploration: {
             ...project.exploration,
             selectedConceptId:
-              project.exploration.selectedConceptId === conceptId ? null : conceptId,
+              project.exploration.selectedConceptId === conceptId &&
+              project.exploration.selectedConceptMessageId === recommendationMessageId
+                ? null : conceptId,
+            selectedConceptMessageId:
+              project.exploration.selectedConceptId === conceptId &&
+              project.exploration.selectedConceptMessageId === recommendationMessageId
+                ? null : recommendationMessageId,
           },
         };
       })
     );
   }
 
-  // Unconfirmed feedback remains separate from Current Intentions.
+  // Each recommendation round has its own draft. Switching rounds must never
+  // replace or silently confirm feedback still unfinished in an earlier round.
   function toggleDraftAttribute(recommendationMessageId, conceptId, attribute) {
-    setProjects((current) =>
-      current.map((project) => {
-        if (project.id !== activeId) return project;
-        const recommendation = project.messages.find(
-          (message) => message.id === recommendationMessageId && message.role === 'recommendations'
-        );
-        if (!recommendation?.concepts.some((concept) => concept.id === conceptId)) return project;
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId) return project;
+      const recommendation = project.messages.find((message) =>
+        message.id === recommendationMessageId && message.role === 'recommendations'
+      );
+      const sourceConcept = recommendation?.concepts.find((concept) => concept.id === conceptId);
+      if (!sourceConcept) return project;
 
-        const previous = project.feedbackDraft;
-        const items = previous.recommendationMessageId === recommendationMessageId
-          ? previous.items
-          : [];
-        const exists = items.some((item) => item.id === attribute.id);
+      const previous = project.feedbackDrafts[recommendationMessageId]?.items ?? [];
+      const alreadySelected = previous.some((item) => item.id === attribute.id);
+      const items = alreadySelected
+        ? previous.filter((item) => item.id !== attribute.id)
+        : [...previous, {
+            ...attribute,
+            sourceConceptId: conceptId,
+            sourceConceptLabel: sourceConcept.name,
+            sentiment: null,
+          }];
 
-        return {
-          ...project,
-          feedbackDraft: {
-            recommendationMessageId,
-            items: exists
-              ? items.filter((item) => item.id !== attribute.id)
-              : [...items, { ...attribute, sourceConceptId: conceptId, sentiment: null }],
-          },
-        };
-      })
-    );
+      return {
+        ...project,
+        feedbackDrafts: {
+          ...project.feedbackDrafts,
+          [recommendationMessageId]: { items },
+        },
+      };
+    }));
   }
 
-  function rateDraftAttribute(attributeId, sentiment) {
+  function rateDraftAttribute(recommendationMessageId, attributeId, sentiment) {
     if (!['like', 'avoid', 'unsure'].includes(sentiment)) return;
-    setProjects((current) =>
-      current.map((project) =>
-        project.id === activeId
-          ? {
-              ...project,
-              feedbackDraft: {
-                ...project.feedbackDraft,
-                items: project.feedbackDraft.items.map((item) =>
-                  item.id === attributeId ? { ...item, sentiment } : item
-                ),
-              },
-            }
-          : project
-      )
-    );
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId) return project;
+      const draft = project.feedbackDrafts[recommendationMessageId];
+      if (!draft) return project;
+      return {
+        ...project,
+        feedbackDrafts: {
+          ...project.feedbackDrafts,
+          [recommendationMessageId]: {
+            items: draft.items.map((item) =>
+              item.id === attributeId ? { ...item, sentiment } : item
+            ),
+          },
+        },
+      };
+    }));
   }
 
-  function removeDraftAttribute(attributeId) {
-    setProjects((current) =>
-      current.map((project) =>
-        project.id === activeId
-          ? {
-              ...project,
-              feedbackDraft: {
-                ...project.feedbackDraft,
-                items: project.feedbackDraft.items.filter((item) => item.id !== attributeId),
-              },
-            }
-          : project
-      )
-    );
+  function removeDraftAttribute(recommendationMessageId, attributeId) {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId) return project;
+      const draft = project.feedbackDrafts[recommendationMessageId];
+      if (!draft) return project;
+      return {
+        ...project,
+        feedbackDrafts: {
+          ...project.feedbackDrafts,
+          [recommendationMessageId]: {
+            items: draft.items.filter((item) => item.id !== attributeId),
+          },
+        },
+      };
+    }));
   }
 
-  // Milestone 4.2: save only explicitly rated items, and preserve unrated draft selections.
-  // This action is project-scoped. It never creates a new recommendation round.
+  // Confirm only explicitly rated attributes from the specific source round.
+  // Unrated choices and other rounds' drafts remain untouched.
   function confirmDraftPreferences(recommendationMessageId) {
-    setProjects((current) =>
-      current.map((project) => {
-        if (project.id !== activeId) return project;
-        if (project.feedbackDraft.recommendationMessageId !== recommendationMessageId) {
-          return project;
-        }
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId) return project;
+      const draft = project.feedbackDrafts[recommendationMessageId];
+      if (!draft) return project;
+      const rated = draft.items.filter((item) => ['like', 'avoid', 'unsure'].includes(item.sentiment));
+      if (!rated.length) return project;
 
-        const rated = project.feedbackDraft.items.filter((item) =>
-          ['like', 'avoid', 'unsure'].includes(item.sentiment)
-        );
-        if (rated.length === 0) return project;
-
-        const { preferences, changes } = mergeConfirmedPreferences(
-          project.intentions.preferences,
-          rated
-        );
-        const confirmation = {
+      const { preferences, changes } = mergeConfirmedPreferences(
+        project.intentions.preferences, rated
+      );
+      return {
+        ...project,
+        intentions: { ...project.intentions, preferences },
+        feedbackDrafts: {
+          ...project.feedbackDrafts,
+          [recommendationMessageId]: {
+            items: draft.items.filter((item) => item.sentiment === null),
+          },
+        },
+        messages: [...project.messages, {
           id: project.nextMessageId,
           role: 'preferences-confirmed',
-          changes, // Snapshot of this event; earlier messages are never rewritten.
-        };
+          changes,
+        }],
+        nextMessageId: project.nextMessageId + 1,
+      };
+    }));
+  }
 
+  // Milestone 5.1: only confirmed preferences influence the next three designs.
+  // No draft is modified, and previous recommendation messages stay immutable.
+  function exploreNewDirections() {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId) return project;
+      const previousRounds = project.messages.filter((message) => message.role === 'recommendations');
+      if (previousRounds.length === 0) return project;
+      const nextRound = project.exploration.round + 1;
+      const outcome = buildNewDirectionRecommendations({
+        originalBrief: previousRounds[0].briefForRecommendations || project.intentions.initialBrief,
+        preferences: project.intentions.preferences,
+        round: nextRound,
+        previousConcepts: previousRounds.flatMap((message) => message.concepts),
+      });
+      const requested = {
+        id: project.nextMessageId,
+        role: 'user',
+        text: 'Explore new directions',
+        action: 'new-directions',
+      };
+      if (outcome.blockedReason) {
         return {
           ...project,
-          intentions: { ...project.intentions, preferences },
-          // Unrated items remain selected and can be rated in a later batch.
-          feedbackDraft: {
-            ...project.feedbackDraft,
-            items: project.feedbackDraft.items.filter((item) => item.sentiment === null),
-          },
-          messages: [...project.messages, confirmation],
-          nextMessageId: project.nextMessageId + 1,
+          messages: [...project.messages, requested, {
+            id: project.nextMessageId + 1,
+            role: 'prototype',
+            text: `I could not generate another round: ${outcome.blockedReason} No existing recommendation was changed.`,
+          }],
+          nextMessageId: project.nextMessageId + 2,
         };
-      })
-    );
+      }
+      return {
+        ...project,
+        messages: [...project.messages, requested, {
+          id: project.nextMessageId + 1,
+          role: 'recommendations',
+          ...outcome,
+        }],
+        nextMessageId: project.nextMessageId + 2,
+        exploration: {
+          ...project.exploration,
+          round: nextRound,
+          strategy: 'new-directions',
+        },
+      };
+    }));
   }
 
 
@@ -458,8 +514,10 @@ function App() {
                         messages={activeProject.messages}
                         composer={renderComposer(true)}
                         selectedConceptId={activeProject.exploration.selectedConceptId}
+                        selectedConceptMessageId={activeProject.exploration.selectedConceptMessageId}
                         onSelectConcept={selectConcept}
-                        feedbackDraft={activeProject.feedbackDraft}
+                        feedbackDrafts={activeProject.feedbackDrafts}
+                        onExploreNewDirections={exploreNewDirections}
                         onToggleDraftAttribute={toggleDraftAttribute}
                         onRateDraftAttribute={rateDraftAttribute}
                         onRemoveDraftAttribute={removeDraftAttribute}

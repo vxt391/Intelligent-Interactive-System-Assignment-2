@@ -748,3 +748,194 @@ Planned functionality includes:
 - Supporting continued exploration without losing earlier intentions.
 
 This milestone will demonstrate how Intenta adapts its recommendations as users' creative intentions evolve.
+
+## Phase 2 — Milestone 5.1: Preference-Aware Exploration of New Design Directions
+
+**Date:** 14 November 2026  
+**Status:** Implemented; responsive layout improvements visually reviewed
+
+### 1. Objective
+
+The objective of this milestone was to extend Intenta from providing initial design recommendations to supporting iterative, preference-aware exploration.
+
+Previously, the application could generate an initial set of business-card concepts and collect structured user preferences. However, confirmed preferences did not yet influence subsequent recommendations.
+
+Milestone 5.1 connects the preference-management functionality developed in Milestone 4 with the recommendation mechanism, enabling users to explore new design directions based on their evolving creative intentions.
+
+### 2. Implementation
+
+The following features were implemented:
+
+**Explore New Directions**
+
+- Added an Explore New Directions action that allows users to request another round of three design recommendations.
+- Extended the existing rule-based recommendation mechanism to consider the original design brief and currently confirmed preferences.
+- Implemented a balanced exploration strategy, aiming to generate two preference-led concepts and one exploratory concept.
+- Used confirmed Like preferences to prioritise relevant design attributes.
+- Used confirmed Avoid preferences to exclude unwanted attributes where supported by the available design catalogue.
+- Treated Not Sure preferences as unresolved rather than positive or negative constraints.
+- Preserved the existing deterministic, CSS-rendered business-card preview approach.
+
+**Multiple Recommendation Rounds**
+
+- Added support for multiple recommendation rounds within the same conversation.
+- Preserved earlier recommendation messages and their associated design concepts.
+- Introduced round-specific concept identification to distinguish concepts from different recommendation rounds.
+- Maintained project-specific recommendation and interaction state.
+
+**Unfinished Feedback Management**
+
+- Preserved unfinished attribute-feedback drafts independently for each recommendation round.
+- Added a warning when users attempt to generate new recommendations while feedback remains unfinished.
+- Provided two actions: Review Feedback and Continue Without Applying.
+- Ensured that unconfirmed feedback does not silently influence subsequent recommendations.
+- Allowed users to revisit previous recommendation rounds and continue working with their feedback.
+
+### 3. Responsive UI Refinements
+
+During visual testing on a laptop, two usability issues were identified and addressed.
+
+**Issue 1: Excessive prompt-composer height**
+
+The original prompt input occupied a substantial portion of the vertical screen space on a laptop. Combined with the Explore New Directions controls, this reduced the visible area available for reviewing previous conversation messages and design recommendations.
+
+**Improvement:**
+
+- Introduced a compact prompt-composer layout for shorter display heights.
+- Reduced unnecessary vertical spacing around the composer and exploration controls.
+- Allowed the prompt input to expand when users need additional writing space.
+- Preserved the more spacious initial interface and large-monitor presentation.
+
+**Issue 2: Crowded Prompt Assistance interface**
+
+When Prompt Assistance was enabled, the prompt-review interface appeared inside the bottom composer, directly beneath the separately scrollable conversation history.
+
+Although the components did not technically overlap, the adjacent scrollable regions and limited vertical space made the interface appear crowded and visually confusing.
+
+**Improvement:**
+
+- Moved the prompt-review interface into a separate dialog.
+- Maintained the comparison between the original prompt and editable suggested prompt.
+- Preserved the existing submission actions.
+- Added clearer visual separation between prompt review and conversation history.
+- Prevented the review interface from permanently reducing the available conversation space.
+
+The student reviewed the updated interface and confirmed that its visual presentation was improved.
+
+### 4. Design and Technical Decisions
+
+**Balanced exploration strategy**
+
+The student selected a strategy that aims to generate two recommendations prioritising confirmed positive preferences and one more exploratory alternative.
+
+This balances personalisation with creative diversity, helping users discover new possibilities without ignoring their existing intentions.
+
+The two-to-one balance is an interaction-design decision for this prototype rather than a scientifically validated recommendation ratio.
+
+**Explicit feedback confirmation**
+
+Only confirmed preferences influence new recommendations. Draft feedback remains separate, maintaining the user's control over which intentions the system applies.
+
+**Preservation of conversation history**
+
+Previous recommendation rounds remain available so users can compare concepts, revisit earlier decisions and understand the progression of their creative intentions.
+
+**Round-specific feedback**
+
+Feedback drafts are associated with their respective recommendation rounds. This prevents unfinished feedback from one round from being unintentionally replaced when users explore another.
+
+**Rule-based recommendation simulation**
+
+The recommendation system remains deterministic and catalogue-based. It simulates preference-aware AI-assisted design exploration without requiring integration with a generative image model.
+
+**Responsive design as an ongoing requirement**
+
+The student identified that the application must support different screen sizes and heights, particularly laptops and larger desktop monitors.
+
+Responsive testing will therefore be incorporated into subsequent implementation milestones rather than postponed until final UI polishing.
+
+### 5. Relevance to Intelligent Interactive Systems
+
+This milestone advances the project's research objective:
+
+_How do structured and visual interaction techniques support users in expressing and refining their intentions during generative AI-assisted visual content creation?_
+
+The implementation demonstrates:
+
+- **Adaptive interaction:** Subsequent recommendations respond to users' explicitly confirmed preferences.
+- **User agency:** Users control which feedback becomes part of their active intentions.
+- **Transparency:** The interface communicates how confirmed preferences are considered.
+- **Exploratory interaction:** Users can discover alternatives without requiring a fully specified design brief.
+- **Interaction continuity:** Previous recommendations and unfinished feedback remain accessible.
+- **Responsive usability:** Interface adaptations support reviewing and comparing design alternatives across different display sizes.
+
+Together, these features support an iterative process in which users can express, evaluate and progressively refine their creative intentions.
+
+### 6. AI Assistance and Student Contributions
+
+**ChatGPT assisted with:**
+
+- Extending the existing React recommendation workflow.
+- Implementing rule-based preference-aware recommendation logic.
+- Adding multiple recommendation rounds and round-specific state management.
+- Preserving unfinished feedback across recommendation rounds.
+- Integrating new exploration controls into the conversation interface.
+- Developing responsive CSS adjustments for shorter laptop displays.
+- Refactoring the Prompt Assistance review into a separate dialog.
+- Conducting code-level syntax and logic checks.
+- Providing installation instructions and manual testing guidance.
+
+**The student:**
+
+- Selected the balanced exploration strategy after comparing alternative recommendation behaviours.
+- Approved the rule that only confirmed preferences influence subsequent recommendations.
+- Required unfinished feedback and previous recommendation rounds to be preserved.
+- Integrated the implementation into the existing application.
+- Tested the interface in Google Chrome.
+- Identified insufficient conversation-history space when viewing the application on a laptop.
+- Requested a more compact input layout to improve visibility of earlier recommendations.
+- Identified visual crowding between Prompt Assistance and the conversation history.
+- Reviewed the revised responsive layout and prompt-review dialog and confirmed that the visual presentation was improved.
+
+### 7. Testing and Validation
+
+**Development environment:** React, Vite, JavaScript and CSS.
+
+**Browser:** Google Chrome.
+
+Code-level checks conducted during implementation included JavaScript/JSX syntax validation, CSS parsing and lightweight tests of preference-aware recommendation behaviour and state handling.
+
+Manual visual review identified and led to corrections for two responsive layout problems.
+
+| Area                                            | Recorded outcome                        |
+| ----------------------------------------------- | --------------------------------------- |
+| New recommendation-round logic                  | Code-level checks passed                |
+| Preference handling and round-specific feedback | Code-level checks passed                |
+| JavaScript/JSX and CSS validation               | Passed                                  |
+| Laptop composer layout                          | Improved following visual review        |
+| Prompt Assistance layout                        | Improved and visually approved          |
+| Full Chrome functional regression checklist     | Not separately recorded as fully passed |
+
+The revised interface was considered visually improved by the student. The full end-to-end functional checklist should be recorded separately if completed.
+
+### 8. Known Limitations
+
+- The recommendation system uses a predefined design catalogue rather than a trained generative AI model.
+- The two preference-led / one exploratory approach is heuristic and may be constrained by available design combinations.
+- Some complex or contradictory requirements may not be fully handled by the current recommendation rules.
+- Project information is maintained in React state and does not persist after a browser refresh.
+- Explore Variations and Use This Design are not yet implemented.
+- Formal accessibility testing and structured usability evaluation remain outstanding.
+- Additional responsive testing is needed across smaller viewport widths and different browser zoom levels.
+
+### 9. Next Steps
+
+**Phase 2 — Milestone 5.2: Explore Variations**
+
+The next milestone will enable users to generate variations of a selected design concept.
+
+The student has approved optional attribute selection: users may specify which characteristics to vary, including colour, typography, layout and decorative details, or leave the selection empty for general variations.
+
+Before implementation, the remaining interaction rules must be finalised, including which characteristics should be preserved, how confirmed preferences affect variations and how differences between concepts are communicated.
+
+**Future development consideration:** Responsive behaviour must continue to be reviewed on different screen sizes throughout subsequent milestones.

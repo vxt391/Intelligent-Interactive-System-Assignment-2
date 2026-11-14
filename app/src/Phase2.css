@@ -1273,3 +1273,289 @@
 .preference-sentiment-removed { background: #f1ecee; color: #665b65; }
 
 .intention-panel button:focus-visible { outline: 3px solid #b7aaf2; outline-offset: 2px; }
+
+/* Milestone 5.1 — preference-aware new directions, without changing
+   the approved Milestone 4 conversation width / scrollbar position. */
+.new-directions-controls {
+  margin-bottom: 15px;
+  border: 1px solid #e7dff1;
+  border-radius: 13px;
+  background: #fbf9fe;
+  padding: 13px 15px;
+}
+
+.new-directions-intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.new-directions-intro strong {
+  display: block;
+  color: #453751;
+  font-size: 12px;
+}
+
+.new-directions-intro p {
+  margin: 4px 0 0;
+  color: #81758a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.new-directions-button {
+  flex-shrink: 0;
+  border: 1px solid #7764c5;
+  border-radius: 9px;
+  background: #7664c5;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 13px;
+}
+
+.new-directions-button:hover { background: #6251b1; }
+
+.new-directions-draft-warning {
+  margin-top: 11px;
+  padding: 12px;
+  border: 1px solid #dfd2a5;
+  border-radius: 10px;
+  background: #fffdf5;
+}
+
+.new-directions-draft-warning p {
+  margin: 0;
+  color: #655b41;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.new-directions-draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.new-directions-review,
+.new-directions-continue {
+  border: 1px solid #d2c5e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #584780;
+  padding: 8px 11px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.new-directions-continue {
+  background: #7664c5;
+  border-color: #7664c5;
+  color: #fff;
+}
+
+.new-directions-review:hover { background: #f4effc; }
+.new-directions-continue:hover { background: #6251b1; }
+
+.concept-direction {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 0 0 7px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #ede9fb;
+  color: #6754a1;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.concept-direction-exploratory {
+  background: #f0ece6;
+  color: #73614b;
+}
+
+.new-directions-controls button:focus-visible,
+.concept-direction:focus-visible {
+  outline: 3px solid #b7aaf2;
+  outline-offset: 2px;
+}
+
+@media (max-width: 630px) {
+  .new-directions-intro { flex-direction: column; align-items: stretch; }
+  .new-directions-button { width: 100%; }
+}
+/* Milestone 5.1 responsive refinement — keep conversation history visible
+   on shorter laptop screens. Applies only after the first prompt is sent;
+   the initial welcome composer and the approved desktop layout are unchanged. */
+@media (max-height: 900px) {
+  .phase2-workspace {
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+
+  .conversation-composer {
+    padding-top: 8px;
+    padding-bottom: 4px;
+    max-height: min(48dvh, 390px);
+  }
+
+  .new-directions-controls {
+    padding: 9px 12px;
+    margin-bottom: 8px;
+  }
+
+  .new-directions-button {
+    padding: 8px 11px;
+  }
+
+  .conversation-compose-title {
+    margin-bottom: 6px;
+  }
+
+  .compact-composer .prompt-box {
+    min-height: 0;
+    height: auto;
+    padding: 9px 12px 8px;
+  }
+
+  .compact-composer .prompt-textarea {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    width: 100%;
+    height: 52px;
+    min-height: 52px;
+    max-height: 140px;
+    margin: 6px 0 4px;
+    overflow-y: auto;
+    resize: vertical;
+    line-height: 1.45;
+  }
+
+  /* Expand while writing without permanently blocking the history. */
+  .compact-composer .prompt-textarea:focus {
+    height: 104px;
+    min-height: 104px;
+  }
+
+  .conversation-compose-note {
+    margin-top: 5px;
+    line-height: 1.35;
+  }
+}
+
+/* Extra-short browser windows: prefer history over explanatory padding. */
+@media (max-height: 700px) {
+  .conversation-composer {
+    max-height: 50dvh;
+  }
+
+  .new-directions-intro p {
+    display: none;
+  }
+
+  .compact-composer .prompt-textarea {
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .compact-composer .prompt-textarea:focus {
+    height: 92px;
+    min-height: 92px;
+  }
+}
+/* Milestone 5.1 laptop UX fix — prompt assistance gets a separate dialog.
+   Paste at the END of Phase2.css, after the earlier compact-composer rules.
+   The normal conversation feed and prompt composer remain unchanged. */
+.prompt-review-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  box-sizing: border-box;
+  background: rgba(29, 24, 40, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.prompt-review-dialog {
+  box-sizing: border-box;
+  width: min(960px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #e3d9ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 75px rgba(31, 24, 47, 0.24);
+}
+
+/* Override the old inline review-card spacing only inside the dialog. */
+.prompt-review-dialog .prompt-review {
+  margin: 0;
+  padding: clamp(16px, 3vw, 28px);
+  border: 0;
+  border-radius: inherit;
+  background: #fff;
+  box-shadow: none;
+}
+
+.prompt-review-header-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.prompt-review-close {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e4deeb;
+  border-radius: 9px;
+  background: #fff;
+  color: #5e536b;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.prompt-review-close:hover { background: #f5f1fb; }
+.prompt-review-close:focus-visible { outline: 3px solid #b7aaf2; outline-offset: 2px; }
+
+.prompt-review-dialog .prompt-review-original,
+.prompt-review-dialog .prompt-review-textarea {
+  box-sizing: border-box;
+  min-height: 145px;
+  max-height: 32dvh;
+  overflow-y: auto;
+}
+
+/* Short laptops: vertically scroll the dialog, never the bottom composer. */
+@media (max-height: 700px) {
+  .prompt-review-backdrop {
+    align-items: flex-start;
+    padding: 12px;
+  }
+  .prompt-review-dialog {
+    max-height: calc(100dvh - 24px);
+  }
+  .prompt-review-dialog .prompt-review-original,
+  .prompt-review-dialog .prompt-review-textarea {
+    min-height: 110px;
+  }
+}
+
+@media (max-width: 650px) {
+  .prompt-review-backdrop { padding: 10px; }
+  .prompt-review-dialog { max-height: calc(100dvh - 20px); }
+  .prompt-review-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
