@@ -496,3 +496,283 @@
     flex-direction: column;
   }
 }
+
+/* Phase 2, Milestone 3: CSS-rendered business-card recommendations. */
+.recommendation-row {
+  width: 100%;
+}
+
+.recommendation-row > .conversation-message {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  padding: 19px;
+}
+
+.recommendations {
+  container-name: concept-area;
+  container-type: inline-size;
+}
+
+.recommendations-intro,
+.recommendations-explanation {
+  margin: 0 0 10px !important;
+  color: #4a4450;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.recommendations-explanation {
+  margin-bottom: 18px !important;
+  color: #746780 !important;
+}
+
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.concept-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 8px;
+  border: 2px solid #e8e4ec;
+  border-radius: 14px;
+  background: #fff;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.concept-card.is-selected {
+  border-color: #7664c5;
+  box-shadow: 0 0 0 2px #7664c51a;
+}
+
+/* These are graphical samples, not yet object-selectable canvases. */
+.business-card-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  isolation: isolate;
+  overflow: hidden;
+  aspect-ratio: 1.6 / 1;
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--card-bg);
+  color: var(--card-fg);
+}
+
+.preview-topline,
+.preview-person {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-topline {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.preview-brand {
+  font-size: clamp(13px, 1.5vw, 21px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.preview-mark {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--card-fg);
+}
+
+.preview-person {
+  gap: 3px;
+}
+
+.preview-person-name {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.preview-person-role {
+  font-size: 7px;
+  letter-spacing: 0.055em;
+}
+
+.preview-decoration {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--card-accent);
+}
+
+.preview-botanical .preview-decoration {
+  right: -22px;
+  bottom: -40px;
+  width: 95px;
+  height: 120px;
+  border-radius: 90% 5% 75% 10%;
+  transform: rotate(-25deg);
+  opacity: 0.48;
+}
+
+.preview-minimal .preview-decoration {
+  top: 0;
+  right: 0;
+  width: 9px;
+  height: 100%;
+  opacity: 0.85;
+}
+
+.preview-minimal .preview-brand {
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+
+.preview-expressive .preview-decoration {
+  top: -43px;
+  right: -25px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  opacity: 0.64;
+}
+
+.preview-expressive .preview-brand {
+  font-size: clamp(17px, 2vw, 25px);
+  font-style: italic;
+}
+
+.preview-layout-structured .preview-person {
+  border-top: 1px solid currentColor;
+  padding-top: 7px;
+}
+
+.preview-layout-dynamic .preview-person {
+  margin-left: auto;
+  text-align: right;
+}
+
+.preview-layout-spacious .preview-person {
+  margin-bottom: 3px;
+}
+
+.concept-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 9px;
+  padding: 10px 2px 2px;
+}
+
+.concept-card h3 {
+  margin: 0;
+  color: #2e2933;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.concept-rationale {
+  margin: 0 !important;
+  color: #77707d !important;
+  line-height: 1.5 !important;
+  font-size: 11px !important;
+}
+
+.concept-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 3px 0 12px;
+  font-size: 10px;
+}
+
+.concept-details div {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 5px;
+}
+
+.concept-details dt {
+  color: #948d9b;
+}
+
+.concept-details dd {
+  margin: 0;
+  color: #514a58;
+  overflow-wrap: anywhere;
+}
+
+.concept-select {
+  width: 100%;
+  min-height: 36px;
+  margin-top: auto;
+  padding: 8px;
+  border: 1px solid #d9d1e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #65539b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.concept-select:hover {
+  background: #f3f0fb;
+}
+
+.concept-select-active {
+  color: #fff;
+  background: #7664c5;
+  border-color: #7664c5;
+}
+
+.concept-select-active:hover {
+  background: #6251b1;
+}
+
+.concept-selection-feedback {
+  margin-top: 15px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  background: #f6f3fb;
+}
+
+.concept-selection-feedback p {
+  margin: 0;
+  color: #685b79;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.recommendations-disclosure {
+  margin: 14px 0 0 !important;
+  color: #96909e !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+}
+
+@container concept-area (max-width: 650px) {
+  .concept-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container concept-area (max-width: 400px) {
+  .concept-grid {
+    grid-template-columns: 1fr;
+  }
+  .business-card-preview {
+    min-height: 135px;
+  }
+}

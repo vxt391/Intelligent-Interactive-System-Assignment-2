@@ -8,6 +8,7 @@ import ConversationView from './components/ConversationView';
 import IntentionPanel from './components/IntentionPanel';
 import PromptAssistancePanel from './components/PromptAssistancePanel';
 import { suggestImprovedPrompt } from './utils/promptAssistance';
+import { buildInitialRecommendations, isBusinessCardRequest } from './utils/recommendations';
 import './App.css';
 import './Phase2.css';
 
@@ -79,6 +80,9 @@ function App() {
         if (project.id !== activeId) return project;
 
         const firstMessage = project.messages.length === 0;
+        const hasRecommendations = project.messages.some(
+          (message) => message.role === 'recommendations'
+        );
         const additions = [
           {
             id: project.nextMessageId,
@@ -91,11 +95,26 @@ function App() {
           },
         ];
 
-        if (firstMessage) {
+        let newExploration = project.exploration;
+        if (!hasRecommendations && isBusinessCardRequest(submitted)) {
+          const recommendation = buildInitialRecommendations(submitted);
+          additions.push({
+            id: project.nextMessageId + 1,
+            role: 'recommendations',
+            ...recommendation,
+          });
+          newExploration = {
+            ...project.exploration,
+            round: 1,
+            selectedConceptId: null,
+          };
+        } else {
           additions.push({
             id: project.nextMessageId + 1,
             role: 'prototype',
-            text: 'Your design brief has been saved. Design recommendations are not active yet; optional prompt assistance uses a rule-based simulation.',
+            text: hasRecommendations
+              ? 'Your follow-up has been saved. Generating further recommendation rounds or variations will be added in Milestone 5; the current concepts remain unchanged.'
+              : 'This milestone currently illustrates business-card designs only. Your message is saved; submit a business-card request to view three simulated concepts.',
           });
         }
 
@@ -105,10 +124,31 @@ function App() {
           promptReview: null,
           messages: [...project.messages, ...additions],
           nextMessageId: project.nextMessageId + additions.length,
+          exploration: newExploration,
           intentions: {
             ...project.intentions,
-            // Save the initial ORIGINAL wording even if an edited suggestion was submitted.
-            initialBrief: project.intentions.initialBrief || original,
+            // Preserve the user's first ORIGINAL wording, even when using prompt assistance.
+            initialBrief: project.intentions.initialBrief || (firstMessage ? original : ''),
+          },
+        };
+      })
+    );
+  }
+
+  function selectConcept(conceptId, recommendationMessageId) {
+    setProjects((current) =>
+      current.map((project) => {
+        if (project.id !== activeId) return project;
+        const recommendation = project.messages.find(
+          (message) => message.id === recommendationMessageId && message.role === 'recommendations'
+        );
+        if (!recommendation?.concepts.some((concept) => concept.id === conceptId)) return project;
+        return {
+          ...project,
+          exploration: {
+            ...project.exploration,
+            selectedConceptId:
+              project.exploration.selectedConceptId === conceptId ? null : conceptId,
           },
         };
       })
@@ -234,6 +274,8 @@ function App() {
                       <ConversationView
                         messages={activeProject.messages}
                         composer={renderComposer(true)}
+                        selectedConceptId={activeProject.exploration.selectedConceptId}
+                        onSelectConcept={selectConcept}
                       />
                     )
                   ) : (

@@ -324,3 +324,125 @@ Implement three visually distinct business-card recommendations based on the sub
 Each recommendation should include a design preview, a short explanation of its visual characteristics and an option for users to select a preferred concept.
 
 Preference feedback and subsequent recommendation strategies will be implemented incrementally in later milestones.
+
+## Phase 2 — Milestone 3: Prompt-Aware Visual Design Recommendations
+
+**Date:** 14 November 2026  
+**Status:** Implemented and manually tested
+
+### 1. Implementation
+
+Extended the Intenta conversational interface to display three simulated visual design recommendations following the submission of a business-card design request.
+
+The following functionality was implemented:
+
+- **Visual design recommendations:** Three distinct business-card concepts are displayed side by side within the conversation interface.
+- **Design previews:** Business-card mock-ups are rendered using reusable React components and CSS rather than external image-generation APIs.
+- **Concept descriptions:** Each recommendation includes a concept name, visual characteristics and a short explanation of the design direction.
+- **Basic prompt awareness:** A rule-based recommendation system recognises a limited set of design attributes from user prompts, such as colours, typography preferences and explicit exclusions.
+- **Concept selection:** Users can select, change or deselect a preferred design concept.
+- **Selection feedback:** The interface visually highlights the selected concept and provides confirmation of the user's choice.
+- **Project-specific state:** Concept recommendations and selections are maintained separately for each project during the session.
+
+The implementation also preserves the existing conversation interface, optional prompt assistance and Current Intentions panel.
+
+### 2. Design and Technical Decisions
+
+**Side-by-side concept comparison:** Three concepts are displayed simultaneously rather than through a carousel. This decision was made to support direct visual comparison and help users identify differences between creative directions.
+
+**Prompt-aware simulation:** A lightweight rule-based system was selected over a fixed set of identical recommendations for every user. This allows recognised requirements from the initial prompt to influence the presented designs.
+
+**Reusable CSS-based previews:** Business-card previews are constructed using React and CSS, avoiding the need for paid generative AI APIs or computationally expensive image-generation models. This approach also provides a foundation for configurable visual elements in later development phases.
+
+**Reversible concept selection:** Users can change or remove their selected concept. This supports user agency and reduces the consequences of exploratory decisions.
+
+**Separation of concept selection and confirmed preferences:** Selecting a design does not automatically save all its attributes as preferences. Explicit attribute feedback and confirmation will be implemented in Milestone 4.
+
+**Incremental development:** The implementation focuses on initial recommendations and concept selection. Iterative exploration and preference-aware follow-up recommendations are reserved for later milestones.
+
+### 3. Simulated Intelligent System Behaviour
+
+The recommendation mechanism uses predefined design configurations and deterministic rules to interpret a limited set of recognised creative attributes.
+
+For example:
+
+- A vague business-card request produces three visually different design directions.
+- A recognised colour preference influences the recommended colour palettes.
+- A recognised typography preference influences the displayed typography.
+- A recognised negative constraint, such as avoiding a particular colour, influences concept generation.
+- Unspecified attributes remain open to exploration.
+
+The system is not a trained natural-language understanding or image-generation model.
+
+Its purpose is to demonstrate how an intelligent interactive interface might respond to creative requirements while maintaining a lightweight, reproducible prototype.
+
+### 4. AI Assistance and Student Contributions
+
+ChatGPT assisted with:
+
+- Proposing alternative layouts for presenting design recommendations.
+- Translating approved interaction requirements into React components.
+- Implementing CSS-based business-card previews.
+- Developing the simulated prompt-aware recommendation logic.
+- Implementing reversible concept selection.
+- Providing code-level checks and manual testing instructions.
+
+The student:
+
+- Selected the three-card comparison layout after discussing alternative interfaces.
+- Chose basic prompt-aware recommendations instead of presenting identical predefined concepts to every user.
+- Approved the separation between concept selection and confirmed creative preferences.
+- Integrated the implementation into the existing React project.
+- Conducted manual functionality testing in Google Chrome.
+- Reviewed the resulting interface and confirmed that the functionality worked as expected.
+
+### 5. Manual Testing
+
+**Environment:** React + Vite application running locally in Google Chrome.
+
+| Test Case                                                                                 | Result |
+| ----------------------------------------------------------------------------------------- | ------ |
+| Submit a business-card request and display three distinct design concepts                 | Passed |
+| Recognise a green colour request and adapt the visual recommendations                     | Passed |
+| Recognise a serif typography request and apply the requested typography                   | Passed |
+| Recognise a negative colour constraint and avoid the specified colour                     | Passed |
+| Select, change and deselect a design concept                                              | Passed |
+| Verify that selecting a concept does not automatically confirm design preferences         | Passed |
+| Verify compatibility with the existing prompt-assistance workflow                         | Passed |
+| Preserve project-specific concept selection when switching projects and interaction modes | Passed |
+| Preserve follow-up messages without unexpectedly replacing the initial recommendations    | Passed |
+| Handle unsupported design types with an explanatory message                               | Passed |
+
+**Result:** All 10 manual test cases passed, as confirmed by the student.
+
+The implementation was also reviewed visually in Google Chrome.
+
+No automated browser-based end-to-end testing was performed.
+
+### 6. Known Limitations
+
+- Recommendations are simulated using predefined design attributes and rules rather than a real generative AI model.
+- Prompt interpretation supports only a limited collection of recognised requirements and cannot reliably understand arbitrary creative language.
+- The initial implementation focuses on business-card designs.
+- Concept previews use fictional placeholder information.
+- Selecting a concept does not yet enable iterative variation generation.
+- Attribute-level preference feedback and confirmation are not yet implemented.
+- Project state is stored in React memory and does not persist after refreshing the browser.
+- Further usability and accessibility testing is required.
+
+### 7. Next Steps
+
+**Phase 2 — Milestone 4: Structured Preference Feedback**
+
+Implement attribute-level feedback to help users communicate which characteristics of the recommended designs they like, dislike or remain uncertain about.
+
+The functionality will include:
+
+- Feedback on colour, typography, layout and design style.
+- Like, Avoid and Not Sure selections.
+- A preference review stage before confirmation.
+- Explicit confirmation of the preferences that should influence future recommendations.
+- Updating the Current Intentions panel with confirmed preferences.
+- Allowing users to revise or remove previously confirmed preferences.
+
+The distinction between selecting a complete design and confirming individual design attributes will remain central to the interaction design.
