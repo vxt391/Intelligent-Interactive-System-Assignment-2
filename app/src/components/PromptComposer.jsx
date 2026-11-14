@@ -1,9 +1,24 @@
-
 const suggestions = [
-  { label: 'Business card', prompt: 'I want to design a business card for my small business. I want it to look professional but creative, although I am not sure about the style yet.' },
-  { label: 'Poster design', prompt: 'I want to design a creative poster, but I am still exploring the colours and visual style.' },
-  { label: 'Logo design', prompt: 'I need a logo for a small brand. I want something memorable and modern.' },
-  { label: 'Surprise me', prompt: 'Help me explore some creative visual design ideas. I am not sure where to start.' },
+  {
+    label: 'Business card',
+    prompt:
+      'I want to design a business card for my small business. I want it to look professional but creative, although I am not sure about the style yet.',
+  },
+  {
+    label: 'Poster design',
+    prompt:
+      'I want to design a creative poster, but I am still exploring the colours and visual style.',
+  },
+  {
+    label: 'Logo design',
+    prompt:
+      'I need a logo for a small brand. I want something memorable and modern.',
+  },
+  {
+    label: 'Surprise me',
+    prompt:
+      'Help me explore some creative visual design ideas. I am not sure where to start.',
+  },
 ];
 
 export default function PromptComposer({
@@ -26,9 +41,7 @@ export default function PromptComposer({
             <input
               type="checkbox"
               checked={assistance}
-              onChange={(event) =>
-                onAssistanceChange(event.target.checked)
-              }
+              onChange={(event) => onAssistanceChange(event.target.checked)}
             />
             <span className="toggle-track" aria-hidden="true" />
             <span>Prompt assistance</span>
@@ -48,7 +61,7 @@ export default function PromptComposer({
         <div className="composer-bottom">
           <span className="composer-hint">
             {assistance
-              ? 'Assistance is on · Prompt suggestions arrive in Phase 2'
+              ? 'Assistance on · You will review before submitting'
               : 'Your ideas, your direction.'}
           </span>
           <div className="composer-actions">
@@ -63,12 +76,12 @@ export default function PromptComposer({
             </button>
             <button
               type="submit"
-              className="send-button"
+              className={`send-button ${assistance ? 'review-prompt-button' : ''}`}
               disabled={!prompt.trim()}
-              aria-label="Submit design prompt"
-              title="Submit prompt"
+              aria-label={assistance ? 'Review prompt before submitting' : 'Submit design prompt'}
+              title={assistance ? 'Review prompt' : 'Submit prompt'}
             >
-              ↑
+              {assistance ? 'Review prompt' : '↑'}
             </button>
           </div>
         </div>

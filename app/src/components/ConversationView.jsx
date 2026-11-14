@@ -37,6 +37,12 @@ export default function ConversationView({ messages, composer }) {
                 {message.role === 'user' ? 'You' : 'Prototype notice'}
               </span>
               <p>{message.text}</p>
+              {message.role === 'user' && message.promptMeta?.submission === 'suggested' && (
+                <details className="conversation-original-details">
+                  <summary>Submitted with assistance · View original wording</summary>
+                  <p>{message.promptMeta.original}</p>
+                </details>
+              )}
             </div>
           </div>
         ))}
@@ -46,7 +52,7 @@ export default function ConversationView({ messages, composer }) {
         <p className="conversation-compose-title">Continue exploring</p>
         {composer}
         <p className="conversation-compose-note">
-          Messages are kept in this browser session. Simulated AI responses are not active yet.
+          Messages remain available during this browser session. Design recommendations are not active yet.
         </p>
       </div>
     </section>

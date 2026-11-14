@@ -6,6 +6,8 @@ import PromptComposer from './components/PromptComposer';
 import FeaturePlaceholder from './components/FeaturePlaceholder';
 import ConversationView from './components/ConversationView';
 import IntentionPanel from './components/IntentionPanel';
+import PromptAssistancePanel from './components/PromptAssistancePanel';
+import { suggestImprovedPrompt } from './utils/promptAssistance';
 import './App.css';
 import './Phase2.css';
 
@@ -16,6 +18,7 @@ function createProject(id) {
     mode: 'explore',
     prompt: '',
     assistance: false,
+    promptReview: null, // Only exists while the user reviews a suggested prompt.
     messages: [],
     nextMessageId: 1,
     intentions: {
@@ -66,52 +69,98 @@ function App() {
     }
   }
 
-  function submitPrompt() {
+  function submitPrompt(text, originalText = text, submission = 'without-assistance') {
+    const submitted = text.trim();
+    const original = originalText.trim();
+    if (!submitted || !original) return;
+
     setProjects((current) =>
       current.map((project) => {
         if (project.id !== activeId) return project;
 
-        const text = project.prompt.trim();
-        if (!text) return project;
-
         const firstMessage = project.messages.length === 0;
         const additions = [
-          { id: project.nextMessageId, role: 'user', text },
+          {
+            id: project.nextMessageId,
+            role: 'user',
+            text: submitted,
+            promptMeta: {
+              original,
+              submission, // 'suggested', 'original', or 'without-assistance'
+            },
+          },
         ];
 
         if (firstMessage) {
           additions.push({
             id: project.nextMessageId + 1,
             role: 'prototype',
-            text: 'Your design brief has been saved in this conversation. Simulated design recommendations will be added in the next Phase 2 milestone.',
+            text: 'Your design brief has been saved. Design recommendations are not active yet; optional prompt assistance uses a rule-based simulation.',
           });
         }
 
         return {
           ...project,
           prompt: '',
+          promptReview: null,
           messages: [...project.messages, ...additions],
           nextMessageId: project.nextMessageId + additions.length,
           intentions: {
             ...project.intentions,
-            initialBrief: project.intentions.initialBrief || text,
+            // Save the initial ORIGINAL wording even if an edited suggestion was submitted.
+            initialBrief: project.intentions.initialBrief || original,
           },
         };
       })
     );
   }
 
+  function handleComposerSubmit() {
+    if (!activeProject) return;
+    const original = activeProject.prompt.trim();
+    if (!original) return;
+
+    if (activeProject.assistance) {
+      // Don't overwrite an in-progress edit if Review is clicked again.
+      if (activeProject.promptReview?.original === original) return;
+      updateProject({
+        promptReview: {
+          original,
+          suggested: suggestImprovedPrompt(original),
+        },
+      });
+    } else {
+      submitPrompt(original);
+    }
+  }
+
   function renderComposer(compact = false) {
     if (!activeProject) return null;
+    const review = activeProject.promptReview;
+
     return (
       <div className={compact ? 'compact-composer' : ''}>
         <PromptComposer
           prompt={activeProject.prompt}
           assistance={activeProject.assistance}
-          onPromptChange={(prompt) => updateProject({ prompt })}
-          onAssistanceChange={(assistance) => updateProject({ assistance })}
-          onSubmit={submitPrompt}
+          onPromptChange={(prompt) => updateProject({ prompt, promptReview: null })}
+          onAssistanceChange={(assistance) =>
+            updateProject({ assistance, promptReview: null })
+          }
+          onSubmit={handleComposerSubmit}
         />
+        {review && (
+          <PromptAssistancePanel
+            original={review.original}
+            suggested={review.suggested}
+            onSuggestedChange={(suggested) =>
+              updateProject({ promptReview: { ...review, suggested } })
+            }
+            onUseOriginal={() => submitPrompt(review.original, review.original, 'original')}
+            onUseSuggested={() => submitPrompt(review.suggested, review.original, 'suggested')}
+            onBack={() => updateProject({ promptReview: null })}
+          />
+        )}
       </div>
     );
   }
@@ -222,4 +271,3 @@ function App() {
 }
 
 export default App;
-
