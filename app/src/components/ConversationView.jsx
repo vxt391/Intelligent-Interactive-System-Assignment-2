@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ConceptRecommendations from './ConceptRecommendations';
+import VariationDialog from './VariationDialog';
+import ContinueExploringDialog from './ContinueExploringDialog';
 
 export default function ConversationView({
   messages,
@@ -9,13 +11,22 @@ export default function ConversationView({
   onSelectConcept,
   feedbackDrafts,
   onExploreNewDirections,
+  onStartVariations,
+  onToggleVariationDimension,
+  onPrepareVariations,
+  onResolveVariationConflict,
+  onContinueVariationsWithoutFeedback,
+  onCancelVariations,
+  variationRequest,
   onToggleDraftAttribute,
   onRateDraftAttribute,
   onRemoveDraftAttribute,
   onConfirmDraftPreferences,
 }) {
   const feedRef = useRef(null);
-  const [confirmNextRound, setConfirmNextRound] = useState(false);
+  const [exploreDialogOpen, setExploreDialogOpen] = useState(false);
+  const [expandedFeedbackRounds, setExpandedFeedbackRounds] = useState({});
+  const [scrollFeedbackId, setScrollFeedbackId] = useState(null);
   const recommendationMessages = messages.filter((message) => message.role === 'recommendations');
   const draftRounds = recommendationMessages.filter((message) =>
     (feedbackDrafts[message.id]?.items.length ?? 0) > 0
@@ -23,29 +34,27 @@ export default function ConversationView({
   const pendingCount = draftRounds.reduce((count, message) =>
     count + feedbackDrafts[message.id].items.length, 0
   );
+  const selectedRound = recommendationMessages.find((item) =>
+    item.id === selectedConceptMessageId && item.concepts.some((c) => c.id === selectedConceptId)
+  );
+  const selectedConcept = selectedRound?.concepts.find((item) => item.id === selectedConceptId);
+  const variationRound = recommendationMessages.find((item) => item.id === variationRequest?.messageId);
+  const variationConcept = variationRound?.concepts.find((item) => item.id === variationRequest?.conceptId);
+  const variationReference = variationConcept ? { concept: variationConcept, round: variationRound.round || 1 } : null;
 
-  function requestNextRound() {
-    if (pendingCount > 0) {
-      setConfirmNextRound(true);
-    } else {
-      setConfirmNextRound(false);
-      onExploreNewDirections();
-    }
-  }
 
-  function continueWithoutDraft() {
-    setConfirmNextRound(false);
-    onExploreNewDirections();
+  function toggleFeedback(messageId) {
+    setExpandedFeedbackRounds((current) => ({
+      ...current,
+      [messageId]: !current[messageId],
+    }));
   }
 
   function reviewUnfinishedFeedback() {
-    setConfirmNextRound(false);
-    const mostRecent = draftRounds[draftRounds.length - 1];
-    const draftSections = feedRef.current?.querySelectorAll('[data-feedback-for]') ?? [];
-    const target = [...draftSections].find((element) =>
-      Number(element.dataset.feedbackFor) === mostRecent?.id
-    );
-    target?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const newestDraftRound = draftRounds[draftRounds.length - 1];
+    if (!newestDraftRound) return;
+    setExpandedFeedbackRounds((current) => ({ ...current, [newestDraftRound.id]: true }));
+    setScrollFeedbackId(newestDraftRound.id);
   }
 
   useEffect(() => {
@@ -54,6 +63,16 @@ export default function ConversationView({
     // Later messages should scroll into view normally.
     feedRef.current.scrollTop = messages.length <= 2 ? 0 : feedRef.current.scrollHeight;
   }, [messages.length]);
+
+  useEffect(() => {
+    if (scrollFeedbackId === null || !expandedFeedbackRounds[scrollFeedbackId]) return;
+    const target = [...(feedRef.current?.querySelectorAll('[data-feedback-for]') ?? [])]
+      .find((element) => Number(element.dataset.feedbackFor) === scrollFeedbackId);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setScrollFeedbackId(null);
+    }
+  }, [scrollFeedbackId, expandedFeedbackRounds]);
 
   return (
     <section className="conversation-view" aria-label="Design conversation">
@@ -98,10 +117,20 @@ export default function ConversationView({
                   selectedConceptId={selectedConceptMessageId === message.id ? selectedConceptId : null}
                   onSelectConcept={onSelectConcept}
                   feedbackDraft={feedbackDrafts[message.id]?.items ?? []}
+                  feedbackExpanded={Boolean(expandedFeedbackRounds[message.id])}
+                  onToggleFeedback={toggleFeedback}
                   onToggleDraftAttribute={onToggleDraftAttribute}
                   onRateDraftAttribute={(id, sentiment) => onRateDraftAttribute(message.id, id, sentiment)}
                   onRemoveDraftAttribute={(id) => onRemoveDraftAttribute(message.id, id)}
-                  onConfirmDraftPreferences={onConfirmDraftPreferences}
+                  onConfirmDraftPreferences={(roundId) => {
+                    const items = feedbackDrafts[roundId]?.items ?? [];
+                    onConfirmDraftPreferences(roundId);
+                    // Keep the panel open if unrated items remain; otherwise return
+                    // to the compact view after successful confirmation.
+                    if (items.length > 0 && items.every((item) => item.sentiment !== null)) {
+                      setExpandedFeedbackRounds((current) => ({ ...current, [roundId]: false }));
+                    }
+                  }}
                 />
               ) : message.role === 'preferences-edited' ? (
                 <div className="preference-confirmation" aria-label="Saved preference edits">
@@ -170,43 +199,58 @@ export default function ConversationView({
 
       <div className="conversation-composer">
         {recommendationMessages.length > 0 && (
-          <section className="new-directions-controls" aria-label="Explore more design directions">
+          <section className="new-directions-controls simplified-exploration-controls" aria-label="Continue design exploration">
             <div className="new-directions-intro">
               <div>
-                <strong>Ready to discover more?</strong>
-                <p>Get three new designs using your latest confirmed preferences.</p>
+                <strong>Ready to continue?</strong>
+                <p>Choose new directions or variations in one simple step.</p>
               </div>
-              <button type="button" className="new-directions-button" onClick={requestNextRound}>
-                Explore New Directions
+              <button type="button" className="new-directions-button" onClick={() => setExploreDialogOpen(true)}>
+                Continue Exploring
               </button>
             </div>
-            {confirmNextRound && pendingCount > 0 && (
-              <div className="new-directions-draft-warning" role="group" aria-label="Unfinished feedback review">
-                <p>
-                  You have {pendingCount} unfinished {pendingCount === 1 ? 'attribute' : 'attributes'} across
-                  {' '}{draftRounds.length} recommendation {draftRounds.length === 1 ? 'round' : 'rounds'}.
-                  Only previously confirmed preferences will guide the next designs.
-                  Your unfinished feedback will be kept.
-                </p>
-                <div className="new-directions-draft-actions">
-                  <button type="button" className="new-directions-review" onClick={reviewUnfinishedFeedback}>
-                    Review Feedback
-                  </button>
-                  <button type="button" className="new-directions-continue" onClick={continueWithoutDraft}>
-                    Continue Without Applying
-                  </button>
-                </div>
-              </div>
+            {selectedConcept && (
+              <p className="variation-selected-hint">
+                Selected: Round {selectedRound.round || 1} · {selectedConcept.name}
+              </p>
             )}
           </section>
         )}
-        <p className="conversation-compose-title">Continue exploring with a prompt</p>
+        <p className="conversation-compose-title">Or continue with a prompt</p>
         {composer}
         <p className="conversation-compose-note">
-          Recommendations are simulated CSS designs. The original brief and confirmed preferences guide new directions.
-          Explore Variations and Use This Design will be added in later steps.
+          Concepts are simulated CSS designs. Saved preferences guide new directions; variations use a selected reference.
         </p>
       </div>
+      {exploreDialogOpen && !variationRequest && (
+        <ContinueExploringDialog
+          selectedConcept={selectedConcept}
+          selectedRound={selectedRound}
+          pendingCount={pendingCount}
+          pendingRoundCount={draftRounds.length}
+          onExploreNewDirections={onExploreNewDirections}
+          onStartVariations={onStartVariations}
+          onReviewFeedback={reviewUnfinishedFeedback}
+          onClose={() => setExploreDialogOpen(false)}
+        />
+      )}
+      {variationRequest && (
+        <VariationDialog
+          request={variationRequest}
+          reference={variationReference}
+          pendingCount={pendingCount}
+          pendingRoundCount={draftRounds.length}
+          onToggleDimension={onToggleVariationDimension}
+          onPrepare={onPrepareVariations}
+          onResolveConflict={onResolveVariationConflict}
+          onCancel={onCancelVariations}
+          onContinueWithoutFeedback={onContinueVariationsWithoutFeedback}
+          onReviewFeedback={() => {
+            onCancelVariations();
+            reviewUnfinishedFeedback();
+          }}
+        />
+      )}
     </section>
   );
 }

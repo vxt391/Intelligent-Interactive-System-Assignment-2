@@ -1559,3 +1559,2331 @@
     justify-content: space-between;
   }
 }
+
+/* Phase 2 — Milestone 5.2: selected-reference variation workflow.
+   Uses a separate dialog, maintaining the laptop conversation viewport. */
+.exploration-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.explore-variations-button {
+  border: 1px solid #beb0da;
+  border-radius: 9px;
+  background: #fff;
+  color: #5e4c8f;
+  padding: 10px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.explore-variations-button:not(:disabled):hover { background: #f0ecf9; }
+.explore-variations-button:disabled { opacity: .48; cursor: not-allowed; }
+.variation-selected-hint {
+  margin: 7px 0 0 !important;
+  color: #766d82 !important;
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+}
+.variation-diff-note {
+  padding: 8px;
+  border-radius: 8px;
+  background: #f8f6fc;
+  color: #6b6175 !important;
+  font-size: 10px !important;
+  line-height: 1.5 !important;
+  text-transform: capitalize;
+}
+.variation-diff-note strong { color: #534663; }
+
+.variation-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(29, 24, 40, .5);
+  backdrop-filter: blur(2px);
+  box-sizing: border-box;
+}
+.variation-dialog {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(720px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow: hidden;
+  border: 1px solid #e0d8eb;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 75px rgba(31, 24, 47, .24);
+}
+.variation-dialog-header,
+.variation-dialog-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 17px 22px;
+  background: #fff;
+  flex-shrink: 0;
+}
+.variation-dialog-header { border-bottom: 1px solid #eee8f2; }
+.variation-dialog-header h2 {
+  margin: 6px 0 0;
+  color: #332c3d;
+  font-size: 19px;
+}
+.variation-dialog-header h2:focus { outline: none; }
+.variation-dialog-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 22px 14px;
+}
+.variation-dialog-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  border-top: 1px solid #eee8f2;
+}
+.variation-close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  border: 1px solid #e4deeb;
+  border-radius: 9px;
+  background: #fff;
+  color: #64596e;
+  font-size: 24px;
+  cursor: pointer;
+}
+.variation-close:hover { background: #f5f1fb; }
+.variation-primary,
+.variation-secondary {
+  min-height: 36px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.variation-primary { background: #7664c5; color: #fff; border: 1px solid #7664c5; }
+.variation-primary:hover:not(:disabled) { background: #6251b1; }
+.variation-primary:disabled { opacity: .48; cursor: not-allowed; }
+.variation-secondary { color: #605276; border: 1px solid #ded7e9; background: #fff; }
+.variation-secondary:hover { background: #f7f3fb; }
+.variation-reference {
+  display: grid;
+  grid-template-columns: minmax(145px, 230px) minmax(0, 1fr);
+  gap: 15px;
+  align-items: center;
+  border: 1px solid #eeeaf3;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fcfbfe;
+}
+.variation-reference-preview { min-width: 0; }
+.variation-reference-info { display: flex; flex-direction: column; gap: 8px; color: #665d6d; }
+.variation-reference-info strong { color: #453952; font-size: 13px; }
+.variation-reference-info span:last-child { font-size: 11px; line-height: 1.55; }
+.variation-reference-label { font-size: 10px; font-weight: 700; color: #8a7ba1; }
+.variation-dialog-description { margin: 14px 0; color: #60596b; font-size: 13px; line-height: 1.6; }
+.variation-fieldset { border: 0; padding: 0; margin: 14px 0 0; }
+.variation-fieldset legend { color: #443d4f; font-size: 12px; font-weight: 700; padding: 0 0 9px; }
+.variation-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.variation-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px;
+  border: 1px solid #e8e2ed;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #4f455a;
+  cursor: pointer;
+}
+.variation-option.is-selected { border-color: #a797d5; background: #f5f2fc; }
+.variation-option input { accent-color: #7664c5; }
+.variation-scope-note,
+.variation-limit-note {
+  margin: 13px 0 0;
+  font-size: 12px;
+  color: #665a74;
+  line-height: 1.6;
+}
+.variation-scope-note { padding: 11px 13px; background: #f7f5fb; border-radius: 9px; }
+.variation-limit-note { color: #8a8192; font-size: 11px; }
+.variation-conflict-list { margin: 10px 0; padding-left: 20px; color: #5b4b55; font-size: 12px; line-height: 1.6; }
+.variation-conflict-list li { margin: 8px 0; }
+.variation-resolution-explanation {
+  display: grid;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid #e9e1ed;
+  border-radius: 9px;
+  background: #faf8fc;
+  color: #665a73;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.variation-error {
+  padding: 13px;
+  border: 1px solid #e2c7b4;
+  border-radius: 9px;
+  color: #704f3b;
+  background: #fff7f1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.variation-dialog button:focus-visible,
+.explore-variations-button:focus-visible,
+.variation-option:focus-within {
+  outline: 3px solid #b7aaf2;
+  outline-offset: 2px;
+}
+@media (max-width: 1050px) {
+  .new-directions-intro { gap: 10px; }
+  .exploration-action-buttons { gap: 6px; }
+  .new-directions-button, .explore-variations-button { padding: 8px 10px; }
+}
+@media (max-width: 760px) {
+  .new-directions-intro { flex-direction: column; align-items: stretch; }
+  .exploration-action-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .explore-variations-button, .new-directions-button { width: 100%; white-space: normal; }
+}
+@media (max-height: 900px) {
+  .variation-selected-hint { margin-top: 4px !important; }
+  .new-directions-controls { padding: 8px 10px; }
+  .variation-dialog-header, .variation-dialog-actions { padding: 12px 17px; }
+  .variation-dialog-body { padding: 14px 17px; }
+}
+@media (max-height: 700px) {
+  .variation-backdrop { align-items: flex-start; padding: 10px; }
+  .variation-dialog { max-height: calc(100dvh - 20px); }
+  .variation-reference-preview { max-width: 155px; }
+  .variation-reference { grid-template-columns: minmax(115px, 155px) minmax(0, 1fr); }
+  .variation-selected-hint { display: none; }
+}
+@media (max-width: 500px) {
+  .variation-backdrop { padding: 8px; }
+  .variation-dialog { max-height: calc(100dvh - 16px); }
+  .variation-dialog-header, .variation-dialog-actions { padding: 11px 13px; }
+  .variation-dialog-body { padding: 12px 13px; }
+  .variation-reference { grid-template-columns: 1fr; }
+  .variation-reference-preview { max-width: 250px; }
+  .variation-options { grid-template-columns: 1fr; }
+  .variation-dialog-actions > button { flex: 1 1 auto; }
+}
+
+/* Phase 2, milestone 1: conversation and intention-panel layout only. */
+.phase2-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+  padding-bottom: 22px;
+}
+
+.phase2-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.intentions-toggle {
+  flex-shrink: 0;
+  border: 1px solid #e4dfeb;
+  background: #fff;
+  color: #574a84;
+  padding: 10px 13px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.intentions-toggle:hover,
+.intentions-toggle[aria-expanded='true'] {
+  background: #f2effa;
+  border-color: #c7bce9;
+}
+
+.phase2-content {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  gap: 22px;
+}
+
+.phase2-primary {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Phase 1 welcome screen remains the initial state. */
+.phase2-primary > .welcome-section {
+  flex-shrink: 0;
+}
+
+/* Conversation after the first submitted prompt. */
+.conversation-view {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+.conversation-feed {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 12px 24px;
+}
+
+.conversation-heading {
+  margin: 14px 0 34px;
+  text-align: center;
+}
+
+.conversation-heading h1 {
+  margin: 8px 0;
+  color: #29242e;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.conversation-heading p {
+  margin: 0;
+  color: #918a95;
+  font-size: 13px;
+}
+
+.conversation-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.conversation-row.from-user {
+  justify-content: flex-end;
+}
+
+.conversation-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #eeeafb;
+  color: #7562bf;
+}
+
+.conversation-message {
+  width: fit-content;
+  max-width: min(85%, 650px);
+  padding: 14px 18px;
+  border: 1px solid #e9e5ea;
+  border-radius: 16px;
+  background: white;
+  text-align: left;
+}
+
+.from-user .conversation-message {
+  background: #f0ecfa;
+  border-color: #e6def9;
+}
+
+.conversation-speaker {
+  display: block;
+  margin-bottom: 7px;
+  color: #7561ad;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.conversation-message p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: #4a4450;
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+.conversation-composer {
+  flex-shrink: 0;
+  border-top: 1px solid #eeebed;
+  padding: 16px 12px 0;
+  background: #fcfbfa;
+}
+
+.conversation-compose-title {
+  margin: 0 0 11px;
+  color: #766b83;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.compact-composer .prompt-textarea {
+  min-height: 62px;
+  margin: 15px 0 8px;
+  font-size: 14px;
+}
+
+.compact-composer .prompt-box {
+  border-radius: 15px;
+  padding: 14px 16px 12px;
+}
+
+.compact-composer .suggestion-chips {
+  display: none;
+}
+
+.conversation-compose-note {
+  margin: 9px 0 0;
+  color: #a49ca8;
+  font-size: 11px;
+}
+
+/* Collapsible right-side intentions panel. */
+.intention-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 305px;
+  min-height: 0;
+  border: 1px solid #e9e5ea;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.intention-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 20px;
+  border-bottom: 1px solid #eeebef;
+}
+
+.intention-panel-header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.intention-panel-header p {
+  margin: 6px 0 0;
+  color: #99909e;
+  font-size: 12px;
+}
+
+.intention-close {
+  border: none;
+  background: transparent;
+  color: #827b8a;
+  font-size: 22px;
+  line-height: 1;
+}
+
+.intention-panel-body {
+  overflow-y: auto;
+  padding: 18px 20px;
+}
+
+.intention-section {
+  margin-bottom: 26px;
+}
+
+.intention-section h3 {
+  margin: 0 0 12px;
+  color: #4d4555;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.intention-brief {
+  margin: 0;
+  padding: 13px;
+  border-radius: 11px;
+  background: #f8f6fa;
+  color: #615a68;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.intention-empty,
+.intention-footnote {
+  color: #9a929e;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.intention-preference-list {
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.intention-footnote {
+  padding-top: 15px;
+  border-top: 1px solid #eeebef;
+}
+
+@media (max-width: 1150px) {
+  .intention-panel {
+    flex-basis: 255px;
+  }
+  .phase2-content {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 850px) {
+  .phase2-toolbar-right .workspace-status {
+    display: none;
+  }
+  .phase2-content {
+    position: relative;
+  }
+  .intention-panel {
+    position: absolute;
+    z-index: 5;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: min(320px, 100%);
+    box-shadow: 0 14px 40px #30263b20;
+  }
+}
+
+@media (max-width: 650px) {
+  .phase2-workspace {
+    gap: 12px;
+  }
+  .phase2-toolbar-right {
+    gap: 0;
+  }
+  .intentions-toggle {
+    max-width: 136px;
+    padding: 8px;
+    font-size: 11px;
+  }
+  .conversation-feed {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .conversation-composer {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* Phase 2, milestone 2: optional, explicit prompt review. */
+.review-prompt-button {
+  width: auto;
+  height: 37px;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.prompt-review {
+  margin-top: 14px;
+  padding: 20px;
+  border: 1px solid #dcd4f2;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px #372b4b0d;
+  text-align: left;
+}
+
+.prompt-review-heading,
+.prompt-review-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.prompt-review-heading h2 {
+  margin: 6px 0 0;
+  color: #312a3b;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.prompt-review-heading h2:focus {
+  outline: none;
+}
+
+.prompt-review-badge {
+  flex-shrink: 0;
+  padding: 6px 9px;
+  border-radius: 50px;
+  background: #f2effa;
+  color: #6a5b98;
+  font-size: 11px;
+}
+
+.prompt-review-intro {
+  margin: 12px 0 18px;
+  color: #77707d;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.prompt-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.prompt-review-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.prompt-review-field h3,
+.prompt-review-field label {
+  margin: 0 0 8px;
+  color: #514856;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.prompt-review-original,
+.prompt-review-textarea {
+  width: 100%;
+  flex: 1;
+  min-height: 152px;
+  padding: 13px;
+  border-radius: 11px;
+  border: 1px solid #e4dfe9;
+  color: #48414c;
+  line-height: 1.6;
+  font-size: 13px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.prompt-review-original {
+  background: #f9f8fa;
+}
+
+.prompt-review-textarea {
+  background: #fff;
+  resize: vertical;
+}
+
+.prompt-review-textarea:focus-visible {
+  outline: 3px solid #b7aaf2;
+  outline-offset: 2px;
+}
+
+.prompt-review-actions {
+  margin-top: 17px;
+  align-items: center;
+}
+
+.prompt-review-back,
+.prompt-review-original-button,
+.prompt-review-suggested-button {
+  min-height: 36px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid #e1dbe8;
+  background: #fff;
+  color: #5e526b;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.prompt-review-submit-options {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.prompt-review-suggested-button {
+  border-color: #7664c5;
+  background: #7664c5;
+  color: #fff;
+}
+
+.prompt-review-suggested-button:hover:not(:disabled) {
+  background: #604db1;
+}
+
+.prompt-review-suggested-button:disabled {
+  opacity: 0.5;
+}
+
+.conversation-original-details {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e5def0;
+}
+
+.conversation-original-details summary {
+  cursor: pointer;
+  color: #685696;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.conversation-original-details p {
+  margin-top: 9px;
+  font-size: 12px;
+  color: #6b6472;
+}
+
+/* In a long conversation, keep the prompt-review panel reachable. */
+.conversation-composer {
+  max-height: min(70vh, 650px);
+  overflow-y: auto;
+}
+
+@media (max-width: 980px) {
+  .prompt-review-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 650px) {
+  .prompt-review {
+    padding: 14px;
+  }
+  .prompt-review-heading,
+  .prompt-review-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+/* Phase 2, Milestone 3: CSS-rendered business-card recommendations. */
+.recommendation-row {
+  width: 100%;
+}
+
+.recommendation-row > .conversation-message {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  padding: 19px;
+}
+
+.recommendations {
+  container-name: concept-area;
+  container-type: inline-size;
+}
+
+.recommendations-intro,
+.recommendations-explanation {
+  margin: 0 0 10px !important;
+  color: #4a4450;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+.recommendations-explanation {
+  margin-bottom: 18px !important;
+  color: #746780 !important;
+}
+
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.concept-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 8px;
+  border: 2px solid #e8e4ec;
+  border-radius: 14px;
+  background: #fff;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.concept-card.is-selected {
+  border-color: #7664c5;
+  box-shadow: 0 0 0 2px #7664c51a;
+}
+
+/* These are graphical samples, not yet object-selectable canvases. */
+.business-card-preview {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  isolation: isolate;
+  overflow: hidden;
+  aspect-ratio: 1.6 / 1;
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border-radius: 9px;
+  background: var(--card-bg);
+  color: var(--card-fg);
+}
+
+.preview-topline,
+.preview-person {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-topline {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.preview-brand {
+  font-size: clamp(13px, 1.5vw, 21px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.preview-mark {
+  font-size: 18px;
+  line-height: 1;
+  color: var(--card-fg);
+}
+
+.preview-person {
+  gap: 3px;
+}
+
+.preview-person-name {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+}
+
+.preview-person-role {
+  font-size: 7px;
+  letter-spacing: 0.055em;
+}
+
+.preview-decoration {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  background: var(--card-accent);
+}
+
+.preview-botanical .preview-decoration {
+  right: -22px;
+  bottom: -40px;
+  width: 95px;
+  height: 120px;
+  border-radius: 90% 5% 75% 10%;
+  transform: rotate(-25deg);
+  opacity: 0.48;
+}
+
+.preview-minimal .preview-decoration {
+  top: 0;
+  right: 0;
+  width: 9px;
+  height: 100%;
+  opacity: 0.85;
+}
+
+.preview-minimal .preview-brand {
+  font-weight: 800;
+  letter-spacing: 0.07em;
+}
+
+.preview-expressive .preview-decoration {
+  top: -43px;
+  right: -25px;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  opacity: 0.64;
+}
+
+.preview-expressive .preview-brand {
+  font-size: clamp(17px, 2vw, 25px);
+  font-style: italic;
+}
+
+.preview-layout-structured .preview-person {
+  border-top: 1px solid currentColor;
+  padding-top: 7px;
+}
+
+.preview-layout-dynamic .preview-person {
+  margin-left: auto;
+  text-align: right;
+}
+
+.preview-layout-spacious .preview-person {
+  margin-bottom: 3px;
+}
+
+.concept-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 9px;
+  padding: 10px 2px 2px;
+}
+
+.concept-card h3 {
+  margin: 0;
+  color: #2e2933;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.concept-rationale {
+  margin: 0 !important;
+  color: #77707d !important;
+  line-height: 1.5 !important;
+  font-size: 11px !important;
+}
+
+.concept-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 3px 0 12px;
+  font-size: 10px;
+}
+
+.concept-details div {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 5px;
+}
+
+.concept-details dt {
+  color: #948d9b;
+}
+
+.concept-details dd {
+  margin: 0;
+  color: #514a58;
+  overflow-wrap: anywhere;
+}
+
+.concept-select {
+  width: 100%;
+  min-height: 36px;
+  margin-top: auto;
+  padding: 8px;
+  border: 1px solid #d9d1e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #65539b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.concept-select:hover {
+  background: #f3f0fb;
+}
+
+.concept-select-active {
+  color: #fff;
+  background: #7664c5;
+  border-color: #7664c5;
+}
+
+.concept-select-active:hover {
+  background: #6251b1;
+}
+
+.concept-selection-feedback {
+  margin-top: 15px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  background: #f6f3fb;
+}
+
+.concept-selection-feedback p {
+  margin: 0;
+  color: #685b79;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.recommendations-disclosure {
+  margin: 14px 0 0 !important;
+  color: #96909e !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+}
+
+@container concept-area (max-width: 650px) {
+  .concept-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container concept-area (max-width: 400px) {
+  .concept-grid {
+    grid-template-columns: 1fr;
+  }
+  .business-card-preview {
+    min-height: 135px;
+  }
+}
+
+
+/* Milestone 4.1 — selectable attributes and shared draft feedback only. */
+.concept-attribute-picker {
+  padding-top: 11px;
+  border-top: 1px solid #eee9f2;
+}
+
+.concept-attribute-picker > p {
+  margin: 0 0 9px !important;
+  font-size: 11px !important;
+  color: #706878 !important;
+  font-weight: 600;
+}
+
+.concept-attribute-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.concept-attribute-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  max-width: 100%;
+  padding: 5px 8px;
+  border: 1px solid #e4deec;
+  border-radius: 20px;
+  background: #faf9fc;
+  color: #61596a;
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.concept-attribute-chip:hover {
+  background: #f0eafc;
+  border-color: #c2b5e6;
+}
+
+.concept-attribute-chip.is-chosen {
+  color: #56449e;
+  border-color: #b4a5e4;
+  background: #eeeafb;
+  font-weight: 600;
+}
+
+.feedback-draft {
+  margin-top: 19px;
+  padding: 18px;
+  border: 1px solid #e1dbe9;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.feedback-draft-heading,
+.feedback-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.feedback-draft-heading h3 {
+  margin: 0 0 5px;
+  font-size: 15px;
+  color: #332c3b;
+}
+
+.feedback-draft-heading p,
+.feedback-draft-empty {
+  margin: 0 !important;
+  color: #77717c !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+.feedback-draft-count {
+  flex-shrink: 0;
+  color: #65568b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.feedback-draft-empty {
+  margin-top: 14px !important;
+  padding: 15px;
+  border-radius: 9px;
+  background: #f8f6fb;
+}
+
+.feedback-draft-items {
+  display: flex;
+  flex-direction: column;
+  margin-top: 14px;
+  gap: 12px;
+}
+
+.feedback-draft-item {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f9f8fb;
+}
+
+.feedback-item-heading strong {
+  display: block;
+  color: #3b3343;
+  font-size: 12px;
+}
+
+.feedback-item-heading span {
+  display: block;
+  margin-top: 4px;
+  color: #928a99;
+  font-size: 10px;
+}
+
+.feedback-remove {
+  flex-shrink: 0;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: #7d698c;
+  font-size: 11px;
+}
+
+.feedback-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 11px;
+}
+
+.feedback-option {
+  border: 1px solid #ded8e5;
+  border-radius: 8px;
+  padding: 6px 12px;
+  background: white;
+  color: #645d6d;
+  font-size: 11px;
+}
+
+.feedback-option:hover {
+  border-color: #ac9aca;
+}
+
+.feedback-option-like {
+  background: #e7f1e8;
+  border-color: #9bbca0;
+  color: #285b3c;
+}
+
+.feedback-option-avoid {
+  background: #faeceb;
+  border-color: #e4aaa4;
+  color: #8b4540;
+}
+
+.feedback-option-unsure {
+  background: #eeeafa;
+  border-color: #bfafe1;
+  color: #584999;
+}
+
+.feedback-draft-footer {
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid #eeeaf1;
+  color: #8a8193;
+  font-size: 11px;
+}
+
+@media (max-width: 650px) {
+  .feedback-draft { padding: 12px; }
+  .feedback-draft-heading { flex-direction: column; }
+}
+
+/* Milestone 4.2 — confirmation and intention summary. */
+.feedback-draft-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 13px;
+}
+
+.feedback-review-summary {
+  padding: 13px;
+  border-radius: 10px;
+  background: #f8f6fc;
+  color: #685f73;
+}
+
+.feedback-review-summary strong {
+  display: block;
+  color: #453b52;
+  font-size: 12px;
+}
+
+.feedback-review-summary ul,
+.preference-confirmation-list {
+  list-style: none;
+  margin: 10px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.feedback-review-summary li,
+.preference-confirmation-list li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  color: #4d4655;
+  font-size: 12px;
+}
+
+.feedback-review-summary p {
+  margin: 8px 0 0 !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+  color: #827789 !important;
+}
+
+.preference-sentiment {
+  display: inline-block;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.preference-sentiment-like {
+  background: #e7f1e8;
+  color: #285b3c;
+}
+
+.preference-sentiment-avoid {
+  background: #faeceb;
+  color: #8b4540;
+}
+
+.preference-sentiment-unsure {
+  background: #eeeafa;
+  color: #584999;
+}
+
+.feedback-confirm-button {
+  align-self: flex-end;
+  padding: 10px 16px;
+  border-radius: 9px;
+  border: 1px solid #7664c5;
+  color: #fff;
+  background: #7664c5;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.feedback-confirm-button:hover:not(:disabled) { background: #6251b1; }
+.feedback-confirm-button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.preference-confirmation-intro {
+  font-weight: 600;
+}
+
+.preference-previous {
+  color: #918897;
+  font-size: 11px;
+}
+
+.conversation-message .preference-confirmation-note {
+  font-size: 11px;
+  color: #8b8092;
+}
+
+.intention-group {
+  margin: 14px 0;
+}
+
+.intention-group h4 {
+  font-size: 11px;
+  color: #716678;
+  margin: 0 0 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .02em;
+}
+
+.intention-tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+}
+
+.intention-tag {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 6px 9px;
+  border-radius: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.intention-tag-like { background: #e7f1e8; color: #285b3c; }
+.intention-tag-avoid { background: #faeceb; color: #8b4540; }
+.intention-tag-unsure { background: #eeeafa; color: #584999; }
+
+/* Preserve the scrollbar improvement approved after Step 4.1.
+   The viewport stretches to the available workspace width while the
+   conversation and composer remain centred. */
+.phase2-primary {
+  overflow: hidden;
+}
+
+.conversation-view {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.conversation-feed > .conversation-heading,
+.conversation-feed > .conversation-row {
+  width: 100%;
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.conversation-composer {
+  width: 100%;
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+/* Milestone 4.3 — explicit editing of already confirmed preferences. */
+.intention-display-heading,
+.intention-edit-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.intention-display-heading h3,
+.intention-edit-heading h3 {
+  margin-bottom: 7px;
+}
+
+.intention-edit-button {
+  border: 1px solid #cfc4eb;
+  border-radius: 8px;
+  padding: 7px 9px;
+  background: #f5f2fc;
+  color: #5e4c9b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.intention-edit-button:hover { background: #eee8fa; }
+
+.intention-unsaved-count {
+  color: #725d9b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.intention-edit-help {
+  margin: 0 0 12px;
+  color: #807587;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.intention-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.intention-edit-item {
+  padding: 11px;
+  background: #faf9fc;
+  border: 1px solid #eee9f1;
+  border-radius: 10px;
+}
+
+.intention-edit-item.is-marked-for-removal {
+  background: #f9f4f3;
+  border-color: #eedbd8;
+}
+
+.intention-edit-item-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.intention-edit-item-heading strong {
+  display: block;
+  color: #3b3343;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.intention-edit-item-heading span {
+  display: block;
+  margin-top: 4px;
+  color: #94899a;
+  font-size: 10px;
+}
+
+.intention-edit-item.is-marked-for-removal strong {
+  text-decoration: line-through;
+  color: #958b92;
+}
+
+.intention-remove-button {
+  flex-shrink: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #8f5260;
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.intention-edit-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 11px;
+}
+
+.intention-edit-options .feedback-option {
+  padding: 6px 8px;
+}
+
+.intention-removal-note {
+  margin: 8px 0 0;
+  color: #96656d;
+  font-size: 11px;
+}
+
+.intention-edit-actions {
+  position: sticky;
+  bottom: -18px;
+  display: flex;
+  gap: 8px;
+  padding: 16px 0 13px;
+  background: #fff;
+}
+
+.intention-save-button,
+.intention-cancel-button {
+  flex: 1;
+  min-height: 36px;
+  border-radius: 9px;
+  padding: 9px 11px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.intention-save-button {
+  background: #7664c5;
+  border: 1px solid #7664c5;
+  color: #fff;
+}
+
+.intention-save-button:hover:not(:disabled) { background: #6251b1; }
+.intention-save-button:disabled { opacity: .42; cursor: not-allowed; }
+
+.intention-cancel-button {
+  background: #fff;
+  border: 1px solid #dad3e6;
+  color: #635875;
+}
+
+.intention-cancel-button:hover { background: #f6f2fa; }
+
+.preference-sentiment-removed { background: #f1ecee; color: #665b65; }
+
+.intention-panel button:focus-visible { outline: 3px solid #b7aaf2; outline-offset: 2px; }
+
+/* Milestone 5.1 — preference-aware new directions, without changing
+   the approved Milestone 4 conversation width / scrollbar position. */
+.new-directions-controls {
+  margin-bottom: 15px;
+  border: 1px solid #e7dff1;
+  border-radius: 13px;
+  background: #fbf9fe;
+  padding: 13px 15px;
+}
+
+.new-directions-intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.new-directions-intro strong {
+  display: block;
+  color: #453751;
+  font-size: 12px;
+}
+
+.new-directions-intro p {
+  margin: 4px 0 0;
+  color: #81758a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.new-directions-button {
+  flex-shrink: 0;
+  border: 1px solid #7764c5;
+  border-radius: 9px;
+  background: #7664c5;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 10px 13px;
+}
+
+.new-directions-button:hover { background: #6251b1; }
+
+.new-directions-draft-warning {
+  margin-top: 11px;
+  padding: 12px;
+  border: 1px solid #dfd2a5;
+  border-radius: 10px;
+  background: #fffdf5;
+}
+
+.new-directions-draft-warning p {
+  margin: 0;
+  color: #655b41;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.new-directions-draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.new-directions-review,
+.new-directions-continue {
+  border: 1px solid #d2c5e8;
+  border-radius: 8px;
+  background: #fff;
+  color: #584780;
+  padding: 8px 11px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.new-directions-continue {
+  background: #7664c5;
+  border-color: #7664c5;
+  color: #fff;
+}
+
+.new-directions-review:hover { background: #f4effc; }
+.new-directions-continue:hover { background: #6251b1; }
+
+.concept-direction {
+  display: inline-block;
+  align-self: flex-start;
+  margin: 0 0 7px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: #ede9fb;
+  color: #6754a1;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.concept-direction-exploratory {
+  background: #f0ece6;
+  color: #73614b;
+}
+
+.new-directions-controls button:focus-visible,
+.concept-direction:focus-visible {
+  outline: 3px solid #b7aaf2;
+  outline-offset: 2px;
+}
+
+@media (max-width: 630px) {
+  .new-directions-intro { flex-direction: column; align-items: stretch; }
+  .new-directions-button { width: 100%; }
+}
+/* Milestone 5.1 responsive refinement — keep conversation history visible
+   on shorter laptop screens. Applies only after the first prompt is sent;
+   the initial welcome composer and the approved desktop layout are unchanged. */
+@media (max-height: 900px) {
+  .phase2-workspace {
+    gap: 12px;
+    padding-bottom: 10px;
+  }
+
+  .conversation-composer {
+    padding-top: 8px;
+    padding-bottom: 4px;
+    max-height: min(48dvh, 390px);
+  }
+
+  .new-directions-controls {
+    padding: 9px 12px;
+    margin-bottom: 8px;
+  }
+
+  .new-directions-button {
+    padding: 8px 11px;
+  }
+
+  .conversation-compose-title {
+    margin-bottom: 6px;
+  }
+
+  .compact-composer .prompt-box {
+    min-height: 0;
+    height: auto;
+    padding: 9px 12px 8px;
+  }
+
+  .compact-composer .prompt-textarea {
+    box-sizing: border-box;
+    flex: 0 0 auto;
+    width: 100%;
+    height: 52px;
+    min-height: 52px;
+    max-height: 140px;
+    margin: 6px 0 4px;
+    overflow-y: auto;
+    resize: vertical;
+    line-height: 1.45;
+  }
+
+  /* Expand while writing without permanently blocking the history. */
+  .compact-composer .prompt-textarea:focus {
+    height: 104px;
+    min-height: 104px;
+  }
+
+  .conversation-compose-note {
+    margin-top: 5px;
+    line-height: 1.35;
+  }
+}
+
+/* Extra-short browser windows: prefer history over explanatory padding. */
+@media (max-height: 700px) {
+  .conversation-composer {
+    max-height: 50dvh;
+  }
+
+  .new-directions-intro p {
+    display: none;
+  }
+
+  .compact-composer .prompt-textarea {
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .compact-composer .prompt-textarea:focus {
+    height: 92px;
+    min-height: 92px;
+  }
+}
+/* Milestone 5.1 laptop UX fix — prompt assistance gets a separate dialog.
+   Paste at the END of Phase2.css, after the earlier compact-composer rules.
+   The normal conversation feed and prompt composer remain unchanged. */
+.prompt-review-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  box-sizing: border-box;
+  background: rgba(29, 24, 40, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.prompt-review-dialog {
+  box-sizing: border-box;
+  width: min(960px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #e3d9ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 75px rgba(31, 24, 47, 0.24);
+}
+
+/* Override the old inline review-card spacing only inside the dialog. */
+.prompt-review-dialog .prompt-review {
+  margin: 0;
+  padding: clamp(16px, 3vw, 28px);
+  border: 0;
+  border-radius: inherit;
+  background: #fff;
+  box-shadow: none;
+}
+
+.prompt-review-header-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.prompt-review-close {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid #e4deeb;
+  border-radius: 9px;
+  background: #fff;
+  color: #5e536b;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.prompt-review-close:hover { background: #f5f1fb; }
+.prompt-review-close:focus-visible { outline: 3px solid #b7aaf2; outline-offset: 2px; }
+
+.prompt-review-dialog .prompt-review-original,
+.prompt-review-dialog .prompt-review-textarea {
+  box-sizing: border-box;
+  min-height: 145px;
+  max-height: 32dvh;
+  overflow-y: auto;
+}
+
+/* Short laptops: vertically scroll the dialog, never the bottom composer. */
+@media (max-height: 700px) {
+  .prompt-review-backdrop {
+    align-items: flex-start;
+    padding: 12px;
+  }
+  .prompt-review-dialog {
+    max-height: calc(100dvh - 24px);
+  }
+  .prompt-review-dialog .prompt-review-original,
+  .prompt-review-dialog .prompt-review-textarea {
+    min-height: 110px;
+  }
+}
+
+@media (max-width: 650px) {
+  .prompt-review-backdrop { padding: 10px; }
+  .prompt-review-dialog { max-height: calc(100dvh - 20px); }
+  .prompt-review-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Phase 2 — Milestone 5.2: selected-reference variation workflow.
+   Uses a separate dialog, maintaining the laptop conversation viewport. */
+.exploration-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+}
+.explore-variations-button {
+  border: 1px solid #beb0da;
+  border-radius: 9px;
+  background: #fff;
+  color: #5e4c8f;
+  padding: 10px 13px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.explore-variations-button:not(:disabled):hover { background: #f0ecf9; }
+.explore-variations-button:disabled { opacity: .48; cursor: not-allowed; }
+.variation-selected-hint {
+  margin: 7px 0 0 !important;
+  color: #766d82 !important;
+  font-size: 10px !important;
+  line-height: 1.4 !important;
+}
+.variation-diff-note {
+  padding: 8px;
+  border-radius: 8px;
+  background: #f8f6fc;
+  color: #6b6175 !important;
+  font-size: 10px !important;
+  line-height: 1.5 !important;
+  text-transform: capitalize;
+}
+.variation-diff-note strong { color: #534663; }
+
+.variation-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(29, 24, 40, .5);
+  backdrop-filter: blur(2px);
+  box-sizing: border-box;
+}
+.variation-dialog {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(720px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow: hidden;
+  border: 1px solid #e0d8eb;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 24px 75px rgba(31, 24, 47, .24);
+}
+.variation-dialog-header,
+.variation-dialog-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 17px 22px;
+  background: #fff;
+  flex-shrink: 0;
+}
+.variation-dialog-header { border-bottom: 1px solid #eee8f2; }
+.variation-dialog-header h2 {
+  margin: 6px 0 0;
+  color: #332c3d;
+  font-size: 19px;
+}
+.variation-dialog-header h2:focus { outline: none; }
+.variation-dialog-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 22px 14px;
+}
+.variation-dialog-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  border-top: 1px solid #eee8f2;
+}
+.variation-close {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  border: 1px solid #e4deeb;
+  border-radius: 9px;
+  background: #fff;
+  color: #64596e;
+  font-size: 24px;
+  cursor: pointer;
+}
+.variation-close:hover { background: #f5f1fb; }
+.variation-primary,
+.variation-secondary {
+  min-height: 36px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.variation-primary { background: #7664c5; color: #fff; border: 1px solid #7664c5; }
+.variation-primary:hover:not(:disabled) { background: #6251b1; }
+.variation-primary:disabled { opacity: .48; cursor: not-allowed; }
+.variation-secondary { color: #605276; border: 1px solid #ded7e9; background: #fff; }
+.variation-secondary:hover { background: #f7f3fb; }
+.variation-reference {
+  display: grid;
+  grid-template-columns: minmax(145px, 230px) minmax(0, 1fr);
+  gap: 15px;
+  align-items: center;
+  border: 1px solid #eeeaf3;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fcfbfe;
+}
+.variation-reference-preview { min-width: 0; }
+.variation-reference-info { display: flex; flex-direction: column; gap: 8px; color: #665d6d; }
+.variation-reference-info strong { color: #453952; font-size: 13px; }
+.variation-reference-info span:last-child { font-size: 11px; line-height: 1.55; }
+.variation-reference-label { font-size: 10px; font-weight: 700; color: #8a7ba1; }
+.variation-dialog-description { margin: 14px 0; color: #60596b; font-size: 13px; line-height: 1.6; }
+.variation-fieldset { border: 0; padding: 0; margin: 14px 0 0; }
+.variation-fieldset legend { color: #443d4f; font-size: 12px; font-weight: 700; padding: 0 0 9px; }
+.variation-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.variation-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 12px;
+  border: 1px solid #e8e2ed;
+  border-radius: 10px;
+  font-size: 12px;
+  color: #4f455a;
+  cursor: pointer;
+}
+.variation-option.is-selected { border-color: #a797d5; background: #f5f2fc; }
+.variation-option input { accent-color: #7664c5; }
+.variation-scope-note,
+.variation-limit-note {
+  margin: 13px 0 0;
+  font-size: 12px;
+  color: #665a74;
+  line-height: 1.6;
+}
+.variation-scope-note { padding: 11px 13px; background: #f7f5fb; border-radius: 9px; }
+.variation-limit-note { color: #8a8192; font-size: 11px; }
+.variation-conflict-list { margin: 10px 0; padding-left: 20px; color: #5b4b55; font-size: 12px; line-height: 1.6; }
+.variation-conflict-list li { margin: 8px 0; }
+.variation-resolution-explanation {
+  display: grid;
+  gap: 9px;
+  padding: 13px;
+  border: 1px solid #e9e1ed;
+  border-radius: 9px;
+  background: #faf8fc;
+  color: #665a73;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.variation-error {
+  padding: 13px;
+  border: 1px solid #e2c7b4;
+  border-radius: 9px;
+  color: #704f3b;
+  background: #fff7f1;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.variation-dialog button:focus-visible,
+.explore-variations-button:focus-visible,
+.variation-option:focus-within {
+  outline: 3px solid #b7aaf2;
+  outline-offset: 2px;
+}
+@media (max-width: 1050px) {
+  .new-directions-intro { gap: 10px; }
+  .exploration-action-buttons { gap: 6px; }
+  .new-directions-button, .explore-variations-button { padding: 8px 10px; }
+}
+@media (max-width: 760px) {
+  .new-directions-intro { flex-direction: column; align-items: stretch; }
+  .exploration-action-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .explore-variations-button, .new-directions-button { width: 100%; white-space: normal; }
+}
+@media (max-height: 900px) {
+  .variation-selected-hint { margin-top: 4px !important; }
+  .new-directions-controls { padding: 8px 10px; }
+  .variation-dialog-header, .variation-dialog-actions { padding: 12px 17px; }
+  .variation-dialog-body { padding: 14px 17px; }
+}
+@media (max-height: 700px) {
+  .variation-backdrop { align-items: flex-start; padding: 10px; }
+  .variation-dialog { max-height: calc(100dvh - 20px); }
+  .variation-reference-preview { max-width: 155px; }
+  .variation-reference { grid-template-columns: minmax(115px, 155px) minmax(0, 1fr); }
+  .variation-selected-hint { display: none; }
+}
+@media (max-width: 500px) {
+  .variation-backdrop { padding: 8px; }
+  .variation-dialog { max-height: calc(100dvh - 16px); }
+  .variation-dialog-header, .variation-dialog-actions { padding: 11px 13px; }
+  .variation-dialog-body { padding: 12px 13px; }
+  .variation-reference { grid-template-columns: 1fr; }
+  .variation-reference-preview { max-width: 250px; }
+  .variation-options { grid-template-columns: 1fr; }
+  .variation-dialog-actions > button { flex: 1 1 auto; }
+}
+/* Milestone 5.2 UX refinement: progressive disclosure.
+   Append this once to the END of your existing Phase2.css.
+   Keeps the compact laptop composer and prompt-review dialog intact. */
+
+.simplified-exploration-controls {
+  margin-bottom: 9px;
+}
+.simplified-exploration-controls .new-directions-intro {
+  gap: 12px;
+}
+.simplified-exploration-controls .new-directions-button {
+  min-width: 151px;
+}
+.simplified-exploration-controls .variation-selected-hint {
+  margin: 4px 0 0 !important;
+}
+
+/* Keep attribute chips and the lengthy feedback draft out of the concept cards
+   until the user explicitly requests optional feedback. */
+.concept-feedback-disclosure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 12px 14px;
+  margin-top: 13px;
+  border: 1px solid #e7e1ef;
+  border-radius: 11px;
+  background: #fcfbfe;
+}
+.concept-feedback-disclosure-copy {
+  min-width: 0;
+}
+.concept-feedback-disclosure-copy strong {
+  display: block;
+  color: #4d435b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+.concept-feedback-disclosure-copy p {
+  margin: 3px 0 0 !important;
+  color: #84788f !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+}
+.concept-feedback-draft-status {
+  display: inline-block;
+  margin-top: 7px;
+  color: #66549e;
+  font-size: 11px;
+  font-weight: 650;
+}
+.concept-feedback-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  min-height: 35px;
+  padding: 8px 11px;
+  border: 1px solid #dcd2ea;
+  border-radius: 9px;
+  background: #fff;
+  color: #62518a;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.concept-feedback-toggle:hover {
+  border-color: #b7a5d8;
+  background: #f5f1fb;
+}
+.concept-feedback-toggle span[aria-hidden] {
+  font-size: 14px;
+}
+.concept-feedback-expanded {
+  margin-top: 8px;
+  padding: 14px;
+  border: 1px solid #eae5ef;
+  border-radius: 12px;
+  background: #fcfbfd;
+}
+.feedback-attribute-heading strong {
+  color: #433b50;
+  font-size: 12px;
+}
+.feedback-attribute-heading p {
+  margin: 4px 0 13px !important;
+  color: #847a8e !important;
+  font-size: 11px !important;
+  line-height: 1.5 !important;
+}
+.feedback-attribute-sources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.feedback-attribute-source {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #ede8f3;
+  border-radius: 10px;
+  background: #fff;
+}
+.feedback-attribute-source h4 {
+  margin: 0 0 9px;
+  color: #5c5069;
+  font-size: 11px;
+  line-height: 1.45;
+}
+.concept-feedback-expanded .feedback-draft {
+  margin-top: 13px;
+  padding: 13px;
+}
+.concept-feedback-expanded .feedback-draft-footer {
+  margin-top: 10px;
+}
+
+/* The exploration menu is separate from the bottom composer, just like
+   the reviewed prompt-assistance dialog. */
+.continue-exploring-dialog {
+  width: min(590px, 100%);
+}
+.continue-exploring-choices {
+  display: grid;
+  gap: 11px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.continue-exploring-choice {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #e6e0ee;
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+.continue-exploring-choice.is-selected {
+  border-color: #9e8bd2;
+  background: #f7f4ff;
+  box-shadow: 0 0 0 1px #9e8bd226;
+}
+.continue-exploring-choice.is-unavailable {
+  opacity: .59;
+  cursor: not-allowed;
+}
+.continue-exploring-choice input {
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: #7664c5;
+}
+.continue-choice-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.continue-choice-copy strong {
+  color: #483d59;
+  font-size: 13px;
+}
+.continue-choice-copy > span {
+  color: #6f647b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.continue-choice-copy small {
+  color: #857790;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.continue-exploring-dialog button:focus-visible,
+.continue-exploring-choice:focus-within,
+.concept-feedback-toggle:focus-visible,
+.concept-feedback-expanded button:focus-visible {
+  outline: 3px solid #b7aaf2;
+  outline-offset: 2px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@container concept-area (max-width: 780px) {
+  .feedback-attribute-sources { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container concept-area (max-width: 490px) {
+  .feedback-attribute-sources { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .concept-feedback-disclosure {
+    flex-wrap: wrap;
+    padding: 11px;
+    gap: 9px;
+  }
+  .concept-feedback-toggle { width: 100%; }
+  .concept-feedback-expanded { padding: 10px; }
+}
+@media (max-height: 900px) {
+  .simplified-exploration-controls {
+    padding: 8px 10px;
+    margin-bottom: 7px;
+  }
+  .continue-exploring-dialog .variation-dialog-body { padding: 13px 17px; }
+  .continue-exploring-choice { padding: 11px 13px; }
+  .continue-exploring-dialog .variation-dialog-actions { padding: 10px 17px; }
+}
+@media (max-height: 700px) {
+  .continue-exploring-dialog { max-height: calc(100dvh - 20px); }
+  .continue-exploring-choice { padding: 9px 12px; }
+}
+
+/* Intenta · Milestone 5.2 UX refinement
+   Append ONCE after all existing laptop-composer and simplified-UX CSS.
+   The textarea's actual height is measured from its content by PromptComposer.jsx.
+   Older fixed-height focus rules must not force an empty field to expand. */
+
+/* One-line input at rest; auto-grow on wrapped or multi-line text.
+   Keep the same interaction on the initial screen and in the conversation. */
+.prompt-box .prompt-textarea,
+.compact-composer .prompt-textarea,
+.compact-composer .prompt-textarea:focus {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  height: auto; /* An inline height, calculated in React, takes precedence. */
+  min-height: 0;
+  max-height: none;
+  padding: 5px 0;
+  margin: 0;
+  overflow-y: hidden;
+  resize: none;
+  line-height: 1.5;
+  transition: none;
+}
+
+/* Make the conversation composer a compact, familiar message entry surface.
+   The send/review action sits beside the text field, while the optional
+   assistance toggle remains visible below it. */
+.compact-composer .prompt-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "input actions"
+    "assist assist";
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 6px;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 9px 12px;
+}
+
+.compact-composer .prompt-textarea,
+.compact-composer .prompt-textarea:focus {
+  grid-area: input;
+  margin: 0;
+  padding: 6px 0;
+  align-self: center;
+}
+
+.compact-composer .composer-bottom {
+  grid-area: actions;
+  align-self: center;
+  margin: 0;
+  padding: 0;
+}
+
+.compact-composer .composer-hint {
+  display: none;
+}
+
+.compact-composer .assistance-row {
+  grid-area: assist;
+  margin: 0;
+  padding: 0;
+}
+
+/* Slightly narrower, centred composer on wide monitors; fluid on laptops. */
+.conversation-composer .compact-composer {
+  width: 100%;
+  max-width: 820px;
+  margin-inline: auto;
+}
+
+.conversation-composer .conversation-compose-title,
+.conversation-composer .conversation-compose-note {
+  max-width: 820px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (max-width: 650px) {
+  .compact-composer .prompt-box {
+    column-gap: 6px;
+    padding: 8px 10px;
+  }
+}
+
+/* Milestone 5.2 — Align composer with Continue Exploring */
+
+.conversation-composer .compact-composer {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+}
+
+.conversation-composer .conversation-compose-title,
+.conversation-composer .conversation-compose-note {
+  max-width: none;
+  width: 100%;
+}

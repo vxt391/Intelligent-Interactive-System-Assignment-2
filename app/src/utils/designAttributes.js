@@ -24,5 +24,6 @@ export function attributesForConcept(concept) {
     attribute('Typography', TYPOGRAPHY_LABELS[concept.typography] || concept.typography, concept.typography),
     attribute('Layout', LAYOUT_LABELS[concept.layout] || concept.layout, concept.layout),
     attribute('Style', `${concept.style} style`, concept.styleId),
+    ...(concept.decorationId ? [attribute('Decoration', `${concept.decorationId[0].toUpperCase()}${concept.decorationId.slice(1)} decoration`, concept.decorationId)] : []),
   ];
 }

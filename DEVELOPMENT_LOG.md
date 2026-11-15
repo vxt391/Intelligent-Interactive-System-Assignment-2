@@ -939,3 +939,303 @@ The student has approved optional attribute selection: users may specify which c
 Before implementation, the remaining interaction rules must be finalised, including which characteristics should be preserved, how confirmed preferences affect variations and how differences between concepts are communicated.
 
 **Future development consideration:** Responsive behaviour must continue to be reviewed on different screen sizes throughout subsequent milestones.
+
+## Phase 2 — Milestone 5.2: Explore Variations and Interaction Simplification
+
+**Date:** 15 November 2026  
+**Status:** Implemented and iteratively reviewed through manual testing
+
+### 1. Objective
+
+The objective of Milestone 5.2 was to enable users to generate variations of a preferred design concept while preserving its overall identity.
+
+Whereas Milestone 5.1 introduced preference-aware exploration of new design directions, Milestone 5.2 supports more focused creative refinement.
+
+The milestone also addressed usability issues identified during testing, particularly the increasing complexity of the exploration controls and the amount of screen space occupied by the prompt composer.
+
+### 2. Implementation — Explore Variations
+
+**2.1 Reference-based variation generation**
+
+- Implemented Explore Variations using a selected design concept as the reference.
+- Allowed users to select a reference concept from any previous recommendation round.
+- Preserved the reference concept rather than replacing it when variations were generated.
+- Recorded the source round and reference concept for each variation request.
+- Integrated variation results into the existing conversation history.
+- Maintained the existing rule-based, CSS-rendered recommendation approach.
+
+**2.2 Optional attribute selection**
+
+Users can optionally specify which design attributes they want to vary:
+
+- Colour
+- Typography
+- Layout
+- Decorations
+
+If no attributes are selected, Intenta generates general variations that aim to preserve the reference concept's overall character.
+
+When multiple attributes are selected, the system explores combinations of those attributes rather than requiring every variation to change all of them.
+
+For example, when Colour and Typography are selected, the system may produce a colour-focused variation, a typography-focused variation and a variation changing both characteristics.
+
+**2.3 Attribute preservation**
+
+The variation mechanism aims to preserve attributes that users did not explicitly select for modification.
+
+Minor supporting changes may be necessary because design characteristics can interact. However, the system should avoid unnecessary changes outside the selected variation scope.
+
+**2.4 Preference-aware variations**
+
+The system considers the user's confirmed intentions when producing variations:
+
+- Confirmed Like preferences are prioritised where compatible with the variation request.
+- Confirmed Avoid preferences are treated as attributes to exclude where feasible.
+- Not Sure preferences do not impose positive or negative restrictions.
+- Unconfirmed feedback does not influence variation generation.
+
+**2.5 Conflict handling**
+
+Implemented an explicit conflict-resolution workflow for situations where the selected reference concept conflicts with confirmed preferences.
+
+The user can choose to:
+
+- **Respect Current Preferences:** Adjust conflicting attributes when generating variations.
+- **Keep Reference for This Round:** Preserve the conflicting reference attribute as a temporary exception.
+- **Cancel:** Return without generating variations.
+
+These decisions affect the current variation request rather than silently modifying the user's saved intentions.
+
+**2.6 Recommendation explanations and limitations**
+
+Variation rounds include information identifying the reference concept and describing the intended changes.
+
+The system also accounts for limitations of the predefined design catalogue.
+
+For example, where only one distinct typography alternative is available, the system can return fewer than three variations rather than deliberately presenting duplicate designs.
+
+### 3. Interaction Design Refinement
+
+During manual testing, the student identified that the interface was becoming visually crowded and cognitively demanding.
+
+The original Milestone 5.2 interface displayed several competing actions, including:
+
+- Confirm Preferences
+- Explore New Directions
+- Explore Variations
+- Review Prompt
+
+The attribute-feedback area was also visually prominent even when users did not intend to provide detailed feedback.
+
+This created uncertainty about which action users should perform next and could make structured feedback appear mandatory.
+
+**3.1 Simplified Continue Exploring workflow**
+
+Replaced the two separate exploration buttons with a single primary action:
+
+**Continue Exploring**
+
+This opens a dialog allowing users to choose between:
+
+- **Explore New Directions:** Generate different design concepts using confirmed preferences.
+- **Explore Variations:** Generate alternatives based on a selected reference concept.
+
+The interface suggests Explore Variations when a concept has been selected. Without a selected concept, users can continue exploring new directions.
+
+This redesign establishes a clearer interaction hierarchy and reduces competing primary actions.
+
+**3.2 Optional design feedback**
+
+Refactored the structured attribute-feedback interface using progressive disclosure.
+
+Instead of displaying attribute chips and a large feedback area beneath every recommendation by default:
+
+- Recommendation cards focus on displaying and selecting design concepts.
+- An optional Give Design Feedback control reveals the attribute-feedback interface.
+- Users can select design attributes across different concepts when they want to provide feedback.
+- Users can rate selected attributes using Like, Avoid or Not Sure.
+- Draft feedback remains separate from confirmed preferences.
+- Unfinished feedback is preserved when the feedback area is closed.
+- The confirmation action is not displayed unnecessarily when no attributes have been rated.
+
+The underlying structured preference-confirmation mechanism remains available.
+
+This redesign makes detailed feedback optional rather than appearing to be a required part of every exploration round.
+
+**3.3 Maintaining separate interaction purposes**
+
+The revised interface distinguishes between three user intentions:
+
+1. **Selecting a concept:** Identifying a preferred design direction.
+2. **Giving feedback:** Communicating attribute-level preferences for future recommendations.
+3. **Continuing exploration:** Requesting new directions or variations.
+
+These actions are not unnecessarily dependent on one another.
+
+### 4. Responsive UI Refinement — Auto-Expanding Composer
+
+Following the exploration-interface redesign, the student identified another opportunity to improve usability.
+
+Although the prompt composer had already been made more compact during Milestone 5.1, it still occupied more space than necessary when users were entering short prompts.
+
+**4.1 Content-based textarea resizing**
+
+Implemented a ChatGPT-style auto-expanding prompt input.
+
+The updated composer:
+
+- Starts at a compact single-line height.
+- Expands automatically as entered text wraps or includes additional lines.
+- Does not expand simply because the input receives focus.
+- Shrinks again when text is removed.
+- Uses a maximum height for long prompts, allowing internal scrolling.
+- Maintains access to the Prompt Assistance toggle and submission controls.
+
+This allows users to write longer prompts when necessary without permanently reducing the conversation-history area.
+
+**4.2 Composer width and alignment**
+
+The initial auto-expanding composer was narrower than the Continue Exploring section.
+
+The student identified the inconsistency during visual testing and requested that both sections share the same horizontal boundaries.
+
+The CSS was subsequently adjusted to align the composer with the Continue Exploring section while preserving the content-based height behaviour.
+
+**4.3 Responsive design considerations**
+
+The updated interaction design was developed with attention to different viewport sizes, including laptop screens and larger monitors.
+
+The implementation prioritises retaining visible conversation history, preventing unnecessary vertical expansion and keeping controls accessible.
+
+Responsive design will continue to be considered throughout subsequent milestones.
+
+### 5. Design Rationale and HCI Relevance
+
+**Progressive disclosure**
+
+Optional feedback controls remain hidden until required, reducing the amount of information and interaction complexity presented simultaneously.
+
+**Reduced cognitive load**
+
+A single Continue Exploring action provides a clearer starting point than multiple competing primary buttons.
+
+**User agency**
+
+Users decide whether to explore new directions, develop an existing concept or provide structured preference feedback.
+
+**Visibility of system state**
+
+Variation dialogs and recommendation explanations identify the reference concept, variation scope and relevant preference conflicts.
+
+**Error prevention and reversibility**
+
+Conflict resolution requires explicit user decisions, while temporary exceptions do not silently change saved intentions.
+
+**Interaction continuity**
+
+Earlier recommendation rounds, selected reference concepts and unfinished feedback remain accessible during continued exploration.
+
+**Responsive usability**
+
+The auto-expanding composer gives conversation history more space while still accommodating longer user inputs.
+
+Together, these design decisions support the project's research objective of helping users express and refine creative intentions through structured and visual interactions.
+
+### 6. AI Assistance and Student Contributions
+
+**ChatGPT assisted with:**
+
+- Translating the approved variation-generation behaviour into React functionality.
+- Implementing reference-based design variations.
+- Developing optional attribute-selection and combination rules.
+- Integrating preference conflict detection and resolution.
+- Preserving recommendation and feedback history.
+- Creating the variation dialog and related UI components.
+- Refactoring exploration controls into a simplified Continue Exploring workflow.
+- Making detailed attribute feedback optional and collapsible.
+- Implementing the auto-expanding prompt composer.
+- Providing CSS adjustments for responsive layout and component alignment.
+- Performing code-level validation and preparing manual testing instructions.
+
+**The student:**
+
+- Selected the optional attribute-selection approach.
+- Chose explicit conflict explanation and confirmation rather than automatic preference overrides.
+- Approved the combination-based variation strategy.
+- Integrated the implementation into the existing React application.
+- Tested Explore Variations and identified usability issues.
+- Observed that multiple prominent actions made the next interaction unclear.
+- Requested simplification of the exploration controls.
+- Approved a single Continue Exploring action with a subsequent choice of exploration mode.
+- Requested that detailed attribute feedback become optional and less visually prominent.
+- Reviewed the simplified interface and confirmed that it was an improvement.
+- Requested a ChatGPT-style input that automatically grows and shrinks according to text length.
+- Tested the auto-expanding composer and confirmed that it worked.
+- Identified a width mismatch between the composer and the Continue Exploring section.
+- Applied the final CSS alignment adjustment and confirmed that it worked.
+
+The implementation therefore involved several iterations of design, integration, testing and refinement rather than a single development step.
+
+### 7. Testing and Validation
+
+**Development environment:** React, Vite, JavaScript and CSS.
+
+**Browser:** Google Chrome.
+
+Code-level validation was carried out during implementation, including JavaScript/JSX syntax checks, CSS parsing and lightweight tests of variation-generation behaviour.
+
+Manual testing and visual review were conducted by the student.
+
+| Test Area                                                      | Recorded Outcome                          |
+| -------------------------------------------------------------- | ----------------------------------------- |
+| Explore Variations control appears after component integration | Confirmed                                 |
+| Explore Variations interaction                                 | Manually tested                           |
+| Simplified Continue Exploring interface                        | Visually reviewed and approved            |
+| Optional design-feedback interface                             | Reviewed as part of the simplified layout |
+| Auto-expanding prompt composer                                 | Confirmed working                         |
+| Composer and Continue Exploring width alignment                | Confirmed working                         |
+| Responsive layout improvements                                 | Visually reviewed                         |
+| Full variation-engine edge-case regression                     | Not separately confirmed as fully passed  |
+| Formal accessibility testing                                   | Not yet conducted                         |
+
+The student confirmed that the redesigned interface was easier to use and that the subsequent composer improvements worked as intended.
+
+A complete end-to-end regression test should still be performed before the final prototype evaluation.
+
+### 8. Known Limitations
+
+- Variations use a predefined, rule-based design catalogue rather than an actual generative image model.
+- Some attribute combinations cannot produce three sufficiently distinct alternatives.
+- The available typography, colour and layout options are limited.
+- Complex or ambiguous natural-language requirements may not be fully represented by the rule-based system.
+- Project and feedback state are stored in React memory and do not persist after a browser refresh.
+- The interface has not yet undergone a formal accessibility audit.
+- The prototype has not yet been evaluated through a structured usability study.
+- The Use This Design confirmation workflow has not yet been implemented.
+
+### 9. Milestone Outcome
+
+Milestone 5.2 extends Intenta's iterative exploration capabilities from broad design discovery to targeted variation of a preferred concept.
+
+It also improves the overall exploration experience through simplified navigation, optional structured feedback and a responsive prompt composer.
+
+The most significant outcome is that users can now choose between broad exploration and focused variation without being required to complete a complex preference-feedback workflow first.
+
+### 10. Next Steps
+
+**Phase 2 — Milestone 5.3: Use This Design**
+
+Implement a distinct action allowing users to confirm that they are satisfied with a recommended design.
+
+The planned workflow includes:
+
+- Separating provisional concept selection from final design approval.
+- Providing a Use This Design action for a selected concept.
+- Displaying a final confirmation step.
+- Recording the approved concept within project state.
+- Allowing users to finish exploration without requiring further recommendations or object-level refinement.
+- Keeping the project editable so users can return to exploration or refinement later.
+
+Persistent saving and exporting will not be implied unless those features are separately implemented.
+
+Future milestones will continue to include responsive layout checks on different screen sizes.

@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+
 const suggestions = [
   {
     label: 'Business card',
@@ -28,6 +30,52 @@ export default function PromptComposer({
   onAssistanceChange,
   onSubmit,
 }) {
+  const promptRef = useRef(null);
+
+  // Resize to content rather than expanding merely because the field is focused.
+  // Cap the height so longer prompts never take over a short laptop screen.
+  const measurePrompt = useCallback(() => {
+    const field = promptRef.current;
+    if (!field) return;
+
+    const screenHeight = window.innerHeight;
+    const maxHeight = Math.min(260, Math.max(112, Math.floor(screenHeight * 0.32)));
+
+    field.style.height = 'auto';
+    const contentHeight = field.scrollHeight;
+    field.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+    field.style.overflowY = contentHeight > maxHeight ? 'auto' : 'hidden';
+  }, []);
+
+  useLayoutEffect(() => {
+    measurePrompt();
+  }, [prompt, measurePrompt]);
+
+  useEffect(() => {
+    const field = promptRef.current;
+    const container = field?.parentElement;
+    if (!container) return undefined;
+
+    // Width can change when Current Intentions is opened, even without a window resize.
+    let lastWidth = container.getBoundingClientRect().width;
+    const observer = typeof ResizeObserver === 'undefined'
+      ? null
+      : new ResizeObserver(() => {
+          const width = container.getBoundingClientRect().width;
+          if (Math.abs(width - lastWidth) > 1) {
+            lastWidth = width;
+            measurePrompt();
+          }
+        });
+
+    observer?.observe(container);
+    window.addEventListener('resize', measurePrompt);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', measurePrompt);
+    };
+  }, [measurePrompt]);
+
   function handleSubmit(event) {
     event.preventDefault();
     onSubmit();
@@ -50,12 +98,13 @@ export default function PromptComposer({
         </div>
 
         <textarea
+          ref={promptRef}
           className="prompt-textarea"
           value={prompt}
           onChange={(event) => onPromptChange(event.target.value)}
           placeholder="Describe what you'd like to create... It's okay if your idea is still vague."
           aria-label="Your creative design prompt"
-          rows={4}
+          rows={1}
         />
 
         <div className="composer-bottom">

@@ -9,6 +9,7 @@ import IntentionPanel from './components/IntentionPanel';
 import PromptAssistancePanel from './components/PromptAssistancePanel';
 import { suggestImprovedPrompt } from './utils/promptAssistance';
 import { buildInitialRecommendations, buildNewDirectionRecommendations, isBusinessCardRequest } from './utils/recommendations';
+import { buildVariationRecommendations, getVariationConflicts, VARIATION_DIMENSIONS } from './utils/variations';
 import { mergeConfirmedPreferences, createPreferenceEdit, getPreferenceEditChanges, applyPreferenceEdits } from './utils/preferenceManagement';
 import './App.css';
 import './Phase2.css';
@@ -23,6 +24,7 @@ function createProject(id) {
     promptReview: null, // Only exists while the user reviews a suggested prompt.
     feedbackDrafts: {}, // Each recommendation round owns an independent unfinished draft.
     preferenceEdit: null, // Unsaved edits to already confirmed preferences, scoped to this project.
+    variationRequest: null, // Milestone 5.2: project-scoped modal decisions, never saved as preferences.
     messages: [],
     nextMessageId: 1,
     intentions: {
@@ -319,6 +321,154 @@ function App() {
   }
 
 
+  // Milestone 5.2: locate an exact concept in any historical recommendation round.
+  // Don't infer a reference from the displayed A/B/C label: those repeat each round.
+  function findVariationReference(project, messageId, conceptId) {
+    const message = project.messages.find((item) =>
+      item.role === 'recommendations' && item.id === messageId
+    );
+    const concept = message?.concepts.find((item) => item.id === conceptId);
+    return concept ? { message, concept } : null;
+  }
+
+  function unfinishedFeedbackCount(project) {
+    return Object.values(project.feedbackDrafts).reduce(
+      (sum, draft) => sum + (draft?.items?.length || 0), 0
+    );
+  }
+
+  function startVariations() {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || project.variationRequest) return project;
+      const { selectedConceptId, selectedConceptMessageId } = project.exploration;
+      const found = findVariationReference(project, selectedConceptMessageId, selectedConceptId);
+      if (!found) return project;
+      return {
+        ...project,
+        variationRequest: {
+          conceptId: selectedConceptId,
+          messageId: selectedConceptMessageId,
+          dimensions: [], stage: 'configure', conflicts: [], conflictResolution: null, error: null,
+        },
+      };
+    }));
+  }
+
+  function toggleVariationDimension(dimension) {
+    if (!VARIATION_DIMENSIONS.some((item) => item.id === dimension)) return;
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || project.variationRequest?.stage !== 'configure') return project;
+      const req = project.variationRequest;
+      return {
+        ...project,
+        variationRequest: {
+          ...req,
+          dimensions: req.dimensions.includes(dimension)
+            ? req.dimensions.filter((item) => item !== dimension)
+            : [...req.dimensions, dimension],
+        },
+      };
+    }));
+  }
+
+  function closeVariationRequest() {
+    setProjects((current) => current.map((project) =>
+      project.id === activeId ? { ...project, variationRequest: null } : project
+    ));
+  }
+
+  function generateVariationRound(project, request) {
+    const found = findVariationReference(project, request.messageId, request.conceptId);
+    if (!found) return {
+      ...project,
+      variationRequest: { ...request, stage: 'error', error: 'The selected reference is no longer available.' },
+    };
+    const rounds = project.messages.filter((item) => item.role === 'recommendations');
+    const nextRound = project.exploration.round + 1;
+    const outcome = buildVariationRecommendations({
+      reference: found.concept,
+      originalBrief: rounds[0]?.briefForRecommendations || project.intentions.initialBrief,
+      preferences: project.intentions.preferences,
+      selectedDimensions: request.dimensions,
+      round: nextRound,
+      referenceRound: found.message.round || 1,
+      referenceMessageId: found.message.id,
+      conflictResolution: request.conflictResolution,
+      previousConcepts: rounds.flatMap((item) => item.concepts),
+    });
+    if (outcome.blockedReason) return {
+      ...project,
+      variationRequest: { ...request, stage: 'error', error: outcome.blockedReason },
+    };
+    const selectedText = request.dimensions.length ? request.dimensions.join(', ') : 'general variations';
+    return {
+      ...project,
+      variationRequest: null,
+      messages: [...project.messages, {
+        id: project.nextMessageId,
+        role: 'user',
+        text: `Explore variations of Round ${found.message.round || 1} · ${found.concept.name} (${selectedText})`,
+        action: 'variations',
+      }, {
+        id: project.nextMessageId + 1,
+        role: 'recommendations',
+        ...outcome,
+      }],
+      nextMessageId: project.nextMessageId + 2,
+      exploration: {
+        ...project.exploration,
+        round: nextRound,
+        strategy: 'variations',
+        // Keep the provisional reference selection in its original round.
+      },
+    };
+  }
+
+  function prepareVariations() {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || project.variationRequest?.stage !== 'configure') return project;
+      const req = project.variationRequest;
+      const found = findVariationReference(project, req.messageId, req.conceptId);
+      if (!found) return { ...project, variationRequest: { ...req, stage: 'error', error: 'The reference concept is unavailable.' } };
+      const rounds = project.messages.filter((item) => item.role === 'recommendations');
+      const check = getVariationConflicts({
+        reference: found.concept,
+        originalBrief: rounds[0]?.briefForRecommendations || project.intentions.initialBrief,
+        preferences: project.intentions.preferences,
+      });
+      if (check.blockedReason) return {
+        ...project, variationRequest: { ...req, stage: 'error', error: check.blockedReason },
+      };
+      if (check.conflicts.length) return {
+        ...project, variationRequest: { ...req, stage: 'conflicts', conflicts: check.conflicts },
+      };
+      if (unfinishedFeedbackCount(project)) return {
+        ...project, variationRequest: { ...req, stage: 'feedback' },
+      };
+      return generateVariationRound(project, req);
+    }));
+  }
+
+  function resolveVariationConflict(choice) {
+    if (!['respect', 'keep-reference'].includes(choice)) return;
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || project.variationRequest?.stage !== 'conflicts') return project;
+      const req = { ...project.variationRequest, conflictResolution: choice };
+      if (unfinishedFeedbackCount(project)) return {
+        ...project, variationRequest: { ...req, stage: 'feedback' },
+      };
+      return generateVariationRound(project, req);
+    }));
+  }
+
+  function continueVariationsWithoutFeedback() {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || project.variationRequest?.stage !== 'feedback') return project;
+      return generateVariationRound(project, project.variationRequest);
+    }));
+  }
+
+
   // Milestone 4.3: begin a separate editing transaction. Nothing confirmed changes yet.
   function beginPreferenceEdit() {
     setProjects((current) => current.map((project) => {
@@ -511,6 +661,7 @@ function App() {
                       </section>
                     ) : (
                       <ConversationView
+                        key={activeProject.id}
                         messages={activeProject.messages}
                         composer={renderComposer(true)}
                         selectedConceptId={activeProject.exploration.selectedConceptId}
@@ -518,6 +669,13 @@ function App() {
                         onSelectConcept={selectConcept}
                         feedbackDrafts={activeProject.feedbackDrafts}
                         onExploreNewDirections={exploreNewDirections}
+                        onStartVariations={startVariations}
+                        onToggleVariationDimension={toggleVariationDimension}
+                        onPrepareVariations={prepareVariations}
+                        onResolveVariationConflict={resolveVariationConflict}
+                        onContinueVariationsWithoutFeedback={continueVariationsWithoutFeedback}
+                        onCancelVariations={closeVariationRequest}
+                        variationRequest={activeProject.variationRequest}
                         onToggleDraftAttribute={toggleDraftAttribute}
                         onRateDraftAttribute={rateDraftAttribute}
                         onRemoveDraftAttribute={removeDraftAttribute}

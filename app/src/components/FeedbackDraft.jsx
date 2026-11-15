@@ -5,22 +5,20 @@ const OPTIONS = [
 ];
 
 export default function FeedbackDraft({ recommendationMessageId, items, onRate, onRemove, onConfirm }) {
-  const ratedCount = items.filter((item) => item.sentiment !== null).length;
+  const rated = items.filter((item) => item.sentiment !== null);
 
   return (
     <section className="feedback-draft" data-feedback-for={recommendationMessageId} aria-label="Shared design attribute feedback">
       <div className="feedback-draft-heading">
         <div>
           <h3>Your feedback draft</h3>
-          <p>Review attributes selected across the three concepts. Nothing is applied yet.</p>
+          <p>Only saved ratings will influence later recommendations.</p>
         </div>
-        <span className="feedback-draft-count">{ratedCount}/{items.length} rated</span>
+        {items.length > 0 && <span className="feedback-draft-count">{rated.length}/{items.length} rated</span>}
       </div>
 
       {items.length === 0 ? (
-        <p className="feedback-draft-empty">
-          Select a colour, typography, layout or style chip on any concept to add it here.
-        </p>
+        <p className="feedback-draft-empty">Select any attributes above to start. You can also hide this section and continue exploring without feedback.</p>
       ) : (
         <div className="feedback-draft-items">
           {items.map((item) => (
@@ -28,14 +26,9 @@ export default function FeedbackDraft({ recommendationMessageId, items, onRate, 
               <div className="feedback-item-heading">
                 <div>
                   <strong>{item.label}</strong>
-                  <span>{item.category} · From {item.sourceConceptLabel || item.sourceConceptId.replace('concept-', '')}</span>
+                  <span>{item.category} · From {item.sourceConceptLabel || item.sourceConceptId?.replace('concept-', '') || 'selected concept'}</span>
                 </div>
-                <button
-                  type="button"
-                  className="feedback-remove"
-                  aria-label={`Remove ${item.label} from feedback draft`}
-                  onClick={() => onRemove(item.id)}
-                >
+                <button type="button" className="feedback-remove" aria-label={`Remove ${item.label} from feedback draft`} onClick={() => onRemove(item.id)}>
                   Remove ×
                 </button>
               </div>
@@ -56,36 +49,34 @@ export default function FeedbackDraft({ recommendationMessageId, items, onRate, 
           ))}
         </div>
       )}
-      <div className="feedback-draft-footer">
-        <div className="feedback-review-summary">
-          <strong>Review before confirming</strong>
-          {ratedCount > 0 ? (
-            <ul>
-              {items.filter((item) => item.sentiment !== null).map((item) => (
-                <li key={item.id}>
-                  <span className={`preference-sentiment preference-sentiment-${item.sentiment}`}>
-                    {item.sentiment === 'like' ? 'Like' : item.sentiment === 'avoid' ? 'Avoid' : 'Not sure'}
-                  </span>
-                  {item.label}
-                </li>
-              ))}
-            </ul>
+
+      {items.length > 0 && (
+        <div className="feedback-draft-footer">
+          {rated.length > 0 ? (
+            <>
+              <div className="feedback-review-summary">
+                <strong>Review before saving</strong>
+                <ul>
+                  {rated.map((item) => (
+                    <li key={item.id}>
+                      <span className={`preference-sentiment preference-sentiment-${item.sentiment}`}>
+                        {item.sentiment === 'like' ? 'Like' : item.sentiment === 'avoid' ? 'Avoid' : 'Not sure'}
+                      </span>
+                      {item.label}
+                    </li>
+                  ))}
+                </ul>
+                <p>Only the rated attributes will be saved. Any unrated selections remain in your draft.</p>
+              </div>
+              <button type="button" className="feedback-confirm-button" onClick={onConfirm}>
+                Save {rated.length} {rated.length === 1 ? 'preference' : 'preferences'}
+              </button>
+            </>
           ) : (
-            <p>Select Like, Avoid or Not sure for at least one attribute.</p>
+            <p className="feedback-draft-empty">Choose Like, Avoid or Not sure for an attribute when you're ready. No preferences have been applied.</p>
           )}
-          <p>
-            Only rated attributes will be saved. Any unrated selections will remain in your draft.
-          </p>
         </div>
-        <button
-          type="button"
-          className="feedback-confirm-button"
-          disabled={ratedCount === 0}
-          onClick={onConfirm}
-        >
-          Confirm {ratedCount} {ratedCount === 1 ? 'preference' : 'preferences'}
-        </button>
-      </div>
+      )}
     </section>
   );
 }

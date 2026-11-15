@@ -145,7 +145,7 @@ function fingerprint(concept) {
   return [concept.styleId, concept.palette, concept.typography, concept.layout].join('|');
 }
 
-function explicitRequirements(brief) {
+export function explicitRequirements(brief) {
   // Limit 'hard' requirements to the small vocabulary this prototype can parse.
   // General wishes ('I want...', 'professional...') remain softer prompt hints.
   const requirements = { colour: new Set(), typography: new Set(), layout: new Set() };
@@ -165,12 +165,13 @@ function explicitRequirements(brief) {
   return requirements;
 }
 
-function matchedPreference(concept, preference) {
+export function matchedPreference(concept, preference) {
   switch (preference.category) {
     case 'Colour': return concept.palette === preference.value;
     case 'Typography': return concept.typography === preference.value;
     case 'Layout': return concept.layout === preference.value;
     case 'Style': return concept.styleId === preference.value;
+    case 'Decoration': return (concept.decorationId || concept.styleId) === preference.value;
     default: return false;
   }
 }
