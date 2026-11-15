@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
+import CommunityGallery from './components/CommunityGallery';
 import ProjectTabs from './components/ProjectTabs';
 import ModeSwitcher from './components/ModeSwitcher';
 import PromptComposer from './components/PromptComposer';
@@ -17,6 +18,7 @@ import BriefUpdateDialog from './components/BriefUpdateDialog';
 import NewDirectionConflictDialog from './components/NewDirectionConflictDialog';
 import './App.css';
 import './Phase2.css';
+import './Phase3.css';
 
 function createProject(id) {
   return {
@@ -56,6 +58,8 @@ function createProject(id) {
 function App() {
   const [projects, setProjects] = useState([createProject(1)]);
   const [activeId, setActiveId] = useState(1);
+  // Navigation is global: Community is available even without a selected project.
+  const [activeWorkspace, setActiveWorkspace] = useState('design');
   const nextProjectId = useRef(2);
 
   const activeProject = projects.find((project) => project.id === activeId);
@@ -72,10 +76,12 @@ function App() {
     const id = nextProjectId.current++;
     setProjects((current) => [...current, createProject(id)]);
     setActiveId(id);
+    setActiveWorkspace('design');
   }
 
   function selectProject(id) {
     setActiveId(id);
+    setActiveWorkspace('design');
   }
 
   function closeProject(id) {
@@ -706,18 +712,23 @@ function App() {
         activeId={activeId}
         onNewProject={newProject}
         onSelectProject={selectProject}
-        onHome={() => updateProject({ mode: 'explore' })}
+        onHome={() => { setActiveWorkspace('design'); updateProject({ mode: 'explore' }); }}
+        onCommunity={() => setActiveWorkspace('community')}
+        communityActive={activeWorkspace === 'community'}
       />
 
       <div className="main-area">
-        <ProjectTabs
+        {activeWorkspace === 'design' && <ProjectTabs
           projects={projects}
           activeId={activeId}
           onSelect={selectProject}
           onClose={closeProject}
           onNew={newProject}
-        />
+        />}
 
+        {activeWorkspace === 'community' ? (
+          <main className="workspace phase3-workspace"><CommunityGallery /></main>
+        ) : (
         <main className="workspace phase2-workspace">
           {activeProject ? (
             <>
@@ -836,8 +847,9 @@ function App() {
             />
           )}
         </main>
+        )}
       </div>
-      {activeProject?.briefReview && (
+      {activeWorkspace === 'design' && activeProject?.briefReview && (
         <BriefUpdateDialog
           review={activeProject.briefReview}
           onToggle={toggleBriefProposal}
@@ -846,7 +858,7 @@ function App() {
           onCancel={cancelBriefUpdates}
         />
       )}
-      {activeProject?.directionRequest && !activeProject.briefReview && (
+      {activeWorkspace === 'design' && activeProject?.directionRequest && !activeProject.briefReview && (
         <NewDirectionConflictDialog
           conflicts={activeProject.directionRequest.conflicts}
           onResolve={resolveNewDirectionConflict}

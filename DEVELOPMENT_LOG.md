@@ -1999,3 +1999,113 @@ The results provide evidence that the implemented interaction mechanisms work to
 **Phase 2 is considered complete for its planned implementation and integration-testing scope.**
 
 The project can now progress to Phase 3 — Community Inspiration, followed by further prototype development and subsequent usability and accessibility evaluation.
+
+## Phase 3 — Milestone 3.1: Community Inspiration Gallery
+
+**Date:** 15 November 2026  
+**Status:** Completed — Implementation and manual integration testing passed
+
+### 1. Objective
+
+The objective of Milestone 3.1 was to introduce a Community Inspiration Gallery that supports users in exploring creative ideas beyond their existing business-card design projects.
+
+The gallery was designed to encourage open-ended visual discovery across multiple creative disciplines, rather than limiting inspiration to business-card templates.
+
+The interface follows a Behance-inspired browsing approach, using visual project cards, category navigation, search and filtering.
+
+### 2. Implementation
+
+The following functionality was implemented:
+
+**Community Gallery**
+
+- Added a curated gallery containing 16 original sample artworks.
+- Included creative categories such as Graphic Design, Photography, Illustration, Branding, UI/UX, 3D Art, Architecture and Typography.
+- Implemented a responsive grid of project thumbnails with titles and descriptive metadata.
+- Added text-based search, category filtering, style filtering, sorting and an empty-results state.
+- Used local SVG assets and predefined project metadata to keep the prototype manageable and independent of external services.
+
+**Navigation and Accessibility**
+
+- Integrated Community Inspiration into the existing left sidebar.
+- Enabled the previously inactive Community navigation item.
+- Removed the redundant top-level Community navigation introduced during initial integration.
+- Added active-navigation highlighting for Home and Community.
+- Enabled access to the gallery without creating or selecting a project.
+- Retained the existing project navigation and Design Workspace.
+- Checked that primary navigation, search and filtering controls were reachable through keyboard Tab navigation.
+
+**Project State and Integration**
+
+- Preserved existing project conversations, recommendations, preferences and design approvals when switching between Community Inspiration and the Design Workspace.
+- Kept gallery browsing independent of the currently selected project.
+- Ensured that viewing gallery content does not automatically change the Active Design Brief or confirmed preferences.
+
+### 3. Main Files
+
+| File or directory                     | Purpose                                                                    |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| `src/App.jsx`                         | Integrates Community Gallery into the application navigation and workspace |
+| `src/components/Sidebar.jsx`          | Enables Community navigation and active-page highlighting                  |
+| `src/components/CommunityGallery.jsx` | Implements the gallery interface and browsing interactions                 |
+| `src/data/communityProjects.js`       | Defines the curated sample project data                                    |
+| `src/Phase3.css`                      | Provides gallery styling and responsive behaviour                          |
+| `public/community-images/`            | Contains the sample SVG artwork                                            |
+
+### 4. Integration Adjustments
+
+During initial integration, Vite reported unresolved imports for `CommunityGallery.jsx` and `communityProjects.js`. The required files were placed in their expected project directories, resolving the import errors.
+
+The gallery navigation was also revised following visual inspection. The initial implementation introduced a separate top navigation bar, but this duplicated the existing Community item in the sidebar.
+
+The final implementation uses the existing sidebar Community button instead, maintaining consistency with the original Intenta layout.
+
+All 16 artwork thumbnails subsequently loaded successfully during testing.
+
+### 5. Testing
+
+Manual functional and integration testing was conducted in Google Chrome.
+
+| Test      | Scope                                                                                                | Result           |
+| --------- | ---------------------------------------------------------------------------------------------------- | ---------------- |
+| 3.1A      | Gallery browsing, artwork loading, search, category filters, style filters and sorting               | 8/8 passed       |
+| 3.1B      | Sidebar navigation, project independence, responsiveness, keyboard navigation and Phase 2 regression | 11/11 passed     |
+| **Total** | **19 checks**                                                                                        | **19/19 passed** |
+
+**Responsive testing**
+
+The gallery was tested at three viewport sizes:
+
+- 1366 × 768 — Laptop
+- 1920 × 1080 — Desktop
+- 2560 × 1440 — Large monitor
+
+The interface remained usable across all three tested viewport sizes without reported overlapping or clipped controls.
+
+**Integration verification**
+
+Testing confirmed that users could switch between Community Inspiration and the Design Workspace while retaining project-specific conversation history, confirmed preferences and previously approved designs.
+
+Existing Phase 2 recommendation generation and Choose Next Step functionality also remained operational.
+
+### 6. Limitations
+
+The gallery currently uses curated mock data rather than a live community database. It does not support real community accounts, project uploads or dynamic content retrieval.
+
+Detailed artwork views and selecting inspiration attributes are not included in this milestone.
+
+Browsing inspiration is currently independent of the design workflow. Transferring inspiration into a business-card project will be implemented in a subsequent milestone, with explicit user confirmation.
+
+The accessibility checks performed in this milestone covered basic keyboard Tab navigation. They do not constitute a comprehensive accessibility audit.
+
+Project information continues to be held in React application memory. Persistent storage across browser refreshes is not part of the current implementation.
+
+### 7. Outcome and Next Steps
+
+Milestone 3.1 successfully introduced an independent, Behance-inspired creative gallery with functional browsing and responsive layouts.
+
+All 19 planned integration checks passed, with no unresolved failures reported.
+
+The milestone is considered complete for its planned implementation and testing scope.
+
+**Next milestone: Phase 3.2 — Inspiration Project Details**, focusing on detailed artwork viewing and allowing users to identify design characteristics that inspire them, without automatically modifying existing projects.
