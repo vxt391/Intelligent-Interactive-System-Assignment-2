@@ -1905,3 +1905,97 @@ The review should examine whether the complete workflow behaves consistently fro
 Further development can then proceed to the remaining planned phases, including Community Inspiration and object-level refinement.
 
 Responsive behaviour should continue to be tested across laptop and larger-monitor display sizes.
+
+## Phase 2 — Final Integration Testing
+
+**Date:** 15 November 2026  
+**Status:** Completed — All planned integration tests passed  
+**Testing approach:** Manual functional and integration testing in Google Chrome  
+**Environment:** React/Vite prototype, Windows, Google Chrome
+
+### Objective
+
+The purpose of this testing stage was to verify that the features implemented throughout Phase 2 work together consistently and support the complete design-exploration workflow.
+
+Testing focused on interaction continuity, explicit user control, structured preference management, conversational intention updates, design recommendation generation, conflict resolution, design approval, project independence and responsive interface behaviour.
+
+### Test Results
+
+A total of **15 test scenarios containing 148 individual checks** were completed.
+
+| Test      | Area tested                                                  | Result             |
+| --------- | ------------------------------------------------------------ | ------------------ |
+| 1.1       | Initial prompt submission and recommendation generation      | 7/7 passed         |
+| 2.1       | Prompt Assistance — Submit Suggestion                        | 8/8 passed         |
+| 2.2       | Prompt Assistance — Submit Original                          | 7/7 passed         |
+| 3.1       | Structured attribute feedback and confirmation               | 8/8 passed         |
+| 3.2       | Editing confirmed preferences                                | 10/10 passed       |
+| 4.1       | Explore New Directions and unfinished feedback               | 10/10 passed       |
+| 4.2       | Revisiting feedback from earlier recommendation rounds       | 10/10 passed       |
+| 5.1       | Explore Variations from earlier concepts                     | 10/10 passed       |
+| 5.2       | Variation preference conflicts and resolution                | 10/10 passed       |
+| 6.1       | Conversational follow-up instructions                        | 11/11 passed       |
+| 6.2       | Unsupported instructions and preference conflicts            | 11/11 passed       |
+| 6.3       | Active Design Brief conflicts during Explore New Directions  | 10/10 passed       |
+| 7.1       | Design approval and completion                               | 10/10 passed       |
+| 7.2       | Returning to exploration and changing an approved design     | 12/12 passed       |
+| 8         | Project independence, responsive design and final regression | 14/14 passed       |
+| **Total** | **15 test scenarios**                                        | **148/148 passed** |
+
+### Key Findings
+
+**1. Intention management and explicit confirmation**
+
+The prototype successfully maintains a distinction between the Original Brief, Active Design Brief, confirmed attribute preferences and unfinished feedback drafts. Users can review, confirm, edit, cancel or remove preferences without unintentionally modifying other project information.
+
+**2. Conversation and recommendation continuity**
+
+Multiple recommendation rounds remain accessible in conversation history. Users can revisit earlier rounds, confirm previously unfinished feedback and generate new recommendations using their latest confirmed intentions. Existing recommendations are preserved rather than retroactively regenerated.
+
+**3. Controlled design exploration**
+
+Explore New Directions and Explore Variations support different exploration goals. The former considers the Active Design Brief and confirmed preferences, while the latter uses a selected concept as a reference and supports optional attribute-specific variation. The prototype also communicates limitations when its predefined design catalogue cannot provide every requested variation.
+
+**4. Conflict handling and transparency**
+
+Tests confirmed that the prototype identifies supported conflicts between design requirements, confirmed Avoid preferences and selected reference concepts. Users can explicitly choose how to proceed without silently overwriting saved intentions. Unsupported natural-language instructions are identified rather than treated as successfully interpreted.
+
+**5. Design approval and reversibility**
+
+Selecting a concept does not automatically approve it. Users must explicitly confirm a design before entering the exploration-completion state. They can subsequently return to exploration, generate additional recommendations and approve a different concept while preserving the earlier history.
+
+**6. Project independence and responsive design**
+
+Project-specific conversations, recommendations, preferences and approvals remained independent when switching between projects during the same running session.
+
+Responsive behaviour was manually checked at the following viewport sizes:
+
+- 1366 × 768 — laptop
+- 1920 × 1080 — desktop
+- 2560 × 1440 — large monitor
+
+The interface remained usable across the tested sizes. The conversation composer expanded and contracted with text input, maintained a maximum height and did not obstruct essential interface controls.
+
+### Issues Identified
+
+No failures or blocking issues remained unresolved during the final integration-testing stage. All reported checks passed, and no additional implementation fixes were required as a result of these tests.
+
+### Scope and Limitations
+
+These results reflect manual testing of the implemented prototype under the specified test scenarios. They do not establish exhaustive test coverage or guarantee the absence of bugs.
+
+The recommendation functionality is a deterministic, rule-based simulation using a predefined design catalogue, rather than an integrated generative AI model. Consequently, design coverage and natural-language interpretation remain constrained by the implemented rules and supported attributes.
+
+Project information is maintained in React application memory. Project independence was verified within an active session; persistence after browser refresh, application restart, or across devices was not tested and should not be assumed.
+
+Responsive testing covered three laptop/desktop viewport sizes. Comprehensive accessibility conformance and usability testing with external participants are outside the scope of these integration checks.
+
+### Conclusion
+
+Phase 2 successfully passed all 15 planned integration scenarios, with **148 checks passed, 0 failed and 0 pending**.
+
+The results provide evidence that the implemented interaction mechanisms work together consistently, particularly in supporting the expression, review, refinement and confirmation of users' design intentions.
+
+**Phase 2 is considered complete for its planned implementation and integration-testing scope.**
+
+The project can now progress to Phase 3 — Community Inspiration, followed by further prototype development and subsequent usability and accessibility evaluation.
