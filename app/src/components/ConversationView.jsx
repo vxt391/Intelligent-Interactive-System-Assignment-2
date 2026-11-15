@@ -124,6 +124,8 @@ export default function ConversationView({
                       ? 'Intenta · Preferences confirmed'
                       : message.role === 'design-approved'
                         ? 'Intenta · Design approval'
+                      : message.role === 'brief-updated'
+                        ? 'Intenta · Active brief updated'
                       : message.role === 'preferences-edited'
                         ? 'Intenta · Preferences updated'
                       : 'Prototype notice'}
@@ -176,6 +178,24 @@ export default function ConversationView({
                     You can return to exploration later. Your individual confirmed preferences and feedback drafts are unchanged.
                     This approval is part of the in-memory prototype, not a permanent save or export.
                   </p>
+                </div>
+              ) : message.role === 'brief-updated' ? (
+                <div className="brief-update-history" aria-label="Confirmed design brief updates">
+                  <p>Your Active Design Brief has been updated. No recommendations were generated automatically.</p>
+                  <ul>
+                    {message.changes.map((change) => (
+                      <li key={change.dimension}>
+                        <strong>{change.label}:</strong> {change.mode === 'avoid' ? 'Avoid' : 'Use'} {change.value}
+                      </li>
+                    ))}
+                  </ul>
+                  {message.removedPreferences?.length > 0 && (
+                    <p>With your approval, removed conflicting Avoid preferences: {message.removedPreferences.map((p) => p.label).join(', ')}.</p>
+                  )}
+                  {message.unsupported?.length > 0 && (
+                    <p className="brief-update-history-note">Other wording was not applied as design rules.</p>
+                  )}
+                  <p className="brief-update-history-note">Choose Next Step when you're ready to generate more designs.</p>
                 </div>
               ) : message.role === 'preferences-edited' ? (
                 <div className="preference-confirmation" aria-label="Saved preference edits">
@@ -280,7 +300,7 @@ export default function ConversationView({
             <p className="conversation-compose-title">Or continue with a prompt</p>
             {composer}
             <p className="conversation-compose-note">
-              Concepts are simulated CSS designs. Saved preferences guide new directions; variations use a selected reference.
+              Concepts are simulated CSS designs. Confirmed updates to the Active Design Brief and saved preferences guide later rounds.
             </p>
           </>
         )}

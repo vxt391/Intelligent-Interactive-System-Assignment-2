@@ -1,3 +1,4 @@
+import { describeActiveBrief } from '../utils/followUpBrief';
 const GROUPS = [
   { value: 'like', heading: 'Liked attributes', empty: 'No liked attributes yet.' },
   { value: 'avoid', heading: 'Attributes to avoid', empty: 'No attributes to avoid yet.' },
@@ -12,6 +13,7 @@ const FEEDBACK_OPTIONS = [
 
 export default function IntentionPanel({
   intentions,
+  activeBrief,
   preferenceEdit,
   pendingChanges,
   onBeginEdit,
@@ -53,6 +55,23 @@ export default function IntentionPanel({
           ) : (
             <p className="intention-empty">Your first submitted prompt will appear here.</p>
           )}
+        </section>
+
+        <section className="intention-section" aria-label="Active design brief">
+          <h3>Active design brief</h3>
+          {activeBrief?.submittedText ? (
+            <>
+              <p className="intention-brief">Submitted instructions: {activeBrief.submittedText}</p>
+              {describeActiveBrief(activeBrief).length > 0 ? (
+                <ul className="active-brief-updates">
+                  {describeActiveBrief(activeBrief).map((description) => <li key={description}>{description}</li>)}
+                </ul>
+              ) : (
+                <p className="intention-empty">No follow-up updates confirmed yet.</p>
+              )}
+              <p className="intention-empty">Confirmed updates replace earlier cues only for the relevant attribute. They do not rewrite your original wording.</p>
+            </>
+          ) : <p className="intention-empty">Your submitted design instructions will appear here.</p>}
         </section>
 
         {editing ? (
@@ -139,8 +158,8 @@ export default function IntentionPanel({
             </div>
             {intentions.preferences.length === 0 && (
               <p className="intention-empty">
-                No confirmed preferences yet. Select and rate attributes on the concepts,
-                then confirm them in the shared feedback area.
+                No confirmed preferences yet. Open Give Design Feedback in a recommendation round,
+                select and rate attributes, then confirm your choices.
               </p>
             )}
             {GROUPS.map((group) => {
@@ -166,7 +185,7 @@ export default function IntentionPanel({
         )}
 
         <p className="intention-footnote">
-          Only confirmed Like and Avoid feedback will influence future recommendation rounds.
+          Recognised active-brief instructions and confirmed Like/Avoid feedback guide future recommendations.
           Not sure remains visible without constraining recommendations.
         </p>
       </div>

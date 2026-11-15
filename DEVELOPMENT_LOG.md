@@ -1541,3 +1541,367 @@ The next development stage should review the remaining continuity and conflict-h
 Further implementation should preserve the existing simplified interface, approval workflow and responsive design improvements.
 
 After the remaining Phase 2 requirements are completed and tested, subsequent development can address community inspiration and object-level refinement according to the project plan.
+
+## Phase 2 — Milestone 5.4: Conversational Continuity and Conflict Handling
+
+**Date:** 15 November 2026  
+**Status:** Implemented and manually tested
+
+### 1. Objective
+
+The objective of this milestone was to improve consistency between users' natural-language instructions, confirmed design preferences and subsequent recommendations.
+
+During a review of the existing Phase 2 implementation, two important limitations were identified:
+
+1. Follow-up conversational prompts were displayed in conversation history but did not update the requirements used by the recommendation engine.
+2. Conflicting instructions were not handled consistently across initial recommendations, Explore New Directions and Explore Variations.
+
+These limitations could lead to situations where users communicated new creative intentions but the generated recommendations continued to follow outdated instructions.
+
+Milestone 5.4 addresses these issues while preserving the simplified interaction interface developed in previous milestones.
+
+### 2. Implementation
+
+#### 2.1 Original Brief and Active Design Brief
+
+Introduced a distinction between two forms of design-brief information:
+
+**Original Brief**
+
+- Preserves the user's initial wording.
+- Provides a historical record of the original creative request.
+- Is not overwritten by subsequent changes.
+
+**Active Design Brief**
+
+- Represents the currently accepted design requirements.
+- Is initialised using the prompt actually submitted by the user, including any explicitly selected Prompt Assistance wording.
+- Can be updated through reviewed and confirmed follow-up instructions.
+- Is used by subsequent recommendation generation.
+
+This separation allows users to revise their requirements without losing the original context.
+
+#### 2.2 Natural-language follow-up interpretation
+
+Extended the conversation workflow to support structured interpretation of follow-up design instructions.
+
+The rule-based interpretation mechanism identifies supported changes involving:
+
+- Colour palettes.
+- Typography.
+- Layout.
+- Decorative details.
+
+For example, a follow-up such as "Actually, make it navy blue and use sans-serif typography" can be interpreted as proposed changes to the active colour and typography requirements.
+
+The mechanism uses predefined design categories rather than a general-purpose natural-language understanding model.
+
+#### 2.3 Explicit review and confirmation
+
+Implemented a review workflow for proposed changes to the Active Design Brief.
+
+When a follow-up instruction contains recognised design changes:
+
+- The system identifies the supported modifications.
+- A review dialog displays the proposed changes.
+- Users can review individual modifications.
+- Users can exclude changes they do not want to apply.
+- The active requirements are updated only after explicit confirmation.
+- Cancelling the review leaves the existing requirements unchanged.
+
+Submitting a message therefore does not automatically modify the user's active design requirements.
+
+#### 2.4 Incremental brief updates
+
+Implemented incremental updating rather than replacing the entire brief after every follow-up message.
+
+For example:
+
+**Existing Active Design Brief:**
+
+- Green palette.
+- Structured layout.
+- Professional appearance.
+
+**Confirmed follow-up:** Change the palette to navy.
+
+**Updated Active Design Brief:**
+
+- Navy palette.
+- Structured layout.
+- Professional appearance.
+
+Previously accepted requirements that are unrelated to the proposed changes are preserved.
+
+This allows users to refine individual aspects of a design without repeatedly restating their full brief.
+
+#### 2.5 Handling unsupported instructions
+
+Added transparent handling for instructions outside the predefined rule-based vocabulary.
+
+When the system cannot reliably interpret part of a follow-up request:
+
+- The unsupported wording is identified.
+- The system does not silently invent an interpretation.
+- Recognised changes can still be reviewed individually.
+- Unsupported instructions are not applied as structured design constraints.
+- The user's message remains visible in conversation history.
+
+This prevents the prototype from presenting limited natural-language processing as unrestricted AI understanding.
+
+#### 2.6 Preference conflict handling
+
+Extended conflict-handling behaviour to improve consistency between active requirements and confirmed preferences.
+
+Potential conflicts can arise when:
+
+- An active brief explicitly requires an attribute.
+- The same attribute has been marked Avoid in Current Intentions.
+
+For example, the Active Design Brief may require a green palette while the user has confirmed an Avoid preference for green.
+
+The revised workflow requires an explicit decision where such conflicts are detected.
+
+Conflict resolution can allow a temporary, round-specific exception without silently overwriting stored preferences or requirements.
+
+This extends the transparent conflict-resolution approach already introduced in Explore Variations.
+
+#### 2.7 Recommendation consistency
+
+Updated recommendation utilities so that subsequent design-generation requests use the latest confirmed Active Design Brief.
+
+The changes address:
+
+- Using active rather than outdated design instructions.
+- Considering confirmed preferences during recommendation generation.
+- Handling supported exclusions more consistently.
+- Maintaining compatibility with existing Explore Variations behaviour.
+- Preserving the original recommendation templates where possible.
+
+An additional backward-compatibility issue was identified during code-level validation: an early version of the changes altered the initial concept-selection behaviour unnecessarily.
+
+This was corrected so that familiar initial design styles remain available while supported exclusions are enforced.
+
+#### 2.8 No automatic recommendation generation
+
+The student selected an explicit user-controlled workflow.
+
+After confirming a follow-up update:
+
+- The Active Design Brief is updated.
+- The system communicates the accepted changes.
+- No new recommendation round is generated automatically.
+- Users decide whether to continue through Choose Next Step.
+
+This preserves the distinction between updating intentions and requesting new design recommendations.
+
+#### 2.9 Conversation and project continuity
+
+The implementation preserves existing Phase 2 functionality, including:
+
+- Earlier recommendation rounds.
+- Unfinished attribute-feedback drafts.
+- Confirmed Like, Avoid and Not Sure preferences.
+- Previously approved designs.
+- Project-specific design state.
+- Explore New Directions.
+- Explore Variations.
+- Use This Design and Return to Exploration.
+
+The continuity changes were designed to integrate with these existing features rather than introduce another complex primary workflow.
+
+### 3. Design and Technical Decisions
+
+**3.1 Explicit user control**
+
+Changes to active requirements must be reviewed and confirmed before being applied.
+
+This prevents the system from treating every conversational statement as a permanent design constraint.
+
+**3.2 Preservation of the original request**
+
+The original wording is maintained independently from revised instructions, allowing users to understand how their intentions have evolved.
+
+**3.3 Incremental intention refinement**
+
+Users can revise individual design attributes without having to rewrite the complete design brief.
+
+**3.4 Separation of information types**
+
+The application distinguishes between:
+
+- Original instructions.
+- Active requirements.
+- Confirmed attribute preferences.
+- Unconfirmed feedback.
+- Provisional concept selection.
+- Approved design selection.
+
+Each type of information serves a different purpose in the interaction workflow.
+
+**3.5 Transparent limitations**
+
+The rule-based interpretation mechanism should only claim to recognise attributes supported by the prototype.
+
+Unsupported or ambiguous instructions must not be silently treated as successfully understood.
+
+**3.6 Consistent conflict resolution**
+
+Where supported design requirements contradict confirmed Avoid preferences, the system asks users to resolve the conflict instead of silently deciding which instruction takes priority.
+
+**3.7 Controlled recommendation generation**
+
+Updating the Active Design Brief does not automatically trigger generation. Users retain control over whether and when to explore additional designs.
+
+**3.8 Maintaining interface simplicity**
+
+The implementation reuses existing dialog patterns and the Choose Next Step interface, avoiding the introduction of additional prominent controls.
+
+Responsive design and the previously approved auto-expanding composer were preserved.
+
+### 4. Relevance to Intelligent Interactive Systems
+
+This milestone directly supports Intenta's research question:
+
+_How do structured and visual interaction techniques support users in expressing and refining their intentions during generative AI-assisted visual content creation?_
+
+The implementation demonstrates several relevant interaction principles.
+
+**Mixed-initiative interaction**
+
+Users express design intentions through natural-language messages, while the system proposes structured interpretations for review.
+
+The system contributes by identifying possible changes, but the user determines which changes are accepted.
+
+**User agency**
+
+Design requirements are not silently modified. Users can confirm, reject or selectively apply proposed changes.
+
+**Transparency and explainability**
+
+The interface communicates what the system has recognised, which changes it proposes and when a conflict requires attention.
+
+**Interaction continuity**
+
+The Active Design Brief maintains the latest accepted requirements while preserving earlier instructions and recommendation history.
+
+**Error prevention**
+
+Explicit review helps reduce the risk of unintended changes caused by ambiguous instructions or imperfect rule-based interpretation.
+
+**Progressive intention refinement**
+
+Users can gradually clarify design requirements through conversation and structured feedback rather than specifying every detail at the beginning.
+
+These capabilities help the system support evolving creative intentions instead of relying exclusively on the initial prompt.
+
+### 5. AI Assistance and Student Contributions
+
+**ChatGPT assisted with:**
+
+- Reviewing the existing Phase 2 implementation to identify continuity gaps.
+- Designing the Original Brief and Active Design Brief separation.
+- Implementing rule-based interpretation of follow-up instructions.
+- Creating the review-and-confirmation workflow.
+- Implementing incremental updates to active design requirements.
+- Adding transparent handling for unsupported instructions.
+- Extending conflict-resolution behaviour.
+- Updating recommendation utilities to use current accepted requirements.
+- Checking compatibility with Explore New Directions and Explore Variations.
+- Performing code-level syntax and regression testing.
+- Preparing installation instructions and manual testing guidance.
+
+**The student:**
+
+- Approved explicit review and confirmation of conversational follow-up instructions.
+- Selected incremental brief updates rather than rewriting the original request.
+- Required the original brief, confirmed preferences and unfinished feedback to remain separate.
+- Approved transparent handling of unsupported instructions.
+- Selected explicit conflict resolution rather than silent preference overrides.
+- Chose not to automatically generate recommendations after confirming brief updates.
+- Required the changes to preserve the simplified interface and responsive layout.
+- Integrated the updated files into the existing React application.
+- Encountered and resolved an issue that initially caused the localhost interface to appear blank.
+- Tested the corrected application in Google Chrome.
+- Confirmed that the updated functionality worked as expected.
+
+### 6. Testing and Validation
+
+**Development environment:** React, Vite, JavaScript and CSS.
+
+**Browser:** Google Chrome.
+
+Code-level validation was conducted during implementation.
+
+This included JavaScript/JSX syntax validation, CSS parsing and 23 targeted data-layer tests covering:
+
+- Initial and active design requirements.
+- Incremental brief modifications.
+- Selective confirmation of proposed updates.
+- Preservation of unrelated requirements.
+- Handling of conflicting Avoid preferences.
+- Recommendation generation using updated instructions.
+- Compatibility with variation generation.
+- Preservation of existing project and feedback state.
+
+The targeted code-level checks passed.
+
+**Manual integration testing**
+
+During installation, the student encountered an issue in which the application displayed a blank localhost page.
+
+The student subsequently identified and resolved the issue locally. The specific cause was not recorded.
+
+After resolving the issue, the student tested the application and confirmed that the updated functionality worked as expected.
+
+The following areas were included in the provided manual testing guidance:
+
+| Test Area                       | Expected Behaviour                               |
+| ------------------------------- | ------------------------------------------------ |
+| Original and Active Brief       | Displayed as separate information                |
+| Follow-up instructions          | Supported changes are recognised                 |
+| Proposed change review          | Changes require confirmation                     |
+| Cancel                          | Does not update active requirements              |
+| Selective confirmation          | Applies only accepted changes                    |
+| Unsupported instructions        | Identified without silent application            |
+| Recommendation generation       | Uses confirmed active requirements               |
+| Conflict resolution             | Requires explicit user decisions                 |
+| Existing feedback and approvals | Preserved during updates                         |
+| Responsive interface            | Maintains previous composer and dialog behaviour |
+
+**Recorded result:** The student reported that the corrected application worked after manual testing.
+
+Formal automated browser-based end-to-end testing and a structured usability evaluation have not yet been conducted.
+
+### 7. Known Limitations
+
+- Natural-language interpretation supports only predefined design categories and expressions.
+- More complex requests may require additional interpretation rules.
+- Ambiguous or abstract design descriptions may not be fully understood.
+- Recommendation generation remains deterministic and rule-based.
+- The available design catalogue limits the possible recommendation combinations.
+- Project and conversation state are maintained in React memory rather than persistent storage.
+- The prototype does not yet provide permanent design saving or exporting.
+- Formal accessibility and usability evaluations remain outstanding.
+
+### 8. Milestone Outcome
+
+Milestone 5.4 improved the consistency and continuity of Intenta's iterative design workflow.
+
+Users can now communicate supported design revisions through follow-up messages, review the system's interpretation and explicitly update their active requirements.
+
+These changes influence subsequent recommendations while preserving the original design brief, previously confirmed preferences and interaction history.
+
+The milestone also strengthens conflict handling and maintains the user's control over when new design recommendations are generated.
+
+Together, these improvements provide a more coherent connection between conversational interaction, structured preference feedback and visual design exploration.
+
+### 9. Next Steps
+
+Following Milestone 5.4, the remaining Phase 2 functionality should be reviewed through an integrated regression test.
+
+The review should examine whether the complete workflow behaves consistently from initial prompt submission through iterative exploration, preference refinement and final design approval.
+
+Further development can then proceed to the remaining planned phases, including Community Inspiration and object-level refinement.
+
+Responsive behaviour should continue to be tested across laptop and larger-monitor display sizes.

@@ -5,7 +5,7 @@
  * This module does not call an AI image generator or persist any design.
  */
 import { PALETTES } from '../data/concepts';
-import { inspectPrompt, explicitRequirements, matchedPreference } from './recommendations';
+import { resolveBriefRules, getBriefPreferenceConflicts, matchedPreference } from './recommendations';
 
 export const VARIATION_DIMENSIONS = [
   { id: 'colour', label: 'Colour' },
@@ -47,32 +47,39 @@ function candidateKey(candidate) {
 }
 
 function asSingleRequirement(set, category) {
-  if (set.size > 1) return { blockedReason: `The original brief contains multiple strict ${category} requirements that this prototype cannot combine.` };
+  if (set.size > 1) return { blockedReason: `The active brief contains multiple strict ${category} requirements that this prototype cannot combine.` };
   return { value: [...set][0] || null };
 }
 
-function collectRules({ reference, originalBrief = '', preferences = [] }) {
-  const hints = inspectPrompt(originalBrief);
-  const hard = explicitRequirements(originalBrief);
+function collectRules({ reference, originalBrief = '', activeBrief = null, preferences = [], conflictResolution = null }) {
+  const briefConflicts = getBriefPreferenceConflicts({ originalBrief, activeBrief, preferences });
+  const briefDimensions = [...new Set(briefConflicts.map((item) => item.dimension))];
+  const roundOverrides = conflictResolution === 'respect'
+    ? { ignoreRequiredDimensions: briefDimensions }
+    : conflictResolution === 'keep-reference'
+      ? { ignoreBriefAvoidDimensions: briefConflicts.filter((item) => item.kind === 'brief-self').map((item) => item.dimension) }
+      : {};
+  const { hints, hard, requiredDecoration, avoidedDecoration } = resolveBriefRules(originalBrief, activeBrief, roundOverrides);
   const colour = asSingleRequirement(hard.colour, 'colour');
   const typography = asSingleRequirement(hard.typography, 'typography');
   const layout = asSingleRequirement(hard.layout, 'layout');
   const blockedReason = colour.blockedReason || typography.blockedReason || layout.blockedReason;
   const strict = { colour: colour.value, typography: typography.value, layout: layout.value };
-  const activeAvoids = preferences.filter((p) => p.sentiment === 'avoid');
+  const ignoredAvoidIds = new Set(conflictResolution === 'keep-reference'
+    ? briefConflicts.filter((item) => item.preferenceId).map((item) => item.preferenceId) : []);
+  const activeAvoids = preferences.filter((p) => p.sentiment === 'avoid' && !ignoredAvoidIds.has(p.id));
   const activeLikes = preferences.filter((p) => p.sentiment === 'like');
   if (blockedReason) return { blockedReason };
 
-  if ((strict.colour && hints.avoidedColours.includes(strict.colour)) ||
-      (strict.typography && hints.avoidedTypography.includes(strict.typography)) ||
-      (strict.layout && hints.avoidedLayouts.includes(strict.layout))) {
-    return { blockedReason: 'The original brief both requires and excludes the same design attribute. Please resolve the contradictory brief before exploring variations.' };
-  }
+  // Conflicting active-brief requirements are explicitly resolved per round.
 
   // An exact palette Avoid and a strict colour-family requirement can be
   // compatible (other shades may remain); only filter candidate values later.
   const refFamily = referencePaletteFamily(reference);
-  const conflicts = [];
+  const conflicts = briefConflicts.map((item) => ({
+    dimension: item.dimension, label: item.dimension, detail: item.detail,
+    kind: item.kind, preferenceId: item.preferenceId || null,
+  }));
   const add = (dimension, label, detail, kind) => {
     if (!conflicts.some((item) => item.dimension === dimension && item.detail === detail)) {
       conflicts.push({ dimension, label, detail, kind });
@@ -80,22 +87,28 @@ function collectRules({ reference, originalBrief = '', preferences = [] }) {
   };
 
   if (strict.colour && refFamily !== strict.colour) {
-    add('colour', 'Colour', `Your original brief requires ${strict.colour}, but this reference uses ${reference.palette}.`, 'requirement');
+    add('colour', 'Colour', `Your active brief requires ${strict.colour}, but this reference uses ${reference.palette}.`, 'requirement');
   }
   if (strict.typography && reference.typography !== strict.typography) {
-    add('typography', 'Typography', `Your original brief requires ${strict.typography === 'sans' ? 'sans-serif' : 'serif'} typography, but the reference differs.`, 'requirement');
+    add('typography', 'Typography', `Your active brief requires ${strict.typography === 'sans' ? 'sans-serif' : 'serif'} typography, but the reference differs.`, 'requirement');
   }
   if (strict.layout && reference.layout !== strict.layout) {
-    add('layout', 'Layout', `Your original brief requires a ${strict.layout} layout, but the reference differs.`, 'requirement');
+    add('layout', 'Layout', `Your active brief requires a ${strict.layout} layout, but the reference differs.`, 'requirement');
+  }
+  if (requiredDecoration && decorationOf(reference) !== requiredDecoration) {
+    add('decoration', 'Decorations', `Your active brief requires ${requiredDecoration} decorations, but the reference differs.`, 'requirement');
+  }
+  if (avoidedDecoration && decorationOf(reference) === avoidedDecoration) {
+    add('decoration', 'Decorations', `Your active brief excludes ${avoidedDecoration} decorations, but the reference uses them.`, 'brief-avoid');
   }
   if (refFamily && hints.avoidedColours.includes(refFamily)) {
-    add('colour', 'Colour', `Your original brief asks to avoid ${refFamily}, but the reference uses ${reference.palette}.`, 'brief-avoid');
+    add('colour', 'Colour', `Your active brief asks to avoid ${refFamily}, but the reference uses ${reference.palette}.`, 'brief-avoid');
   }
   if (hints.avoidedTypography.includes(reference.typography)) {
-    add('typography', 'Typography', `Your original brief asks to avoid this typography, but the reference uses it.`, 'brief-avoid');
+    add('typography', 'Typography', `Your active brief asks to avoid this typography, but the reference uses it.`, 'brief-avoid');
   }
   if (hints.avoidedLayouts.includes(reference.layout)) {
-    add('layout', 'Layout', `Your original brief asks to avoid this layout, but the reference uses it.`, 'brief-avoid');
+    add('layout', 'Layout', `Your active brief asks to avoid this layout, but the reference uses it.`, 'brief-avoid');
   }
   for (const preference of activeAvoids) {
     if (matchedPreference(reference, preference)) {
@@ -103,7 +116,7 @@ function collectRules({ reference, originalBrief = '', preferences = [] }) {
       if (dimension) add(dimension, preference.category, `Current Intentions marks “${preference.label}” as Avoid, but the selected reference uses it.`, 'confirmed-avoid');
     }
   }
-  return { strict, hints, activeAvoids, activeLikes, conflicts, refFamily };
+  return { strict, hints, activeAvoids, activeLikes, conflicts, refFamily, requiredDecoration, avoidedDecoration };
 }
 
 export function getVariationConflicts(context) {
@@ -131,7 +144,7 @@ function generateCandidate(reference, colourFamily, palette, typography, layout,
  * previousConcepts.
  */
 export function buildVariationRecommendations({
-  reference, originalBrief = '', preferences = [], selectedDimensions = [],
+  reference, originalBrief = '', activeBrief = null, preferences = [], selectedDimensions = [],
   round = 2, referenceRound = 1, referenceMessageId = null,
   conflictResolution = null, previousConcepts = [],
 }) {
@@ -139,7 +152,7 @@ export function buildVariationRecommendations({
     return { blockedReason: 'The selected reference concept is unavailable. Please select a design again.' };
   }
   const selected = [...new Set(selectedDimensions)].filter((dimension) => DIMENSIONS.includes(dimension));
-  const rules = collectRules({ reference, originalBrief, preferences });
+  const rules = collectRules({ reference, originalBrief, activeBrief, preferences, conflictResolution });
   if (rules.blockedReason) return { blockedReason: rules.blockedReason };
   const conflicts = rules.conflicts;
   if (conflicts.length && !['respect', 'keep-reference'].includes(conflictResolution)) {
@@ -180,6 +193,8 @@ export function buildVariationRecommendations({
             if (rules.strict.colour && family !== rules.strict.colour && !keepException('colour', candidate.palette === reference.palette)) continue;
             if (rules.strict.typography && type !== rules.strict.typography && !keepException('typography', type === reference.typography)) continue;
             if (rules.strict.layout && layout !== rules.strict.layout && !keepException('layout', layout === reference.layout)) continue;
+            if (rules.requiredDecoration && decoration !== rules.requiredDecoration && !keepException('decoration', decoration === decorationOf(reference))) continue;
+            if (rules.avoidedDecoration && decoration === rules.avoidedDecoration && !keepException('decoration', decoration === decorationOf(reference))) continue;
             if (rules.hints.avoidedColours.includes(family) && !keepException('colour', candidate.palette === reference.palette)) continue;
             if (rules.hints.avoidedTypography.includes(type) && !keepException('typography', type === reference.typography)) continue;
             if (rules.hints.avoidedLayouts.includes(layout) && !keepException('layout', layout === reference.layout)) continue;
@@ -285,6 +300,6 @@ export function buildVariationRecommendations({
     requestedDimensions: selected,
     conflictResolution: conflicts.length ? conflictResolution : null,
     explanation: `${header}${outcomeNote}${countNote}${conflictNote} Confirmed Likes were treated as soft preferences and Avoids were checked against the available designs${conflictResolution === 'keep-reference' ? ', except for your explicit reference exception' : ''}.`,
-    disclosure: 'Rule-based CSS variations from a limited catalogue. The original reference stays unchanged. Only confirmed preferences and recognised original-brief requirements are applied; drafts do not affect this round.',
+    disclosure: 'Rule-based CSS variations from a limited catalogue. The original reference stays unchanged. Only confirmed preferences and recognised active-brief requirements are applied; drafts do not affect this round.',
   };
 }

@@ -8,10 +8,13 @@ import ConversationView from './components/ConversationView';
 import IntentionPanel from './components/IntentionPanel';
 import PromptAssistancePanel from './components/PromptAssistancePanel';
 import { suggestImprovedPrompt } from './utils/promptAssistance';
-import { buildInitialRecommendations, buildNewDirectionRecommendations, isBusinessCardRequest } from './utils/recommendations';
+import { buildInitialRecommendations, buildNewDirectionRecommendations, getBriefPreferenceConflicts, isBusinessCardRequest } from './utils/recommendations';
 import { buildVariationRecommendations, getVariationConflicts, VARIATION_DIMENSIONS } from './utils/variations';
 import { mergeConfirmedPreferences, createPreferenceEdit, getPreferenceEditChanges, applyPreferenceEdits } from './utils/preferenceManagement';
 import { getDesignConcept, approveDesignProject } from './utils/designApproval';
+import { createActiveBrief, makeFollowUpReview, applyFollowUpReview } from './utils/followUpBrief';
+import BriefUpdateDialog from './components/BriefUpdateDialog';
+import NewDirectionConflictDialog from './components/NewDirectionConflictDialog';
 import './App.css';
 import './Phase2.css';
 
@@ -24,6 +27,9 @@ function createProject(id) {
     assistance: false,
     promptReview: null, // Only exists while the user reviews a suggested prompt.
     feedbackDrafts: {}, // Each recommendation round owns an independent unfinished draft.
+    activeBrief: null, // Actual submitted wording + separately confirmed structured revisions.
+    briefReview: null, // Proposed follow-up revisions; no changes until approval.
+    directionRequest: null, // One-round new-direction conflict resolution only.
     preferenceEdit: null, // Unsaved edits to already confirmed preferences, scoped to this project.
     variationRequest: null, // Milestone 5.2: project-scoped modal decisions, never saved as preferences.
     approvalRequest: null, // Milestone 5.3: concept awaiting explicit final approval.
@@ -85,68 +91,94 @@ function App() {
     const original = originalText.trim();
     if (!submitted || !original) return;
 
-    setProjects((current) =>
-      current.map((project) => {
-        if (project.id !== activeId) return project;
-
-        const firstMessage = project.messages.length === 0;
-        const hasRecommendations = project.messages.some(
-          (message) => message.role === 'recommendations'
-        );
-        const additions = [
-          {
-            id: project.nextMessageId,
-            role: 'user',
-            text: submitted,
-            promptMeta: {
-              original,
-              submission, // 'suggested', 'original', or 'without-assistance'
-            },
-          },
-        ];
-
-        let newExploration = project.exploration;
-        if (!hasRecommendations && isBusinessCardRequest(submitted)) {
-          const recommendation = buildInitialRecommendations(submitted);
-          additions.push({
-            id: project.nextMessageId + 1,
-            role: 'recommendations',
-            ...recommendation,
-            round: 1,
-            source: 'initial',
-            briefForRecommendations: original,
-          });
-          newExploration = {
-            ...project.exploration,
-            round: 1,
-            selectedConceptId: null,
-            selectedConceptMessageId: null,
-          };
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || project.briefReview) return project;
+      const firstMessage = project.messages.length === 0;
+      const hasRecommendations = project.messages.some((message) => message.role === 'recommendations');
+      const userMessage = {
+        id: project.nextMessageId, role: 'user', text: submitted,
+        promptMeta: { original, submission },
+      };
+      const additions = [userMessage];
+      let newExploration = project.exploration;
+      let newReview = null;
+      let activeBrief = project.activeBrief;
+      if (!hasRecommendations && isBusinessCardRequest(submitted)) {
+        // First recommendations use the ACTUALLY submitted wording, including
+        // an edited assistance suggestion, never the preserved original text.
+        activeBrief = createActiveBrief(submitted);
+        const result = buildInitialRecommendations(submitted, activeBrief);
+        if (result.blockedReason) {
+          additions.push({ id: project.nextMessageId + 1, role: 'prototype',
+            text: `I could not create the initial designs: ${result.blockedReason}. Please revise your prompt.` });
         } else {
-          additions.push({
-            id: project.nextMessageId + 1,
-            role: 'prototype',
-            text: hasRecommendations
-              ? 'Your follow-up is visible in the conversation, but free-form follow-up text does not yet change the design rules. Use Explore New Directions to generate another round based on confirmed preferences.'
-              : 'This milestone currently illustrates business-card designs only. Your message is saved; submit a business-card request to view three simulated concepts.',
-          });
+          additions.push({ id: project.nextMessageId + 1, role: 'recommendations',
+            ...result, round: 1, source: 'initial', briefForRecommendations: submitted });
+          newExploration = { ...project.exploration, round: 1,
+            selectedConceptId: null, selectedConceptMessageId: null };
         }
+      } else if (hasRecommendations) {
+        newReview = makeFollowUpReview(submitted, project.intentions.preferences);
+        if (!newReview.proposals.length) {
+          additions.push({ id: project.nextMessageId + 1, role: 'prototype',
+            text: `Your message is recorded, but no supported design change was confidently identified. ${newReview.unsupported.join(' ')} The Active Design Brief and recommendations remain unchanged. Try a specific colour, typography, layout or decoration instruction.` });
+          newReview = null;
+        }
+      } else {
+        additions.push({ id: project.nextMessageId + 1, role: 'prototype',
+          text: 'This prototype illustrates business-card designs. Submit a business-card request to receive concepts.' });
+      }
+      return {
+        ...project,
+        prompt: '', promptReview: null,
+        activeBrief,
+        briefReview: newReview,
+        messages: [...project.messages, ...additions],
+        nextMessageId: project.nextMessageId + additions.length,
+        exploration: newExploration,
+        intentions: { ...project.intentions,
+          initialBrief: project.intentions.initialBrief || (firstMessage ? original : ''),
+        },
+      };
+    }));
+  }
 
-        return {
-          ...project,
-          prompt: '',
-          promptReview: null,
-          messages: [...project.messages, ...additions],
-          nextMessageId: project.nextMessageId + additions.length,
-          exploration: newExploration,
-          intentions: {
-            ...project.intentions,
-            // Preserve the user's first ORIGINAL wording, even when using prompt assistance.
-            initialBrief: project.intentions.initialBrief || (firstMessage ? original : ''),
-          },
-        };
-      })
-    );
+  function toggleBriefProposal(proposalId) {
+    setProjects((current) => current.map((project) =>
+      project.id !== activeId || !project.briefReview ? project : {
+        ...project,
+        briefReview: { ...project.briefReview, proposals: project.briefReview.proposals.map((item) =>
+          item.id === proposalId ? { ...item, enabled: !item.enabled } : item) },
+      }
+    ));
+  }
+
+  function resolveBriefProposal(proposalId, resolution) {
+    if (resolution !== 'remove-avoid') return;
+    setProjects((current) => current.map((project) =>
+      project.id !== activeId || !project.briefReview ? project : {
+        ...project,
+        briefReview: { ...project.briefReview, proposals: project.briefReview.proposals.map((item) =>
+          item.id === proposalId ? { ...item, resolution } : item) },
+      }
+    ));
+  }
+
+  function confirmBriefUpdates() {
+    setProjects((current) => current.map((project) =>
+      project.id === activeId ? applyFollowUpReview(project) : project
+    ));
+  }
+
+  function cancelBriefUpdates() {
+    setProjects((current) => current.map((project) =>
+      project.id !== activeId || !project.briefReview ? project : {
+        ...project, briefReview: null,
+        messages: [...project.messages, { id: project.nextMessageId, role: 'prototype',
+          text: 'No changes were applied to the Active Design Brief.' }],
+        nextMessageId: project.nextMessageId + 1,
+      }
+    ));
   }
 
   function selectConcept(conceptId, recommendationMessageId) {
@@ -276,52 +308,79 @@ function App() {
     }));
   }
 
-  // Milestone 5.1: only confirmed preferences influence the next three designs.
-  // No draft is modified, and previous recommendation messages stay immutable.
+  // Continuity: new directions now use the current ACTIVE brief. Conflicts with
+  // saved Avoids require a per-round user choice, not a hidden override.
+  function generateNewDirections(project, resolution = null, conflicts = []) {
+    const previousRounds = project.messages.filter((message) => message.role === 'recommendations');
+    if (!previousRounds.length) return project;
+    const nextRound = project.exploration.round + 1;
+    const dimensions = [...new Set(conflicts.map((item) => item.dimension))];
+    const roundOverrides = resolution === 'respect-brief' ? {
+      ignoreAvoidPreferenceIds: conflicts.map((item) => item.preferenceId).filter(Boolean),
+      ignoreBriefAvoidDimensions: conflicts.filter((item) => item.kind === 'brief-self').map((item) => item.dimension),
+    } : resolution === 'respect-preferences' ? {
+      ignoreRequiredDimensions: dimensions,
+    } : {};
+    const outcome = buildNewDirectionRecommendations({
+      originalBrief: project.activeBrief?.submittedText || previousRounds[0].briefForRecommendations || project.intentions.initialBrief,
+      activeBrief: project.activeBrief,
+      preferences: project.intentions.preferences,
+      round: nextRound,
+      roundOverrides,
+      previousConcepts: previousRounds.flatMap((message) => message.concepts),
+    });
+    const requested = {
+      id: project.nextMessageId, role: 'user', text: 'Explore new directions',
+      action: 'new-directions',
+    };
+    if (outcome.blockedReason) return {
+      ...project, directionRequest: null,
+      messages: [...project.messages, requested, {
+        id: project.nextMessageId + 1, role: 'prototype',
+        text: `I could not generate another round: ${outcome.blockedReason}. No previous design was changed.`,
+      }],
+      nextMessageId: project.nextMessageId + 2,
+    };
+    const exceptionNote = resolution
+      ? resolution === 'respect-brief'
+        ? ' For this round, you chose to prioritise the active brief over overlapping Avoid preferences.'
+        : ' For this round, you chose to prioritise confirmed Avoid preferences over overlapping brief requirements.'
+      : '';
+    return {
+      ...project, directionRequest: null,
+      messages: [...project.messages, requested, {
+        id: project.nextMessageId + 1, role: 'recommendations',
+        ...outcome, explanation: `${outcome.explanation}${exceptionNote}`,
+      }],
+      nextMessageId: project.nextMessageId + 2,
+      exploration: { ...project.exploration, round: nextRound, strategy: 'new-directions' },
+    };
+  }
+
   function exploreNewDirections() {
     setProjects((current) => current.map((project) => {
-      if (project.id !== activeId) return project;
-      const previousRounds = project.messages.filter((message) => message.role === 'recommendations');
-      if (previousRounds.length === 0) return project;
-      const nextRound = project.exploration.round + 1;
-      const outcome = buildNewDirectionRecommendations({
-        originalBrief: previousRounds[0].briefForRecommendations || project.intentions.initialBrief,
-        preferences: project.intentions.preferences,
-        round: nextRound,
-        previousConcepts: previousRounds.flatMap((message) => message.concepts),
+      if (project.id !== activeId || project.directionRequest || project.briefReview) return project;
+      const conflicts = getBriefPreferenceConflicts({
+        originalBrief: project.activeBrief?.submittedText || project.intentions.initialBrief,
+        activeBrief: project.activeBrief, preferences: project.intentions.preferences,
       });
-      const requested = {
-        id: project.nextMessageId,
-        role: 'user',
-        text: 'Explore new directions',
-        action: 'new-directions',
-      };
-      if (outcome.blockedReason) {
-        return {
-          ...project,
-          messages: [...project.messages, requested, {
-            id: project.nextMessageId + 1,
-            role: 'prototype',
-            text: `I could not generate another round: ${outcome.blockedReason} No existing recommendation was changed.`,
-          }],
-          nextMessageId: project.nextMessageId + 2,
-        };
-      }
-      return {
-        ...project,
-        messages: [...project.messages, requested, {
-          id: project.nextMessageId + 1,
-          role: 'recommendations',
-          ...outcome,
-        }],
-        nextMessageId: project.nextMessageId + 2,
-        exploration: {
-          ...project.exploration,
-          round: nextRound,
-          strategy: 'new-directions',
-        },
-      };
+      if (conflicts.length) return { ...project, directionRequest: { conflicts } };
+      return generateNewDirections(project);
     }));
+  }
+
+  function resolveNewDirectionConflict(resolution) {
+    if (!['respect-brief', 'respect-preferences'].includes(resolution)) return;
+    setProjects((current) => current.map((project) =>
+      project.id !== activeId || !project.directionRequest ? project
+        : generateNewDirections(project, resolution, project.directionRequest.conflicts)
+    ));
+  }
+
+  function cancelNewDirectionConflict() {
+    setProjects((current) => current.map((project) =>
+      project.id === activeId ? { ...project, directionRequest: null } : project
+    ));
   }
 
 
@@ -391,7 +450,8 @@ function App() {
     const nextRound = project.exploration.round + 1;
     const outcome = buildVariationRecommendations({
       reference: found.concept,
-      originalBrief: rounds[0]?.briefForRecommendations || project.intentions.initialBrief,
+      originalBrief: project.activeBrief?.submittedText || rounds[0]?.briefForRecommendations || project.intentions.initialBrief,
+      activeBrief: project.activeBrief,
       preferences: project.intentions.preferences,
       selectedDimensions: request.dimensions,
       round: nextRound,
@@ -437,7 +497,8 @@ function App() {
       const rounds = project.messages.filter((item) => item.role === 'recommendations');
       const check = getVariationConflicts({
         reference: found.concept,
-        originalBrief: rounds[0]?.briefForRecommendations || project.intentions.initialBrief,
+        originalBrief: project.activeBrief?.submittedText || rounds[0]?.briefForRecommendations || project.intentions.initialBrief,
+        activeBrief: project.activeBrief,
         preferences: project.intentions.preferences,
       });
       if (check.blockedReason) return {
@@ -749,6 +810,7 @@ function App() {
                 {activeProject.ui.intentionsOpen && (
                   <IntentionPanel
                     intentions={activeProject.intentions}
+                    activeBrief={activeProject.activeBrief}
                     preferenceEdit={activeProject.preferenceEdit}
                     pendingChanges={activeProject.preferenceEdit
                       ? getPreferenceEditChanges(activeProject.preferenceEdit).length : 0}
@@ -775,6 +837,22 @@ function App() {
           )}
         </main>
       </div>
+      {activeProject?.briefReview && (
+        <BriefUpdateDialog
+          review={activeProject.briefReview}
+          onToggle={toggleBriefProposal}
+          onResolve={resolveBriefProposal}
+          onApply={confirmBriefUpdates}
+          onCancel={cancelBriefUpdates}
+        />
+      )}
+      {activeProject?.directionRequest && !activeProject.briefReview && (
+        <NewDirectionConflictDialog
+          conflicts={activeProject.directionRequest.conflicts}
+          onResolve={resolveNewDirectionConflict}
+          onCancel={cancelNewDirectionConflict}
+        />
+      )}
     </div>
   );
 }
