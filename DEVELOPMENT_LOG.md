@@ -1239,3 +1239,305 @@ The planned workflow includes:
 Persistent saving and exporting will not be implied unless those features are separately implemented.
 
 Future milestones will continue to include responsive layout checks on different screen sizes.
+
+## Phase 2 — Milestone 5.3: Design Approval and Exploration Completion
+
+**Date:** 15 November 2026  
+**Status:** Implemented; code-level validation completed; final manual testing pending confirmation
+
+### 1. Objective
+
+The objective of Milestone 5.3 was to introduce a clear completion pathway for users who are satisfied with a recommended design.
+
+Previous milestones focused on generating design concepts, collecting preferences and supporting iterative exploration. However, users also need a way to indicate that a design meets their intentions without being required to continue generating alternatives or modifying individual elements.
+
+Milestone 5.3 addresses this requirement by introducing a **Use This Design** workflow that allows users to explicitly approve a concept and finish the exploration process.
+
+The implementation maintains the flexibility to return to exploration later without losing the approved design.
+
+### 2. Implementation
+
+#### 2.1 Unified Choose Next Step workflow
+
+Extended the simplified exploration interface introduced in Milestone 5.2.
+
+The existing Continue Exploring action was replaced with **Choose Next Step**, which presents three possible pathways:
+
+- **Explore New Directions:** Generate different design concepts using confirmed preferences.
+- **Explore Variations:** Generate alternatives based on a selected concept.
+- **Use This Design:** Approve a selected concept and finish exploration.
+
+Explore New Directions remains available without a selected concept.
+
+Explore Variations and Use This Design require users to select a reference concept.
+
+This approach maintains a single primary action rather than introducing additional competing buttons into the conversation interface.
+
+#### 2.2 Explicit design-confirmation dialog
+
+Implemented a separate confirmation dialog for the Use This Design pathway.
+
+The dialog:
+
+- Displays the selected concept using the existing business-card preview.
+- Identifies the source recommendation round and concept.
+- Explains that the user is approving the design for the current project.
+- Provides a Confirm Design action.
+- Allows users to return or close the dialog without approving the concept.
+- Explains that approval does not permanently lock the project.
+
+The confirmation step prevents a provisional concept selection from being interpreted as final approval.
+
+#### 2.3 Separation of selected and approved concepts
+
+Extended project state to distinguish between:
+
+**Selected Concept**
+
+A provisional design selection that can be used as a reference for further exploration or variation generation.
+
+**Approved Concept**
+
+A design that the user has explicitly confirmed as satisfactory.
+
+Selecting a different concept does not automatically replace the approved design.
+
+The approved concept changes only when the user completes another explicit confirmation.
+
+This separation supports continued exploration without accidentally losing an earlier satisfactory result.
+
+#### 2.4 Design approval state
+
+Implemented project-specific approval records.
+
+The approval information identifies:
+
+- The approved concept.
+- The source recommendation round.
+- The associated design attributes.
+- The design information required to preserve the approved concept independently of later exploration.
+
+Approval does not automatically convert every attribute belonging to the chosen design into a confirmed Like preference.
+
+Existing confirmed preferences and unfinished feedback drafts remain independent of the design approval process.
+
+#### 2.5 Exploration completion state
+
+After confirming a design, Intenta displays a completion message within the existing conversation.
+
+The completion interface includes:
+
+- A Design Approved confirmation.
+- A preview of the approved business-card concept.
+- Information identifying the chosen design.
+- A Return to Exploration action.
+
+While exploration is marked complete, the normal exploration controls and prompt composer are replaced with Return to Exploration.
+
+This creates a meaningful stopping point and avoids immediately encouraging users to generate additional recommendations.
+
+#### 2.6 Returning to exploration
+
+Users can return to exploration after approving a design.
+
+When exploration resumes:
+
+- The normal exploration controls become available again.
+- The previously approved concept remains recorded.
+- Earlier recommendation rounds remain accessible.
+- Previously confirmed preferences remain unchanged.
+- Unfinished feedback drafts are preserved.
+- Selecting a different concept does not automatically overwrite the approved concept.
+
+If the user later approves a different design, the new approval becomes the active approved concept while earlier approval events remain in conversation history.
+
+#### 2.7 Conversation and recommendation continuity
+
+Integrated approval information into the existing conversation-based interaction structure.
+
+The implementation:
+
+- Records approval events in conversation history.
+- Preserves previous recommendation rounds.
+- Displays an Approved indicator for the currently approved concept.
+- Supports concept approval from earlier recommendation rounds.
+- Maintains independent approval states across projects.
+
+The existing design-preview and recommendation mechanisms were reused rather than replaced.
+
+### 3. Design and Technical Decisions
+
+**3.1 Progressive disclosure**
+
+The student selected a unified Choose Next Step interaction instead of adding a separate prominent Use This Design button.
+
+This decision followed usability concerns identified during Milestone 5.2, where multiple competing actions made the interface difficult to navigate.
+
+Grouping the three pathways within one dialog reduces visual clutter while retaining functionality.
+
+**3.2 Explicit user confirmation**
+
+Approving a design requires a deliberate confirmation action.
+
+This prevents the system from treating provisional exploration decisions as final user intentions.
+
+**3.3 Distinguishing design approval from attribute preferences**
+
+A user may approve a design as a whole without necessarily liking every individual attribute in isolation.
+
+Therefore, design approval and structured attribute preferences are maintained separately.
+
+**3.4 Reversible completion**
+
+Exploration completion is not permanent.
+
+Users can return to exploration without removing their existing approved concept.
+
+This accommodates changing intentions and supports iterative creative work.
+
+**3.5 Preservation of interaction history**
+
+Previous recommendations and approval events remain in conversation history, allowing users to revisit earlier decisions.
+
+The active approved design can change, but the historical record of prior decisions is preserved.
+
+**3.6 Project-specific state**
+
+Approved designs are associated with individual projects to prevent decisions from one project affecting another.
+
+**3.7 Incremental implementation**
+
+The milestone reused the existing recommendation engine, design previews and preference-management functionality.
+
+The implementation focused on design approval and completion rather than introducing unrelated functionality such as exporting, persistent storage or object-level refinement.
+
+### 4. Relevance to Intelligent Interactive Systems
+
+This milestone contributes to Intenta's research question:
+
+_How do structured and visual interaction techniques support users in expressing and refining their intentions during generative AI-assisted visual content creation?_
+
+The implementation demonstrates several relevant interaction-design principles.
+
+**User agency**
+
+Users explicitly decide when a design satisfies their intentions. The system does not require further exploration once the user is satisfied.
+
+**Recognition over recall**
+
+The design-confirmation dialog displays the actual selected concept, allowing users to visually verify their decision instead of relying on a concept name alone.
+
+**Visibility of system state**
+
+The interface distinguishes between a selected concept, an approved concept and a completed exploration session.
+
+**Error prevention**
+
+A separate confirmation step reduces the likelihood of accidentally approving an unintended design.
+
+**User control and freedom**
+
+Users can cancel approval, return to exploration and approve a different design later.
+
+**Progressive disclosure**
+
+The Choose Next Step dialog provides access to multiple pathways without displaying all actions simultaneously.
+
+**Support for task completion**
+
+The system recognises that successful creative exploration may end when the user identifies a satisfactory design, rather than always requiring further iteration.
+
+Together, these features establish a clearer relationship between intention exploration, design selection and final approval.
+
+### 5. AI Assistance and Student Contributions
+
+**ChatGPT assisted with:**
+
+- Translating the approved design-confirmation workflow into React functionality.
+- Extending the Choose Next Step dialog to support design approval.
+- Implementing the confirmation dialog and selected-design preview.
+- Developing project-specific approval-state management.
+- Separating provisional concept selection from confirmed design approval.
+- Adding conversation approval events and completion-state presentation.
+- Implementing Return to Exploration behaviour.
+- Preserving recommendation history, confirmed preferences and feedback drafts.
+- Preparing responsive CSS updates that retain previous composer improvements.
+- Performing syntax and data-layer validation.
+- Providing installation and manual testing instructions.
+
+**The student:**
+
+- Identified the need for users to finish exploration when a satisfactory design is found.
+- Approved a separate Use This Design action with an explicit confirmation step.
+- Selected the unified Choose Next Step interface to avoid reintroducing competing primary buttons.
+- Approved the separation between selected and approved concepts.
+- Chose a completion-focused interface that temporarily replaces exploration controls with Return to Exploration.
+- Required approval to remain reversible rather than permanently locking the project.
+- Approved preservation of earlier recommendation rounds, unfinished feedback and confirmed preferences.
+- Required responsive design to remain a consideration during implementation.
+- Directed the incremental implementation approach.
+
+### 6. Testing and Validation
+
+**Development environment:** React, Vite, JavaScript and CSS.
+
+**Browser for manual verification:** Google Chrome.
+
+Code-level validation conducted during implementation included:
+
+- JavaScript and JSX syntax checks.
+- CSS parsing.
+- Data-layer checks of approval records.
+- Checks of source-round and concept identification.
+- Checks of preservation of unfinished feedback.
+- Checks of approval replacement and historical records.
+
+These code-level checks passed during implementation.
+
+The following browser-level checks are required to confirm the complete interaction:
+
+| Test Area                                                      | Status                      |
+| -------------------------------------------------------------- | --------------------------- |
+| Choose Next Step displays all three pathways                   | Pending manual confirmation |
+| Use This Design requires a selected concept                    | Pending manual confirmation |
+| Confirmation dialog displays the correct concept               | Pending manual confirmation |
+| Back and Escape cancel without approval                        | Pending manual confirmation |
+| Confirm Design creates a completion event                      | Pending manual confirmation |
+| Approved indicator appears on the correct concept              | Pending manual confirmation |
+| Return to Exploration restores normal controls                 | Pending manual confirmation |
+| Approved concept remains unchanged during further exploration  | Pending manual confirmation |
+| Re-approval updates the active approved concept                | Pending manual confirmation |
+| Previous recommendations and unfinished feedback remain intact | Pending manual confirmation |
+| Project-specific approval state remains independent            | Pending manual confirmation |
+| Responsive layout works on laptop and large-monitor screens    | Pending manual confirmation |
+
+The milestone should be marked as fully manually tested once these browser interactions have been verified.
+
+### 7. Known Limitations
+
+- The approved concept is maintained in React application state rather than persistent storage.
+- Approval does not export, download or permanently save the design.
+- The design previews remain CSS-rendered simulations based on predefined attributes.
+- No trained generative image model is integrated.
+- Object-level visual refinement is not implemented within this milestone.
+- Formal accessibility testing remains outstanding.
+- A structured usability evaluation with participants has not yet been conducted.
+- Project information may be lost when the application is refreshed.
+
+### 8. Milestone Outcome
+
+Milestone 5.3 introduces a clear endpoint to Intenta's design-exploration workflow.
+
+Users can now move from receiving recommendations to selecting a concept, explicitly approving it and completing exploration without additional mandatory steps.
+
+The approval process also remains reversible, allowing users to continue exploring while retaining their previously approved design.
+
+This extends Intenta from an interface focused exclusively on iterative recommendation generation to one that also supports users in recognising and confirming satisfactory outcomes.
+
+### 9. Next Steps
+
+The next development stage should review the remaining continuity and conflict-handling requirements within Phase 2, including consistency between the original prompt, confirmed preferences and iterative recommendation behaviour.
+
+Further implementation should preserve the existing simplified interface, approval workflow and responsive design improvements.
+
+After the remaining Phase 2 requirements are completed and tested, subsequent development can address community inspiration and object-level refinement according to the project plan.

@@ -5,14 +5,16 @@ import { createPortal } from 'react-dom';
 export default function ContinueExploringDialog({
   selectedConcept,
   selectedRound,
+  initialMode,
   pendingCount,
   pendingRoundCount,
   onExploreNewDirections,
   onStartVariations,
+  onStartDesignApproval,
   onReviewFeedback,
   onClose,
 }) {
-  const [mode, setMode] = useState(selectedConcept ? 'variations' : 'directions');
+  const [mode, setMode] = useState(selectedConcept ? (initialMode || 'variations') : 'directions');
   const [stage, setStage] = useState('choose');
   const dialogRef = useRef(null);
   const headingRef = useRef(null);
@@ -58,6 +60,12 @@ export default function ContinueExploringDialog({
   }
 
   function continueChoice() {
+    if (mode === 'approve') {
+      if (!selectedConcept) return;
+      onClose();
+      onStartDesignApproval();
+      return;
+    }
     if (mode === 'variations') {
       if (!selectedConcept) return;
       onClose();
@@ -87,7 +95,7 @@ export default function ContinueExploringDialog({
           <div>
             <span className="eyebrow">INTENTA · YOUR NEXT STEP</span>
             <h2 id="continue-dialog-title" tabIndex={-1} ref={headingRef}>
-              {stage === 'feedback' ? 'You have unfinished feedback' : 'How would you like to continue?'}
+              {stage === 'feedback' ? 'You have unfinished feedback' : 'What would you like to do next?'}
             </h2>
           </div>
           <button type="button" className="variation-close" aria-label="Close exploration choices" onClick={onClose}>×</button>
@@ -97,7 +105,7 @@ export default function ContinueExploringDialog({
           {stage === 'choose' ? (
             <>
               <p id="continue-dialog-description" className="variation-dialog-description">
-                Choose one path. Design feedback is optional, and you can change direction later.
+                Explore new ideas, develop a selected concept, or approve a design you're happy with. Design feedback is optional.
               </p>
               <fieldset className="continue-exploring-choices">
                 <legend className="visually-hidden">Choose an exploration path</legend>
@@ -132,6 +140,24 @@ export default function ContinueExploringDialog({
                     <small>No selected concept is required.</small>
                   </span>
                 </label>
+                <label className={`continue-exploring-choice ${mode === 'approve' ? 'is-selected' : ''} ${!selectedConcept ? 'is-unavailable' : ''}`}>
+                  <input
+                    type="radio"
+                    name="exploration-path"
+                    checked={mode === 'approve'}
+                    disabled={!selectedConcept}
+                    onChange={() => setMode('approve')}
+                  />
+                  <span className="continue-choice-copy">
+                    <strong>Use This Design</strong>
+                    <span>I'm satisfied with the selected concept and want to finish exploring for now.</span>
+                    {selectedConcept ? (
+                      <small>You'll review Round {selectedRound?.round || 1} · {selectedConcept.name} before approval.</small>
+                    ) : (
+                      <small>Select a concept from any round to approve it.</small>
+                    )}
+                  </span>
+                </label>
               </fieldset>
             </>
           ) : (
@@ -151,7 +177,7 @@ export default function ContinueExploringDialog({
             {stage === 'feedback' ? 'Back' : 'Cancel'}
           </button>
           {stage === 'choose' ? (
-            <button type="button" className="variation-primary" onClick={continueChoice}>Continue</button>
+            <button type="button" className="variation-primary" onClick={continueChoice}>{mode === 'approve' ? 'Review Design' : 'Continue'}</button>
           ) : (
             <>
               <button type="button" className="variation-secondary" onClick={() => { onClose(); onReviewFeedback(); }}>

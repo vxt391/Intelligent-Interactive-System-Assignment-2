@@ -11,6 +11,7 @@ import { suggestImprovedPrompt } from './utils/promptAssistance';
 import { buildInitialRecommendations, buildNewDirectionRecommendations, isBusinessCardRequest } from './utils/recommendations';
 import { buildVariationRecommendations, getVariationConflicts, VARIATION_DIMENSIONS } from './utils/variations';
 import { mergeConfirmedPreferences, createPreferenceEdit, getPreferenceEditChanges, applyPreferenceEdits } from './utils/preferenceManagement';
+import { getDesignConcept, approveDesignProject } from './utils/designApproval';
 import './App.css';
 import './Phase2.css';
 
@@ -25,6 +26,9 @@ function createProject(id) {
     feedbackDrafts: {}, // Each recommendation round owns an independent unfinished draft.
     preferenceEdit: null, // Unsaved edits to already confirmed preferences, scoped to this project.
     variationRequest: null, // Milestone 5.2: project-scoped modal decisions, never saved as preferences.
+    approvalRequest: null, // Milestone 5.3: concept awaiting explicit final approval.
+    approvedDesign: null, // Last explicitly approved concept, preserved while exploring.
+    explorationComplete: false, // Completion is reversible, without clearing approval.
     messages: [],
     nextMessageId: 1,
     intentions: {
@@ -469,6 +473,46 @@ function App() {
   }
 
 
+  // Milestone 5.3: provisional selection never approves a concept. The review
+  // request is scoped to the current project and to an exact historic round.
+  function startDesignApproval() {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || project.explorationComplete || project.approvalRequest) return project;
+      const { selectedConceptId: conceptId, selectedConceptMessageId: messageId } = project.exploration;
+      if (!getDesignConcept(project.messages, messageId, conceptId)) return project;
+      return { ...project, approvalRequest: { messageId, conceptId } };
+    }));
+  }
+
+  function cancelDesignApproval() {
+    setProjects((current) => current.map((project) =>
+      project.id === activeId ? { ...project, approvalRequest: null } : project
+    ));
+  }
+
+  function confirmDesignApproval() {
+    setProjects((current) => current.map((project) =>
+      project.id === activeId ? approveDesignProject(project) : project
+    ));
+  }
+
+  function resumeExploration() {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId || !project.explorationComplete) return project;
+      return {
+        ...project,
+        explorationComplete: false,
+        messages: [...project.messages, {
+          id: project.nextMessageId,
+          role: 'user',
+          action: 'resume-exploration',
+          text: 'Return to exploration',
+        }],
+        nextMessageId: project.nextMessageId + 1,
+      };
+    }));
+  }
+
   // Milestone 4.3: begin a separate editing transaction. Nothing confirmed changes yet.
   function beginPreferenceEdit() {
     setProjects((current) => current.map((project) => {
@@ -623,7 +667,11 @@ function App() {
                 />
                 <div className="phase2-toolbar-right">
                   <span className="workspace-status">
-                    {activeProject.name} · Draft workspace
+                    {activeProject.name} · {activeProject.explorationComplete
+                      ? 'Exploration complete'
+                      : activeProject.approvedDesign
+                        ? 'Approved design · Exploring'
+                        : 'Draft workspace'}
                   </span>
                   <button
                     type="button"
@@ -680,6 +728,13 @@ function App() {
                         onRateDraftAttribute={rateDraftAttribute}
                         onRemoveDraftAttribute={removeDraftAttribute}
                         onConfirmDraftPreferences={confirmDraftPreferences}
+                        approvedDesign={activeProject.approvedDesign}
+                        approvalRequest={activeProject.approvalRequest}
+                        explorationComplete={activeProject.explorationComplete}
+                        onStartDesignApproval={startDesignApproval}
+                        onCancelDesignApproval={cancelDesignApproval}
+                        onConfirmDesignApproval={confirmDesignApproval}
+                        onResumeExploration={resumeExploration}
                       />
                     )
                   ) : (

@@ -12,6 +12,7 @@ const LAYOUT_LABELS = {
 export default function ConceptRecommendations({
   recommendation,
   selectedConceptId,
+  approvedConceptId,
   onSelectConcept,
   feedbackDraft,
   feedbackExpanded,
@@ -40,9 +41,13 @@ export default function ConceptRecommendations({
       <div className="concept-grid">
         {recommendation.concepts.map((concept, index) => {
           const isSelected = selectedConceptId === concept.id;
+          const isApproved = approvedConceptId === concept.id;
           return (
-            <article key={concept.id} className={`concept-card ${isSelected ? 'is-selected' : ''}`}>
-              <BusinessCardPreview concept={concept} />
+            <article key={concept.id} className={`concept-card ${isSelected ? 'is-selected' : ''} ${isApproved ? 'is-approved' : ''}`}>
+              <div className="concept-preview-wrap">
+                <BusinessCardPreview concept={concept} />
+                {isApproved && <span className="concept-approved-badge" aria-label="Currently approved design">✓ Approved</span>}
+              </div>
               <div className="concept-card-content">
                 {concept.direction && <span className={`concept-direction ${concept.direction === 'Exploratory' ? 'concept-direction-exploratory' : ''}`}>{concept.direction}</span>}
                 <h3>{String.fromCharCode(65 + index)}. {concept.name}</h3>

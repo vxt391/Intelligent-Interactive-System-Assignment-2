@@ -3887,3 +3887,109 @@
   max-width: none;
   width: 100%;
 }
+
+/* Milestone 5.3 — Use This Design: append AFTER all Milestone 5.2 CSS.
+   Reuse existing modal and action styling rather than creating competing buttons. */
+.design-approval-dialog {
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+.design-approval-body {
+  display: grid;
+  gap: 13px;
+}
+.design-approval-preview {
+  width: 100%;
+  max-width: 460px;
+  margin-inline: auto;
+}
+.design-approval-preview .business-card-preview {
+  width: 100%;
+}
+.design-approval-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.design-approval-identity strong {
+  font-size: 15px;
+  color: #443b50;
+}
+.design-approval-identity span {
+  color: #756d7d;
+  font-size: 12px;
+}
+.design-approval-note {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid #e9e3f0;
+  border-radius: 10px;
+  background: #f8f6fc;
+  color: #63586d;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.concept-preview-wrap { position: relative; }
+.concept-approved-badge {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #3b745c;
+  box-shadow: 0 1px 5px #2b524e2b;
+  font-size: 11px;
+  font-weight: 700;
+}
+.concept-card.is-approved { border-color: #8ebda7; }
+/* The approved marker persists, while a new provisional selection remains visible. */
+.concept-card.is-approved.is-selected {
+  border-color: #7664c5;
+  box-shadow: 0 0 0 2px #7664c51a;
+}
+.approved-design-message { display: grid; gap: 12px; }
+.approved-design-message-header { display: flex; align-items: flex-start; gap: 10px; }
+.approved-design-icon {
+  flex: 0 0 30px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #e4f3eb;
+  color: #2e7854;
+  font-weight: 800;
+}
+.approved-design-message h3 { margin: 0 0 3px; font-size: 15px; color: #355748; }
+.approved-design-message-header p { font-size: 12px; color: #776d7e; }
+.approved-design-message-preview { max-width: 400px; width: 100%; }
+.approved-design-message-preview .business-card-preview { width: 100%; }
+.approved-design-message-note { font-size: 12px !important; color: #847b8b !important; }
+.exploration-complete-controls .new-directions-intro { align-items: center; }
+.exploration-complete-controls .new-directions-intro strong { color: #365e4a; }
+.exploration-complete-controls .new-directions-button { white-space: normal; }
+.design-approval-dialog button:focus-visible,
+.exploration-complete-controls button:focus-visible { outline: 3px solid #b7aaf2; outline-offset: 2px; }
+@media (max-width: 700px) {
+  .design-approval-dialog { width: min(560px, calc(100vw - 16px)); }
+  .concept-approved-badge { top: 6px; right: 6px; }
+  .exploration-complete-controls .new-directions-intro { align-items: stretch; }
+  .exploration-complete-controls .new-directions-button { width: 100%; }
+}
+@media (max-height: 740px) {
+  .design-approval-dialog { max-height: calc(100dvh - 16px); }
+  .design-approval-body { gap: 8px; }
+  .design-approval-note { padding: 9px 12px; }
+}
+
+/* Reserve a readable card width for the approval preview inside the conversation. */
+.conversation-row.approval-row .conversation-message {
+  width: min(520px, calc(100% - 50px));
+  max-width: 100%;
+}

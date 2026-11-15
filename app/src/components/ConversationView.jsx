@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import ConceptRecommendations from './ConceptRecommendations';
 import VariationDialog from './VariationDialog';
 import ContinueExploringDialog from './ContinueExploringDialog';
+import ConfirmDesignDialog from './ConfirmDesignDialog';
+import BusinessCardPreview from './BusinessCardPreview';
 
 export default function ConversationView({
   messages,
@@ -22,9 +24,17 @@ export default function ConversationView({
   onRateDraftAttribute,
   onRemoveDraftAttribute,
   onConfirmDraftPreferences,
+  approvedDesign,
+  approvalRequest,
+  explorationComplete,
+  onStartDesignApproval,
+  onCancelDesignApproval,
+  onConfirmDesignApproval,
+  onResumeExploration,
 }) {
   const feedRef = useRef(null);
   const [exploreDialogOpen, setExploreDialogOpen] = useState(false);
+  const [nextStepDefault, setNextStepDefault] = useState(null);
   const [expandedFeedbackRounds, setExpandedFeedbackRounds] = useState({});
   const [scrollFeedbackId, setScrollFeedbackId] = useState(null);
   const recommendationMessages = messages.filter((message) => message.role === 'recommendations');
@@ -41,6 +51,12 @@ export default function ConversationView({
   const variationRound = recommendationMessages.find((item) => item.id === variationRequest?.messageId);
   const variationConcept = variationRound?.concepts.find((item) => item.id === variationRequest?.conceptId);
   const variationReference = variationConcept ? { concept: variationConcept, round: variationRound.round || 1 } : null;
+  const approvalRound = recommendationMessages.find((item) => item.id === approvalRequest?.messageId);
+  const approvalConcept = approvalRound?.concepts.find((item) => item.id === approvalRequest?.conceptId);
+  const approvalReference = approvalConcept
+    ? { concept: approvalConcept, round: approvalRound.round || 1 }
+    : null;
+
 
 
   function toggleFeedback(messageId) {
@@ -91,7 +107,7 @@ export default function ConversationView({
 
         {messages.map((message) => (
           <div
-            className={`conversation-row ${message.role === 'user' ? 'from-user' : 'from-prototype'} ${message.role === 'recommendations' ? 'recommendation-row' : ''}`}
+            className={`conversation-row ${message.role === 'user' ? 'from-user' : 'from-prototype'} ${message.role === 'recommendations' ? 'recommendation-row' : ''} ${message.role === 'design-approved' ? 'approval-row' : ''}`}
             key={message.id}
             data-recommendation-id={message.role === 'recommendations' ? message.id : undefined}
           >
@@ -106,6 +122,8 @@ export default function ConversationView({
                     ? `Intenta · Design concepts · Round ${message.round ?? 1}`
                     : message.role === 'preferences-confirmed'
                       ? 'Intenta · Preferences confirmed'
+                      : message.role === 'design-approved'
+                        ? 'Intenta · Design approval'
                       : message.role === 'preferences-edited'
                         ? 'Intenta · Preferences updated'
                       : 'Prototype notice'}
@@ -115,6 +133,7 @@ export default function ConversationView({
                 <ConceptRecommendations
                   recommendation={{ ...message, messageId: message.id }}
                   selectedConceptId={selectedConceptMessageId === message.id ? selectedConceptId : null}
+                  approvedConceptId={approvedDesign?.messageId === message.id ? approvedDesign.conceptId : null}
                   onSelectConcept={onSelectConcept}
                   feedbackDraft={feedbackDrafts[message.id]?.items ?? []}
                   feedbackExpanded={Boolean(expandedFeedbackRounds[message.id])}
@@ -132,6 +151,32 @@ export default function ConversationView({
                     }
                   }}
                 />
+              ) : message.role === 'design-approved' ? (
+                <div className="approved-design-message" aria-label="Design approval recorded">
+                  <div className="approved-design-message-header">
+                    <span className="approved-design-icon" aria-hidden="true">✓</span>
+                    <div>
+                      <h3>{approvedDesign?.approvalMessageId === message.id ? 'Design approved!' : 'Previous design approval'}</h3>
+                      <p>
+                        {message.approvedDesign?.concept?.name} · Round {message.approvedDesign?.round}
+                      </p>
+                    </div>
+                  </div>
+                  {message.approvedDesign?.concept && (
+                    <div className="approved-design-message-preview">
+                      <BusinessCardPreview concept={message.approvedDesign.concept} />
+                    </div>
+                  )}
+                  <p>
+                    {approvedDesign?.approvalMessageId === message.id
+                      ? 'You have chosen this design for this project. Exploration is complete for now.'
+                      : 'This was an earlier approval. The current approved design is marked in its recommendation round.'}
+                  </p>
+                  <p className="approved-design-message-note">
+                    You can return to exploration later. Your individual confirmed preferences and feedback drafts are unchanged.
+                    This approval is part of the in-memory prototype, not a permanent save or export.
+                  </p>
+                </div>
               ) : message.role === 'preferences-edited' ? (
                 <div className="preference-confirmation" aria-label="Saved preference edits">
                   <p className="preference-confirmation-intro">
@@ -198,40 +243,72 @@ export default function ConversationView({
       </div>
 
       <div className="conversation-composer">
-        {recommendationMessages.length > 0 && (
-          <section className="new-directions-controls simplified-exploration-controls" aria-label="Continue design exploration">
+        {explorationComplete ? (
+          <section className="new-directions-controls simplified-exploration-controls exploration-complete-controls" aria-label="Exploration complete">
             <div className="new-directions-intro">
               <div>
-                <strong>Ready to continue?</strong>
-                <p>Choose new directions or variations in one simple step.</p>
+                <strong>Exploration complete for now</strong>
+                <p>
+                  {approvedDesign?.concept?.name || 'Your chosen design'} is approved. You can revisit earlier designs whenever you like.
+                </p>
               </div>
-              <button type="button" className="new-directions-button" onClick={() => setExploreDialogOpen(true)}>
-                Continue Exploring
+              <button type="button" className="new-directions-button" onClick={onResumeExploration}>
+                Return to Exploration
               </button>
             </div>
-            {selectedConcept && (
-              <p className="variation-selected-hint">
-                Selected: Round {selectedRound.round || 1} · {selectedConcept.name}
-              </p>
-            )}
           </section>
+        ) : (
+          <>
+            {recommendationMessages.length > 0 && (
+              <section className="new-directions-controls simplified-exploration-controls" aria-label="Choose next step">
+                <div className="new-directions-intro">
+                  <div>
+                    <strong>Ready to continue?</strong>
+                    <p>Explore new directions, try variations, or approve a design.</p>
+                  </div>
+                  <button type="button" className="new-directions-button" onClick={() => { setNextStepDefault(null); setExploreDialogOpen(true); }}>
+                    Choose Next Step
+                  </button>
+                </div>
+                {selectedConcept && (
+                  <p className="variation-selected-hint">
+                    Selected: Round {selectedRound.round || 1} · {selectedConcept.name}
+                  </p>
+                )}
+              </section>
+            )}
+            <p className="conversation-compose-title">Or continue with a prompt</p>
+            {composer}
+            <p className="conversation-compose-note">
+              Concepts are simulated CSS designs. Saved preferences guide new directions; variations use a selected reference.
+            </p>
+          </>
         )}
-        <p className="conversation-compose-title">Or continue with a prompt</p>
-        {composer}
-        <p className="conversation-compose-note">
-          Concepts are simulated CSS designs. Saved preferences guide new directions; variations use a selected reference.
-        </p>
       </div>
-      {exploreDialogOpen && !variationRequest && (
+      {exploreDialogOpen && !variationRequest && !approvalRequest && !explorationComplete && (
         <ContinueExploringDialog
           selectedConcept={selectedConcept}
           selectedRound={selectedRound}
+          initialMode={nextStepDefault}
           pendingCount={pendingCount}
           pendingRoundCount={draftRounds.length}
           onExploreNewDirections={onExploreNewDirections}
           onStartVariations={onStartVariations}
+          onStartDesignApproval={onStartDesignApproval}
           onReviewFeedback={reviewUnfinishedFeedback}
           onClose={() => setExploreDialogOpen(false)}
+        />
+      )}
+      {approvalRequest && !explorationComplete && (
+        <ConfirmDesignDialog
+          reference={approvalReference}
+          onConfirm={onConfirmDesignApproval}
+          onBack={() => {
+            onCancelDesignApproval();
+            setNextStepDefault('approve');
+            setExploreDialogOpen(true);
+          }}
+          onClose={onCancelDesignApproval}
         />
       )}
       {variationRequest && (
