@@ -19,11 +19,14 @@ import { buildVariationRecommendations, getVariationConflicts, VARIATION_DIMENSI
 import { mergeConfirmedPreferences, createPreferenceEdit, getPreferenceEditChanges, applyPreferenceEdits } from './utils/preferenceManagement';
 import { getDesignConcept, approveDesignProject } from './utils/designApproval';
 import { createActiveBrief, makeFollowUpReview, applyFollowUpReview } from './utils/followUpBrief';
+import RefinementWorkspace from './components/RefinementWorkspace';
+import { enterRefinement, editRefinement, undoRefinement } from './utils/refinementDraft';
 import BriefUpdateDialog from './components/BriefUpdateDialog';
 import NewDirectionConflictDialog from './components/NewDirectionConflictDialog';
 import './App.css';
 import './Phase2.css';
 import './Phase3.css';
+import './Phase4.css';
 
 function createProject(id) {
   return {
@@ -42,6 +45,8 @@ function createProject(id) {
     variationRequest: null, // Milestone 5.2: project-scoped modal decisions, never saved as preferences.
     approvalRequest: null, // Milestone 5.3: concept awaiting explicit final approval.
     approvedDesign: null, // Last explicitly approved concept, preserved while exploring.
+    refinement: null, // Phase 4: separate project-specific, editable concept copy.
+    refinementHandoffDismissed: false,
     explorationComplete: false, // Completion is reversible, without clearing approval.
     messages: [],
     nextMessageId: 1,
@@ -102,6 +107,46 @@ function App() {
         project.id === activeId ? { ...project, ...changes } : project
       )
     );
+  }
+
+  // Phase 4: use the existing Explore / Refine toggle rather than a second page.
+  // Selection is provisional; approval remains a separate explicit action.
+  function changeDesignMode(mode) {
+    if (!activeProject) return;
+    if (mode === 'explore') { updateProject({ mode: 'explore' }); return; }
+    if (mode === 'refine') {
+      setProjects((current) => current.map((project) => project.id === activeId
+        ? enterRefinement(project) : project));
+    }
+  }
+
+  function refineSelectedConcept() {
+    setProjects((current) => current.map((project) => project.id === activeId
+      ? enterRefinement(project) : project));
+  }
+
+  function refineApprovedDesign() {
+    setProjects((current) => current.map((project) => project.id === activeId
+      ? enterRefinement(project, true) : project));
+  }
+
+  function finishApprovedDesignForNow() {
+    updateProject({ refinementHandoffDismissed: true });
+  }
+
+  function updateRefinementDraft(next) {
+    setProjects((current) => current.map((project) => project.id === activeId && project.refinement
+      ? { ...project, refinement: next } : project));
+  }
+
+  function updateRefinementProperties(operation) {
+    setProjects((current) => current.map((project) => project.id === activeId
+      ? editRefinement(project, operation) : project));
+  }
+
+  function undoRefinementChange() {
+    setProjects((current) => current.map((project) => project.id === activeId
+      ? undoRefinement(project) : project));
   }
 
   function newProject() {
@@ -730,6 +775,7 @@ function App() {
     setProjects((current) => current.map((project) => {
       if (project.id !== activeId) return project;
       const approved = approveDesignProject(project);
+      approved.refinementHandoffDismissed = false;
       return approved.explorationComplete
         ? { ...approved, exploration: {
             ...approved.exploration,
@@ -881,9 +927,11 @@ function App() {
     );
   }
 
+  const focusedRefine = activeWorkspace === 'design' && activeProject?.mode === 'refine';
+
   return (
-    <div className="app-shell">
-      <Sidebar
+    <div className={`app-shell ${focusedRefine ? 'phase4-focused-shell' : ''}`}>
+      {!focusedRefine && <Sidebar
         projects={projects}
         activeId={activeId}
         onNewProject={newProject}
@@ -891,10 +939,10 @@ function App() {
         onHome={() => { setActiveWorkspace('design'); updateProject({ mode: 'explore' }); }}
         onCommunity={openCommunityFromSidebar}
         communityActive={activeWorkspace === 'community'}
-      />
+      />}
 
-      <div className="main-area">
-        {activeWorkspace === 'design' && <ProjectTabs
+      <div className={`main-area ${focusedRefine ? 'phase4-main-area' : ''}`}>
+        {activeWorkspace === 'design' && !focusedRefine && <ProjectTabs
           projects={projects}
           activeId={activeId}
           onSelect={selectProject}
@@ -929,6 +977,23 @@ function App() {
               onViewConnectedProject={viewConnectedProject}
             />
           </main>
+        ) : focusedRefine ? (
+          <main className="phase4-workspace">
+            <div className="phase4-workspace-header">
+              <div className="phase4-header-start">
+                <strong>Intenta <span className="phase4-header-muted">/ {activeProject.name}</span></strong>
+              </div>
+              <ModeSwitcher mode="refine" onChange={changeDesignMode} />
+              <span className="phase4-header-caption">Refine · Session-only working copy</span>
+            </div>
+            <RefinementWorkspace
+              project={activeProject}
+              onBack={() => changeDesignMode('explore')}
+              onChange={updateRefinementDraft}
+              onEdit={updateRefinementProperties}
+              onUndo={undoRefinementChange}
+            />
+          </main>
         ) : (
         <main className="workspace phase2-workspace">
           {activeProject ? (
@@ -936,7 +1001,7 @@ function App() {
               <div className="workspace-toolbar">
                 <ModeSwitcher
                   mode={activeProject.mode}
-                  onChange={(mode) => updateProject({ mode })}
+                  onChange={changeDesignMode}
                 />
                 <div className="phase2-toolbar-right">
                   <span className="workspace-status">
@@ -1008,6 +1073,10 @@ function App() {
                         onCancelDesignApproval={cancelDesignApproval}
                         onConfirmDesignApproval={confirmDesignApproval}
                         onResumeExploration={resumeExploration}
+                        onRefineSelectedConcept={refineSelectedConcept}
+                        onRefineApprovedDesign={refineApprovedDesign}
+                        onFinishApprovedDesign={finishApprovedDesignForNow}
+                        refinementHandoffDismissed={activeProject.refinementHandoffDismissed}
                         onExploreCommunitySuggestion={openCommunityFromSuggestion}
                         onKeepDesigningSuggestion={keepDesigningAfterSuggestion}
                       />

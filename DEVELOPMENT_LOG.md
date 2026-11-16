@@ -2728,3 +2728,92 @@ The contextual Back to Project Conversation navigation refinement passed all 3 f
 **Final Phase 3.4 result:** 31/31 reported manual checks passed across uncertainty detection, inline suggestions, final regression testing and contextual navigation.
 
 No outstanding failures were reported. Phase 3.4 is ready for Git commit.
+
+### Phase 4 — Milestone 4.1: Refinement Workspace Foundation
+
+**Status:** Completed — manual Chrome testing passed.
+
+#### Objective
+
+Develop a dedicated, visually focused Refinement Workspace within Intenta's existing Explore / Refine workflow.
+
+The workspace aims to support future object-linked conversational refinement by providing an interactive business-card canvas, visual references and a dedicated AI refinement conversation area.
+
+#### Implementation
+
+**1. Focused Refinement Workspace**
+
+- Integrated the new workspace into the existing Refine mode rather than creating a separate application page.
+- Introduced a full-width layout that hides the main navigation sidebar during refinement.
+- Preserved the existing Explore / Refine toggle for navigation.
+- Used a compact header displaying the application and current project context.
+- Removed the redundant Back to Explore header button to avoid duplicate navigation controls.
+- Retained an appropriate return-to-Explore action in the empty state when no design has been selected.
+
+**2. Three-Part Workspace Layout**
+
+- Implemented a collapsible References panel on the left.
+- Positioned the Design Canvas in the centre as the primary interaction area.
+- Positioned AI Conversation on the right, with a narrower width to prioritise canvas space.
+- Adapted the workspace layout using inspiration from visual editing environments such as Lovart, without reproducing their advanced functionality.
+
+**3. Concept Selection and Refinement State**
+
+- Supported entering refinement from a provisionally selected design concept without requiring final approval.
+- Supported entering refinement after the existing Use This Design confirmation workflow.
+- Introduced a separate session-only refinement working copy.
+- Preserved the original recommendation and existing project information.
+- Provided an empty state when no suitable design has been selected.
+- Preserved refinement state when switching between Explore and Refine.
+
+**4. Initial Interactive Design Canvas**
+
+- Displayed the chosen business-card concept within the refinement workspace.
+- Introduced structured, selectable design elements.
+- Supported basic direct property editing and undo functionality.
+- Maintained separation between local refinement edits and project-level confirmed design preferences.
+
+**5. Workspace UX Refinements**
+
+- Removed duplicate navigation controls from the Refine header.
+- Narrowed the AI Conversation panel to provide additional space for the central canvas.
+- Implemented independent collapsing and expanding of References and AI Conversation.
+- Added a compact AI Chat control for reopening the conversation panel.
+- Allowed the central Design Canvas to expand when either panel is collapsed.
+- Preserved the AI Conversation panel's open/closed state across Explore / Refine navigation.
+
+#### Testing and Evaluation
+
+Manual integration testing was conducted in Google Chrome.
+
+Testing included:
+
+- Explore / Refine navigation and selected-concept handling.
+- Correct presentation of the focused workspace.
+- Canvas selection and basic property-editing behaviour.
+- Preservation of working edits when switching between modes.
+- Removal of redundant header navigation.
+- Independent collapsing and expanding of References and AI Conversation.
+- Expansion of the Design Canvas when the conversation panel is collapsed.
+- Preservation of panel state across navigation.
+- Responsive layouts at 1366 × 768, 1920 × 1080 and 2560 × 1440.
+
+**Latest panel-collapse refinement:** All 6 manual checks reported as passed.
+
+No failures were reported in the completed tests.
+
+#### Limitations
+
+- AI-driven conversational refinement is not yet implemented.
+- Numbered pointer placement and point-and-describe interactions are reserved for Phase 4.2.
+- Advanced drag-and-drop editing and arbitrary image manipulation are not included in this milestone.
+- The refinement conversation composer is not yet functional.
+- The prototype uses session-only React state rather than persistent storage.
+
+#### Outcome
+
+Milestone 4.1 establishes a focused, responsive workspace for visually refining business-card concepts.
+
+The new layout improves the allocation of screen space between references, the interactive canvas and conversational controls, while preserving continuity with the existing Explore workflow.
+
+**Next milestone:** Phase 4.2 — Point-and-Describe Interaction and Object-Linked Refinement.

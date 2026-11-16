@@ -31,6 +31,10 @@ export default function ConversationView({
   onCancelDesignApproval,
   onConfirmDesignApproval,
   onResumeExploration,
+  onRefineSelectedConcept,
+  onRefineApprovedDesign,
+  onFinishApprovedDesign,
+  refinementHandoffDismissed = false,
   onExploreCommunitySuggestion,
   onKeepDesigningSuggestion,
 }) {
@@ -299,9 +303,13 @@ export default function ConversationView({
                   {approvedDesign?.concept?.name || 'Your chosen design'} is approved. You can revisit earlier designs whenever you like.
                 </p>
               </div>
-              <button type="button" className="new-directions-button" onClick={onResumeExploration}>
-                Return to Exploration
-              </button>
+              <div className="phase4-approval-actions">
+                {!refinementHandoffDismissed && <>
+                  <button type="button" className="new-directions-button" onClick={onRefineApprovedDesign}>Refine Design</button>
+                  <button type="button" className="phase4-secondary-action" onClick={onFinishApprovedDesign}>Finish for Now</button>
+                </>}
+                <button type="button" className="phase4-secondary-action" onClick={onResumeExploration}>Return to Exploration</button>
+              </div>
             </div>
           </section>
         ) : (
@@ -317,6 +325,11 @@ export default function ConversationView({
                     Choose Next Step
                   </button>
                 </div>
+                {selectedConcept && (
+                  <button type="button" className="phase4-refine-entry" onClick={onRefineSelectedConcept}>
+                    Refine Selected Concept ↗
+                  </button>
+                )}
                 {selectedConcept && (
                   <p className="variation-selected-hint">
                     Selected: Round {selectedRound.round || 1} · {selectedConcept.name}
