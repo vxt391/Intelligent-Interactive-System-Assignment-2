@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import CommunityGallery, { createCommunityState } from './components/CommunityGallery';
 import { COMMUNITY_PROJECTS } from './data/communityProjects';
 import { getInspirationAttributes } from './data/inspirationAttributes';
 import { applyInspirationTransfer, makeTransferOptions, validateTransfer } from './utils/inspirationTransfer';
+import { createCommunitySuggestionTracker, resetCommunityObservation, trackProjectCommunityInteraction } from './utils/communitySuggestionRules';
 import ProjectTabs from './components/ProjectTabs';
 import ModeSwitcher from './components/ModeSwitcher';
 import PromptComposer from './components/PromptComposer';
@@ -54,6 +55,8 @@ function createProject(id) {
       round: 0,
       uncertaintyStreak: 0,
       communitySuggestionDismissed: false,
+      // Phase 3.4.1: project-scoped, internal detection. Inline UI arrives in 3.4.2.
+      communitySuggestionTracker: createCommunitySuggestionTracker(),
     },
     ui: { intentionsOpen: false, projectInspirationExpanded: false },
   };
@@ -71,6 +74,23 @@ function App() {
   const nextProjectId = useRef(2);
 
   const activeProject = projects.find((project) => project.id === activeId);
+
+  // Phase 3.4.1 diagnostic only: inspect detection in Chrome without rendering
+  // a suggestion early. Available in Vite development builds, not production.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return undefined;
+    window.__intentaCommunitySignals = () => projects.map((project) => {
+      const state = project.exploration.communitySuggestionTracker;
+      return {
+        projectId: project.id,
+        recent: state.recent.map(({ action, signal }) => ({ action, signal })),
+        observedSinceSuggestion: state.observedSinceSuggestion,
+        suggestedCount: state.suggestedCount,
+        pending: state.pending,
+      };
+    });
+    return () => { delete window.__intentaCommunitySignals; };
+  }, [projects]);
 
   function updateProject(changes) {
     setProjects((current) =>
@@ -216,7 +236,7 @@ function App() {
         additions.push({ id: project.nextMessageId + 1, role: 'prototype',
           text: 'This prototype illustrates business-card designs. Submit a business-card request to receive concepts.' });
       }
-      return {
+      const next = {
         ...project,
         prompt: '', promptReview: null,
         activeBrief,
@@ -228,6 +248,15 @@ function App() {
           initialBrief: project.intentions.initialBrief || (firstMessage ? original : ''),
         },
       };
+      // A submitted business-card brief or a follow-up after recommendations is
+      // one relevant interaction, including wording that the brief parser cannot apply.
+      // Non-business-card messages before any recommendations are not tracked.
+      return hasRecommendations || (!hasRecommendations && isBusinessCardRequest(submitted) &&
+        additions.some((item) => item.role === 'recommendations'))
+        ? trackProjectCommunityInteraction(next, {
+            eventKey: `message:${userMessage.id}`, action: 'message', text: submitted,
+          })
+        : next;
     }));
   }
 
@@ -377,7 +406,7 @@ function App() {
       const { preferences, changes } = mergeConfirmedPreferences(
         project.intentions.preferences, rated
       );
-      return {
+      const next = {
         ...project,
         intentions: { ...project.intentions, preferences },
         feedbackDrafts: {
@@ -393,6 +422,11 @@ function App() {
         }],
         nextMessageId: project.nextMessageId + 1,
       };
+      // Individual Like/Avoid/Not Sure chips are ordinary feedback, never broad rejection.
+      return trackProjectCommunityInteraction(next, {
+        eventKey: `feedback:${project.nextMessageId}`,
+        action: 'feedback',
+      });
     }));
   }
 
@@ -434,7 +468,7 @@ function App() {
         ? ' For this round, you chose to prioritise the active brief over overlapping Avoid preferences.'
         : ' For this round, you chose to prioritise confirmed Avoid preferences over overlapping brief requirements.'
       : '';
-    return {
+    const next = {
       ...project, directionRequest: null,
       messages: [...project.messages, requested, {
         id: project.nextMessageId + 1, role: 'recommendations',
@@ -443,6 +477,9 @@ function App() {
       nextMessageId: project.nextMessageId + 2,
       exploration: { ...project.exploration, round: nextRound, strategy: 'new-directions' },
     };
+    return trackProjectCommunityInteraction(next, {
+      eventKey: `new-directions:${requested.id}`, action: 'new-directions',
+    });
   }
 
   function exploreNewDirections() {
@@ -553,7 +590,7 @@ function App() {
       variationRequest: { ...request, stage: 'error', error: outcome.blockedReason },
     };
     const selectedText = request.dimensions.length ? request.dimensions.join(', ') : 'general variations';
-    return {
+    const next = {
       ...project,
       variationRequest: null,
       messages: [...project.messages, {
@@ -574,6 +611,9 @@ function App() {
         // Keep the provisional reference selection in its original round.
       },
     };
+    return trackProjectCommunityInteraction(next, {
+      eventKey: `variations:${project.nextMessageId}`, action: 'variations',
+    });
   }
 
   function prepareVariations() {
@@ -640,9 +680,16 @@ function App() {
   }
 
   function confirmDesignApproval() {
-    setProjects((current) => current.map((project) =>
-      project.id === activeId ? approveDesignProject(project) : project
-    ));
+    setProjects((current) => current.map((project) => {
+      if (project.id !== activeId) return project;
+      const approved = approveDesignProject(project);
+      return approved.explorationComplete
+        ? { ...approved, exploration: {
+            ...approved.exploration,
+            communitySuggestionTracker: resetCommunityObservation(approved.exploration.communitySuggestionTracker),
+          } }
+        : approved;
+    }));
   }
 
   function resumeExploration() {

@@ -2486,11 +2486,11 @@ Integrate linked Community inspiration references into the existing Design Works
 
 Manual integration testing was conducted in Google Chrome.
 
-| Test | Focus | Result |
-|---|---|---|
-| 3.3.3A | Project Inspiration display, reference-only connections and collapsible UI | 8/8 passed |
-| 3.3.3B | Project independence, preference changes, responsive layout and regression testing | 15/15 passed |
-| **Total** | **Manual integration checks** | **23/23 passed** |
+| Test      | Focus                                                                              | Result           |
+| --------- | ---------------------------------------------------------------------------------- | ---------------- |
+| 3.3.3A    | Project Inspiration display, reference-only connections and collapsible UI         | 8/8 passed       |
+| 3.3.3B    | Project independence, preference changes, responsive layout and regression testing | 15/15 passed     |
+| **Total** | **Manual integration checks**                                                      | **23/23 passed** |
 
 **Responsive testing:** 1366 × 768, 1920 × 1080 and 2560 × 1440.
 
@@ -2524,13 +2524,99 @@ This supports Intenta's research focus on structured, visual and user-controlled
 
 **Status:** Completed — 80/80 manual integration checks passed.
 
-| Sub-milestone | Description | Result |
-|---|---|---|
-| 3.3.1 | Explicit project selection | 10/10 passed |
-| 3.3.2 | Attribute transfer, conflict resolution and reference-only UX refinement | 47/47 passed |
-| 3.3.3 | Project Inspiration display and final integration | 23/23 passed |
-| **Total** | **Community-to-Project Inspiration Integration** | **80/80 passed** |
+| Sub-milestone | Description                                                              | Result           |
+| ------------- | ------------------------------------------------------------------------ | ---------------- |
+| 3.3.1         | Explicit project selection                                               | 10/10 passed     |
+| 3.3.2         | Attribute transfer, conflict resolution and reference-only UX refinement | 47/47 passed     |
+| 3.3.3         | Project Inspiration display and final integration                        | 23/23 passed     |
+| **Total**     | **Community-to-Project Inspiration Integration**                         | **80/80 passed** |
 
 **Next milestone:** Phase 3 — Milestone 3.4: Contextual Community Inspiration Suggestions.
 
+### Phase 3 — Milestone 3.4.1: Rule-Based Uncertainty Detection
 
+**Status:** Completed — 16/16 automated tests and 10/10 manual integration checks passed.
+
+#### Objective
+
+Implement a deterministic, project-scoped detection mechanism that identifies repeated user uncertainty or broad rejection during design exploration, enabling Intenta to offer optional Community Inspiration suggestions in a later milestone.
+
+The detection mechanism should avoid interpreting ordinary design refinement as general uncertainty and must not interrupt the existing design workflow.
+
+#### Implementation
+
+**1. Rule-Based Signal Classification**
+
+- Implemented a dedicated utility for identifying supported expressions of design uncertainty and broad recommendation rejection.
+- Distinguished meaningful uncertainty signals from routine design exploration and attribute-specific feedback.
+- Used deterministic text-matching and interaction rules rather than emotion detection or an external AI model.
+- Ensured ordinary Avoid feedback, routine variation requests and narrow attribute dissatisfaction do not independently trigger Community suggestions.
+
+**2. Observation Window and Eligibility**
+
+- Implemented the agreed rule requiring at least two meaningful uncertainty or broad-rejection signals within the last three relevant exploration interactions.
+- Recorded relevant interaction types, including submitted design messages and exploration actions.
+- Represented suggestion eligibility through a `pending` status.
+- Introduced observation tracking to support future suggestion cooldown behaviour.
+
+**3. Project-Specific State Management**
+
+- Maintained separate detection histories for individual design projects.
+- Preserved project-specific eligibility when switching between projects.
+- Prevented uncertainty signals from one project from affecting another project.
+- Supported rule-level safeguards for repeated suggestions and duplicate interaction events.
+
+**4. Development Diagnostics**
+
+- Introduced a development-only Chrome Console diagnostic:
+
+  `window.__intentaCommunitySignals()`
+
+- Exposed project-specific interaction histories, signal classifications, observation counts and pending eligibility for testing.
+- Kept the detector internal without displaying contextual Community suggestions or navigating users automatically.
+
+#### Testing and Evaluation
+
+**Automated testing**
+
+Executed the Node.js test suite:
+
+`node --test tests/communitySuggestionRules.test.mjs`
+
+**Result:** 16/16 automated tests passed.
+
+Automated tests covered signal classification, false-positive prevention, observation windows, cooldown rules, duplicate-event handling and project independence.
+
+**Manual integration testing**
+
+Conducted testing in Google Chrome.
+
+| Test area                 | Expected behaviour                                                           | Result |
+| ------------------------- | ---------------------------------------------------------------------------- | ------ |
+| Initialisation            | Application and diagnostics initialise correctly                             | Passed |
+| Uncertainty detection     | Meaningful uncertainty is recorded                                           | Passed |
+| Neutral interactions      | Routine new-direction exploration is treated as neutral                      | Passed |
+| Trigger threshold         | Two meaningful signals within three interactions produce pending eligibility | Passed |
+| False-positive prevention | Narrow attribute feedback does not trigger suggestions                       | Passed |
+| Project independence      | Detection histories remain independent across projects                       | Passed |
+| UI boundaries             | No suggestion UI or automatic navigation occurs yet                          | Passed |
+| Regression testing        | Existing briefs, recommendations and Community navigation remain functional  | Passed |
+
+**Overall manual result:** 10/10 checks passed.
+
+No import errors, compilation errors or browser console errors were reported.
+
+#### Limitations
+
+- Detection relies on predefined rules and supported language patterns; it does not provide comprehensive natural-language understanding.
+- The detector may not recognise every possible expression of uncertainty or dissatisfaction.
+- Detection history remains in session-only React state.
+- Inline Community suggestions, user actions and conversation-history statuses are not yet implemented.
+
+#### Outcome
+
+Milestone 3.4.1 establishes the underlying detection mechanism for contextual Community Inspiration suggestions.
+
+The implementation successfully identifies repeated broad uncertainty while distinguishing it from ordinary design refinement, preserving project independence and avoiding premature interruptions.
+
+**Next milestone:** Phase 3 — Milestone 3.4.2: Inline Community Inspiration Suggestions and User Actions.
