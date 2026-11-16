@@ -151,6 +151,8 @@ export function applyInspirationTransfer(project, { artwork, savedAttributes, se
     artworkTitle: artwork.title,
     artworkCategory: artwork.category,
     image: artwork.image,
+    // Preserve the explicitly chosen connection mode for honest UI messaging.
+    referenceOnly: referenceOnly === true,
     sourceAttributes: savedAttributes.map((a) => ({ id: a.id, label: a.label, dimension: a.dimension })),
     transferred: applied,
     retainedExisting: kept,

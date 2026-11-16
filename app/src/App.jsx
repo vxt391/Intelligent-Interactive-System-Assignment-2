@@ -55,7 +55,7 @@ function createProject(id) {
       uncertaintyStreak: 0,
       communitySuggestionDismissed: false,
     },
-    ui: { intentionsOpen: false },
+    ui: { intentionsOpen: false, projectInspirationExpanded: false },
   };
 }
 
@@ -163,7 +163,7 @@ function App() {
     setActiveWorkspace('design');
     setCommunityState((current) => ({ ...current, connectionNotice: null }));
     setProjects((current) => current.map((project) => project.id === id
-      ? { ...project, mode: 'explore', ui: { ...project.ui, intentionsOpen: true } } : project));
+      ? { ...project, mode: 'explore', ui: { ...project.ui, intentionsOpen: true, projectInspirationExpanded: true } } : project));
   }
 
   function closeProject(id) {
@@ -914,6 +914,14 @@ function App() {
                   <IntentionPanel
                     intentions={activeProject.intentions}
                     activeBrief={activeProject.activeBrief}
+                    inspirationReferences={activeProject.inspirationReferences || []}
+                    inspirationExpanded={Boolean(activeProject.ui.projectInspirationExpanded)}
+                    onToggleInspiration={() => updateProject({
+                      ui: {
+                        ...activeProject.ui,
+                        projectInspirationExpanded: !activeProject.ui.projectInspirationExpanded,
+                      },
+                    })}
                     preferenceEdit={activeProject.preferenceEdit}
                     pendingChanges={activeProject.preferenceEdit
                       ? getPreferenceEditChanges(activeProject.preferenceEdit).length : 0}

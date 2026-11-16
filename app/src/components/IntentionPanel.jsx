@@ -1,4 +1,5 @@
 import { describeActiveBrief } from '../utils/followUpBrief';
+import ProjectInspiration from './ProjectInspiration';
 const GROUPS = [
   { value: 'like', heading: 'Liked attributes', empty: 'No liked attributes yet.' },
   { value: 'avoid', heading: 'Attributes to avoid', empty: 'No attributes to avoid yet.' },
@@ -14,6 +15,9 @@ const FEEDBACK_OPTIONS = [
 export default function IntentionPanel({
   intentions,
   activeBrief,
+  inspirationReferences = [],
+  inspirationExpanded = false,
+  onToggleInspiration,
   preferenceEdit,
   pendingChanges,
   onBeginEdit,
@@ -183,6 +187,13 @@ export default function IntentionPanel({
             })}
           </section>
         )}
+
+        <ProjectInspiration
+          references={inspirationReferences}
+          preferences={intentions.preferences}
+          expanded={inspirationExpanded}
+          onToggle={onToggleInspiration}
+        />
 
         <p className="intention-footnote">
           Recognised active-brief instructions and confirmed Like/Avoid feedback guide future recommendations.

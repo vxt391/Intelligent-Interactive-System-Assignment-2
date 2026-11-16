@@ -248,3 +248,54 @@
   .phase3-transfer-review { padding: 18px; }
   .phase3-connection-actions { width: 100%; }
 }
+
+
+/* Phase 3.3.3 — compact, accessible project-scoped inspiration section. */
+.project-inspiration {
+  border-top: 1px solid #ece7f0;
+  padding-top: 16px;
+  margin: 7px 0 20px;
+  min-width: 0;
+}
+.project-inspiration-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  gap: 8px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 5px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  color: #463a54;
+  cursor: pointer;
+}
+.project-inspiration-toggle:hover { background: #f8f5fc; }
+.project-inspiration-toggle:focus-visible { outline: 3px solid #b7aaf2; outline-offset: 2px; }
+.project-inspiration-toggle-title { display: inline-flex; align-items: center; gap: 7px; font-weight: 750; font-size: 12px; }
+.project-inspiration-chevron { color: #8065b0; font-size: 15px; width: 15px; text-align: center; }
+.project-inspiration-count { flex: none; border-radius: 99px; background: #f0ebf7; color: #66527d; font-size: 10px; padding: 5px 7px; }
+.project-inspiration-content { padding-top: 4px; }
+.project-inspiration-intro, .project-inspiration-disclaimer { color: #83768d; font-size: 11px; line-height: 1.55; margin: 3px 0 11px; }
+.project-inspiration-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.project-inspiration-card { min-width: 0; border: 1px solid #e8e0ee; border-radius: 11px; padding: 10px; background: #fff; }
+.project-inspiration-card-main { display: flex; align-items: center; min-width: 0; gap: 10px; }
+.project-inspiration-thumb { display: block; flex: 0 0 62px; width: 62px; height: 62px; object-fit: cover; background: #eee8f2; border-radius: 8px; }
+.project-inspiration-thumb-fallback { display: flex; align-items: center; justify-content: center; color: #8e79ab; font-size: 24px; }
+.project-inspiration-card-info { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.project-inspiration-title { display: block; overflow-wrap: anywhere; color: #493b57; font-size: 12px; line-height: 1.35; }
+.project-inspiration-category { color: #817588; font-size: 10px; line-height: 1.4; }
+.project-inspiration-transfer { margin-top: 10px; }
+.project-inspiration-caption { display: block; font-size: 10px; font-weight: 720; color: #716281; margin-bottom: 6px; }
+.project-inspiration-tags { margin: 0; padding: 0; display: flex; flex-wrap: wrap; list-style: none; gap: 5px; }
+.project-inspiration-tag { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; border-radius: 7px; border: 1px solid #e3d8ee; background: #f8f4fd; color: #614a7d; font-size: 10px; line-height: 1.4; padding: 5px 7px; max-width: 100%; overflow-wrap: anywhere; }
+.project-inspiration-status { border-radius: 5px; padding: 2px 4px; background: #fff0e5; color: #855331; font-weight: 750; }
+.project-inspiration-none { color: #78668f; font-size: 11px; font-weight: 650; margin: 9px 0 0; line-height: 1.5; }
+.project-inspiration-retained, .project-inspiration-source { font-size: 10px; color: #817588; line-height: 1.6; margin: 8px 0 0; overflow-wrap: anywhere; }
+.project-inspiration-disclaimer { border-top: 1px solid #f0ecf2; padding-top: 10px; margin: 12px 0 0; }
+@media (max-width: 850px) {
+  .project-inspiration-thumb { width: 58px; height: 58px; flex-basis: 58px; }
+}
