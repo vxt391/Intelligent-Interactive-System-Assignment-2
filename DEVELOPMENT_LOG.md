@@ -2620,3 +2620,111 @@ Milestone 3.4.1 establishes the underlying detection mechanism for contextual Co
 The implementation successfully identifies repeated broad uncertainty while distinguishing it from ordinary design refinement, preserving project independence and avoiding premature interruptions.
 
 **Next milestone:** Phase 3 — Milestone 3.4.2: Inline Community Inspiration Suggestions and User Actions.
+
+### Phase 3 — Milestone 3.4.2: Contextual Community Inspiration Suggestions
+
+**Status:** Implementation completed — 10/10 manual integration checks passed. Additional navigation refinement pending final confirmation.
+
+#### Objective
+
+Integrate the rule-based uncertainty detection mechanism from Milestone 3.4.1 into Intenta's existing conversational interface, enabling optional Community Inspiration suggestions when users repeatedly express uncertainty or broadly reject design directions.
+
+#### Implementation
+
+**1. Inline Conversation Suggestions**
+
+- Integrated Community Inspiration suggestions into the existing project conversation history.
+- Displayed suggestions after the agreed detection threshold: at least two meaningful uncertainty or broad-rejection signals within three relevant exploration interactions.
+- Provided two explicit actions: **Explore Community** and **Keep Designing**.
+- Ensured suggestions did not automatically redirect users or generate new recommendations.
+
+**2. Suggestion Dismissal and History**
+
+- Implemented Keep Designing to dismiss a suggestion without interrupting the current design workflow.
+- Preserved dismissed suggestions in conversation history with a non-interactive status.
+- Marked suggestions as used when users explicitly visited Community, including through the sidebar.
+- Removed outdated action buttons from used and dismissed suggestions.
+
+**3. Frequency Control**
+
+- Implemented project-specific observation windows.
+- Required at least three fresh relevant interactions, including two new meaningful signals, before displaying another suggestion.
+- Prevented previously used signals from repeatedly triggering suggestions.
+- Ensured at most one actionable suggestion was active at a time.
+
+**4. Navigation Refinement**
+
+- Added a contextual **Back to Project Conversation** control for users entering Community through a conversation suggestion.
+- Designed the control to return users to the originating project's conversation.
+- Kept ordinary sidebar Community browsing independent of this contextual navigation.
+- Preserved existing Community browsing and project state.
+
+#### Testing
+
+**Test 3.4.2A — Inline Suggestions:** 10/10 passed.
+
+Verified suggestion appearance, explicit navigation, dismissal, historical statuses, cooldown behaviour, project independence and existing project-state preservation.
+
+**Test 3.4.2B — Back to Conversation:** Final manual navigation verification pending.
+
+---
+
+### Phase 3 — Milestone 3.4.3: Final Regression Testing
+
+**Status:** Completed — 8/8 manual regression checks passed.
+
+#### Objective
+
+Verify the reliability and continuity of contextual Community Inspiration suggestions and ensure compatibility with previously implemented Phase 2 and Phase 3 functionality.
+
+#### Testing and Results
+
+- Confirmed that a single uncertainty signal does not trigger a suggestion.
+- Confirmed that uncertainty signals outside the recent three-interaction window do not cause unintended suggestions.
+- Verified preservation of dismissed suggestion history across project switching.
+- Verified that older suggestions remain non-interactive and at most one actionable suggestion exists.
+- Confirmed that ordinary sidebar Community navigation remains available.
+- Verified that Saved Inspiration, supported attribute transfer and reference-only connections continue functioning.
+- Verified responsive layouts at 1366 × 768, 1920 × 1080 and 2560 × 1440.
+- Confirmed that Community and Design Workspace navigation preserve project state without reported console errors.
+
+**Result:** 8/8 regression checks passed, with no outstanding failures reported in these scenarios.
+
+#### Overall Phase 3.4 Evaluation
+
+| Test                         | Result                     |
+| ---------------------------- | -------------------------- |
+| 3.4.1 Manual Integration     | 10/10 passed               |
+| 3.4.1 Automated Rule Tests   | 16/16 passed               |
+| 3.4.2A Inline Suggestions    | 10/10 passed               |
+| 3.4.3 Final Regression       | 8/8 passed                 |
+| 3.4.2B Navigation Refinement | Pending final confirmation |
+
+**Total verified manual checks:** 28/28, excluding the pending navigation refinement.
+
+#### Limitations
+
+- Suggestion detection is deterministic and rule-based, rather than a comprehensive natural-language understanding system.
+- Project histories and suggestion states remain session-only.
+- The Community Gallery uses curated sample artwork rather than a live external content source.
+- Manual functionality testing does not establish the usability or effectiveness of suggestions with real participants.
+
+#### Outcome
+
+Milestone 3.4 introduces contextual, optional visual-inspiration guidance into Intenta's conversational workflow.
+
+The implementation supports users who experience repeated uncertainty during visual design exploration while preserving user control, project continuity and existing design intentions.
+
+Once the contextual navigation refinement is confirmed, Phase 3 — Community Inspiration will be ready for its final Git commit.
+
+**Final Navigation Verification — Completed**
+
+The contextual Back to Project Conversation navigation refinement passed all 3 focused manual checks in Google Chrome.
+
+- Users entering Community through a conversation suggestion can return directly to the originating project.
+- Returning preserves the project's conversation and design progress.
+- Ordinary sidebar Community browsing does not display an unnecessary project-specific back arrow.
+
+**Final Phase 3.4 result:** 31/31 reported manual checks passed across uncertainty detection, inline suggestions, final regression testing and contextual navigation.
+
+No outstanding failures were reported. Phase 3.4 is ready for Git commit.

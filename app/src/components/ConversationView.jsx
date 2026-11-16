@@ -31,6 +31,8 @@ export default function ConversationView({
   onCancelDesignApproval,
   onConfirmDesignApproval,
   onResumeExploration,
+  onExploreCommunitySuggestion,
+  onKeepDesigningSuggestion,
 }) {
   const feedRef = useRef(null);
   const [exploreDialogOpen, setExploreDialogOpen] = useState(false);
@@ -128,10 +130,35 @@ export default function ConversationView({
                         ? 'Intenta · Active brief updated'
                       : message.role === 'preferences-edited'
                         ? 'Intenta · Preferences updated'
+                      : message.role === 'community-suggestion'
+                        ? 'Intenta · Community Inspiration'
                       : 'Prototype notice'}
               </span>
 
-              {message.role === 'recommendations' ? (
+              {message.role === 'community-suggestion' ? (
+                <div className="community-inline-suggestion" aria-label="Optional Community Inspiration suggestion">
+                  <p>Still exploring possible design directions? Browsing Community Inspiration may help you find visual ideas to explore.</p>
+                  <p className="community-suggestion-explanation">This is optional. Your design brief, feedback and previous concepts will stay available.</p>
+                  {message.status === 'active' ? (
+                    <div className="community-suggestion-actions">
+                      <button type="button" className="community-suggestion-visit"
+                        onClick={() => onExploreCommunitySuggestion?.(message.id)}>
+                        Explore Community
+                      </button>
+                      <button type="button" className="community-suggestion-dismiss"
+                        onClick={() => onKeepDesigningSuggestion?.(message.id)}>
+                        Keep Designing
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="community-suggestion-historic-status" role="status">
+                      {message.status === 'used'
+                        ? 'Used · Explored Community'
+                        : 'Dismissed · Continued designing'}
+                    </p>
+                  )}
+                </div>
+              ) : message.role === 'recommendations' ? (
                 <ConceptRecommendations
                   recommendation={{ ...message, messageId: message.id }}
                   selectedConceptId={selectedConceptMessageId === message.id ? selectedConceptId : null}

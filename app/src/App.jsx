@@ -4,7 +4,8 @@ import CommunityGallery, { createCommunityState } from './components/CommunityGa
 import { COMMUNITY_PROJECTS } from './data/communityProjects';
 import { getInspirationAttributes } from './data/inspirationAttributes';
 import { applyInspirationTransfer, makeTransferOptions, validateTransfer } from './utils/inspirationTransfer';
-import { createCommunitySuggestionTracker, resetCommunityObservation, trackProjectCommunityInteraction } from './utils/communitySuggestionRules';
+import { createCommunitySuggestionTracker, resetCommunityObservation } from './utils/communitySuggestionRules';
+import { trackAndOfferCommunitySuggestion, resolveCommunitySuggestion, markActiveCommunitySuggestionsUsed } from './utils/communitySuggestionWorkflow';
 import ProjectTabs from './components/ProjectTabs';
 import ModeSwitcher from './components/ModeSwitcher';
 import PromptComposer from './components/PromptComposer';
@@ -67,6 +68,8 @@ function App() {
   const [activeId, setActiveId] = useState(1);
   // Navigation is global: Community is available even without a selected project.
   const [activeWorkspace, setActiveWorkspace] = useState('design');
+  // Contextual return path exists ONLY after a conversation's Explore Community action.
+  const [communityReturnProjectId, setCommunityReturnProjectId] = useState(null);
   // Community browsing and explicitly saved inspiration persist when the workspace unmounts.
   // These are global session-only states, deliberately separate from any design project.
   const [communityState, setCommunityState] = useState(createCommunityState);
@@ -74,6 +77,7 @@ function App() {
   const nextProjectId = useRef(2);
 
   const activeProject = projects.find((project) => project.id === activeId);
+  const returnProject = projects.find((project) => project.id === communityReturnProjectId);
 
   // Phase 3.4.1 diagnostic only: inspect detection in Chrome without rendering
   // a suggestion early. Available in Vite development builds, not production.
@@ -179,11 +183,54 @@ function App() {
 
   function viewConnectedProject(id) {
     if (!projects.some((item) => item.id === id)) return;
+    setCommunityReturnProjectId(null);
     setActiveId(id);
     setActiveWorkspace('design');
     setCommunityState((current) => ({ ...current, connectionNotice: null }));
     setProjects((current) => current.map((project) => project.id === id
       ? { ...project, mode: 'explore', ui: { ...project.ui, intentionsOpen: true, projectInspirationExpanded: true } } : project));
+  }
+
+  // Phase 3.4.2: the suggestion stays in history with a terminal status.
+  function keepDesigningAfterSuggestion(messageId) {
+    setProjects((current) => current.map((project) => project.id === activeId
+      ? resolveCommunitySuggestion(project, messageId, 'dismissed') : project));
+  }
+
+  function openCommunityFromSuggestion(messageId) {
+    // Remember the exact originating project, not whichever project may later be active.
+    setCommunityReturnProjectId(activeId);
+    // Navigation occurs ONLY on this explicit button press.
+    setProjects((current) => current.map((project) => project.id === activeId
+      ? resolveCommunitySuggestion(project, messageId, 'used') : project));
+    setActiveWorkspace('community');
+  }
+
+  function openCommunityFromSidebar() {
+    // Unprompted gallery visits must not inherit an old return-to-conversation button.
+    setCommunityReturnProjectId(null);
+    setProjects((current) => current.map((project) => project.id === activeId
+      ? markActiveCommunitySuggestionsUsed(project) : project));
+    setActiveWorkspace('community');
+  }
+
+  function returnToSuggestionConversation() {
+    // The destination is captured when Explore Community is clicked. Do not
+    // accidentally return to a different project created during gallery browsing.
+    const destinationId = communityReturnProjectId;
+    if (destinationId === null || !projects.some((project) => project.id === destinationId)) {
+      setCommunityReturnProjectId(null);
+      return;
+    }
+    // Keep the gallery's active filters, selected tab, and scroll position
+    // available when users later reopen Community within this React session.
+    const scrollTop = communityScrollRef.current?.scrollTop ?? 0;
+    setCommunityState((current) => (current.view === 'gallery' || current.view === 'saved')
+      ? { ...current, scrollPositions: { ...current.scrollPositions, [current.view]: scrollTop } }
+      : current);
+    setActiveId(destinationId);
+    setActiveWorkspace('design');
+    setCommunityReturnProjectId(null);
   }
 
   function closeProject(id) {
@@ -253,7 +300,7 @@ function App() {
       // Non-business-card messages before any recommendations are not tracked.
       return hasRecommendations || (!hasRecommendations && isBusinessCardRequest(submitted) &&
         additions.some((item) => item.role === 'recommendations'))
-        ? trackProjectCommunityInteraction(next, {
+        ? trackAndOfferCommunitySuggestion(next, {
             eventKey: `message:${userMessage.id}`, action: 'message', text: submitted,
           })
         : next;
@@ -423,7 +470,7 @@ function App() {
         nextMessageId: project.nextMessageId + 1,
       };
       // Individual Like/Avoid/Not Sure chips are ordinary feedback, never broad rejection.
-      return trackProjectCommunityInteraction(next, {
+      return trackAndOfferCommunitySuggestion(next, {
         eventKey: `feedback:${project.nextMessageId}`,
         action: 'feedback',
       });
@@ -477,7 +524,7 @@ function App() {
       nextMessageId: project.nextMessageId + 2,
       exploration: { ...project.exploration, round: nextRound, strategy: 'new-directions' },
     };
-    return trackProjectCommunityInteraction(next, {
+    return trackAndOfferCommunitySuggestion(next, {
       eventKey: `new-directions:${requested.id}`, action: 'new-directions',
     });
   }
@@ -611,7 +658,7 @@ function App() {
         // Keep the provisional reference selection in its original round.
       },
     };
-    return trackProjectCommunityInteraction(next, {
+    return trackAndOfferCommunitySuggestion(next, {
       eventKey: `variations:${project.nextMessageId}`, action: 'variations',
     });
   }
@@ -842,7 +889,7 @@ function App() {
         onNewProject={newProject}
         onSelectProject={selectProject}
         onHome={() => { setActiveWorkspace('design'); updateProject({ mode: 'explore' }); }}
-        onCommunity={() => setActiveWorkspace('community')}
+        onCommunity={openCommunityFromSidebar}
         communityActive={activeWorkspace === 'community'}
       />
 
@@ -857,6 +904,21 @@ function App() {
 
         {activeWorkspace === 'community' ? (
           <main className="workspace phase3-workspace" ref={communityScrollRef}>
+            {returnProject && (
+              <nav className="phase3-return-bar" aria-label="Return to design conversation">
+                <div className="phase3-return-bar-inner">
+                  <button
+                    type="button"
+                    className="phase3-return-conversation"
+                    onClick={returnToSuggestionConversation}
+                    aria-label={`Back to ${returnProject.name} conversation`}
+                  >
+                    <span aria-hidden="true">←</span>
+                    <span>Back to {returnProject.name} conversation</span>
+                  </button>
+                </div>
+              </nav>
+            )}
             <CommunityGallery
               state={communityState}
               onChange={setCommunityState}
@@ -946,6 +1008,8 @@ function App() {
                         onCancelDesignApproval={cancelDesignApproval}
                         onConfirmDesignApproval={confirmDesignApproval}
                         onResumeExploration={resumeExploration}
+                        onExploreCommunitySuggestion={openCommunityFromSuggestion}
+                        onKeepDesigningSuggestion={keepDesigningAfterSuggestion}
                       />
                     )
                   ) : (
