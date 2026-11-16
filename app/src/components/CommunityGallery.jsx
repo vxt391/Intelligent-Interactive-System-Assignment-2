@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { COMMUNITY_CATEGORIES, COMMUNITY_PROJECTS, COMMUNITY_STYLES } from '../data/communityProjects';
 import { getInspirationAttributes } from '../data/inspirationAttributes';
+import ProjectSelectionDialog from './ProjectSelectionDialog';
 
 /**
  * Phase 3.2: project-independent creative browsing, detail pages and saved inspiration.
@@ -20,10 +21,15 @@ export const createCommunityState = () => ({
   saved: {}, // Explicitly confirmed inspiration, independent of projects.
   reviewOpen: false,
   removalId: null,
+  // Step 3.3.1 only: temporary destination selection; not a project connection.
+  transferRequest: null, // { artworkId, targetProjectId, stage: 'select' | 'ready' }
   scrollPositions: { gallery: 0, saved: 0 },
 });
 
-export default function CommunityGallery({ state, onChange, scrollContainerRef }) {
+export default function CommunityGallery({
+  state, onChange, scrollContainerRef,
+  projectChoices = [], onCreateProjectForInspiration,
+}) {
   const reviewHeadingRef = useRef(null);
   const titleRef = useRef(null);
   const lastOpenedRef = useRef(null);
@@ -33,7 +39,7 @@ export default function CommunityGallery({ state, onChange, scrollContainerRef }
   const {
     view, returnView, selectedProjectId,
     category, query, style, sort, showFilters,
-    drafts, saved, reviewOpen, removalId, scrollPositions,
+    drafts, saved, reviewOpen, removalId, scrollPositions, transferRequest,
   } = state;
 
   const selectedProject = COMMUNITY_PROJECTS.find((item) => item.id === selectedProjectId);
@@ -125,8 +131,44 @@ export default function CommunityGallery({ state, onChange, scrollContainerRef }
     const nextDrafts = { ...prev.drafts };
     delete nextSaved[id];
     delete nextDrafts[id];
-    return { ...prev, saved: nextSaved, drafts: nextDrafts, removalId: null };
+    return {
+      ...prev, saved: nextSaved, drafts: nextDrafts, removalId: null,
+      transferRequest: prev.transferRequest?.artworkId === id ? null : prev.transferRequest,
+    };
   });
+
+  // Only already-confirmed Community inspiration can start a project connection.
+  // This step intentionally DOES NOT transfer preferences, link an artwork, or
+  // generate recommendations. Those actions require a later review (Step 3.3.2).
+  const startConnect = (artworkId) => {
+    if (!(saved[artworkId]?.length > 0)) return;
+    patch({
+      transferRequest: { artworkId, targetProjectId: null, stage: 'select' },
+    });
+  };
+  const selectDestination = (targetProjectId) => onChange((prev) => ({
+    ...prev,
+    transferRequest: prev.transferRequest
+      ? { ...prev.transferRequest, targetProjectId, stage: 'select' }
+      : null,
+  }));
+  const continueToReviewBoundary = () => onChange((prev) => {
+    const request = prev.transferRequest;
+    if (!request || request.stage !== 'select' ||
+        !projectChoices.some((project) => project.id === request.targetProjectId) ||
+        !(prev.saved[request.artworkId]?.length > 0)) return prev;
+    return { ...prev, transferRequest: { ...request, stage: 'ready' } };
+  });
+  const backToProjectSelection = () => onChange((prev) => ({
+    ...prev,
+    transferRequest: prev.transferRequest
+      ? { ...prev.transferRequest, stage: 'select' }
+      : null,
+  }));
+  const closeProjectPicker = () => patch({ transferRequest: null });
+  const transferArtwork = transferRequest
+    ? COMMUNITY_PROJECTS.find((project) => project.id === transferRequest.artworkId)
+    : null;
 
   const savedCount = savedProjectIds.length;
 
@@ -250,7 +292,12 @@ export default function CommunityGallery({ state, onChange, scrollContainerRef }
                     {getInspirationAttributes(project.id).filter((a) => saved[project.id].includes(a.id)).map((a) =>
                       <span className="phase3-saved-chip" key={a.id}>{a.label}</span>)}
                   </div>
-                  <button type="button" className="phase3-saved-remove" onClick={() => patch({ removalId: project.id })}>Remove saved inspiration</button>
+                  <div className="phase3-saved-actions">
+                    <button type="button" className="phase3-connect-button" onClick={() => startConnect(project.id)}>
+                      Connect to Project
+                    </button>
+                    <button type="button" className="phase3-saved-remove" onClick={() => patch({ removalId: project.id })}>Remove saved inspiration</button>
+                  </div>
                 </article>
               ))}
             </div>
@@ -260,7 +307,7 @@ export default function CommunityGallery({ state, onChange, scrollContainerRef }
               <button type="button" onClick={showGallery}>Explore Community</button>
             </div>
           )}
-          <footer className="phase3-gallery-footer">Saved inspiration belongs to your current browser session. Connecting it to a business-card project comes in Milestone 3.3.</footer>
+          <footer className="phase3-gallery-footer">Saved inspiration belongs to this session. Connect to Project lets you choose a destination; attribute review and final confirmation follow in Step 3.3.2.</footer>
         </>
       )}
 
@@ -304,7 +351,14 @@ export default function CommunityGallery({ state, onChange, scrollContainerRef }
                 Review Inspiration →
               </button>
             </div>
-            {confirmedIds.length > 0 && <p className="phase3-detail-saved-note">✓ You have saved inspiration from this project. Visit Saved Inspiration in Community to revisit it.</p>}
+            {confirmedIds.length > 0 && (
+              <div className="phase3-detail-connect">
+                <p className="phase3-detail-saved-note">✓ This artwork is saved in Community. Connecting uses its last confirmed attributes, not unsaved changes.</p>
+                <button type="button" className="phase3-connect-button" onClick={() => startConnect(selectedProject.id)}>
+                  Connect to Project
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -333,6 +387,21 @@ export default function CommunityGallery({ state, onChange, scrollContainerRef }
             </div>
           </section>
         </div>
+      )}
+
+      {transferRequest && transferArtwork && (saved[transferRequest.artworkId]?.length ?? 0) > 0 && (
+        <ProjectSelectionDialog
+          request={transferRequest}
+          artwork={transferArtwork}
+          confirmedAttributes={getInspirationAttributes(transferArtwork.id).filter((attribute) =>
+            saved[transferArtwork.id].includes(attribute.id))}
+          projects={projectChoices}
+          onSelectProject={selectDestination}
+          onContinue={continueToReviewBoundary}
+          onBack={backToProjectSelection}
+          onClose={closeProjectPicker}
+          onCreateProject={onCreateProjectForInspiration}
+        />
       )}
 
       {removalId && (

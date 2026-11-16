@@ -88,6 +88,14 @@ function App() {
     setActiveWorkspace('design');
   }
 
+  // Phase 3.3.1: creating a destination from Community must not navigate away,
+  // select the new project automatically, or modify another project's intentions.
+  // The user must still explicitly choose the destination in the picker.
+  function createProjectForCommunity() {
+    const id = nextProjectId.current++;
+    setProjects((current) => [...current, createProject(id)]);
+  }
+
   function closeProject(id) {
     const remaining = projects.filter((project) => project.id !== id);
     setProjects(remaining);
@@ -732,7 +740,13 @@ function App() {
 
         {activeWorkspace === 'community' ? (
           <main className="workspace phase3-workspace" ref={communityScrollRef}>
-            <CommunityGallery state={communityState} onChange={setCommunityState} scrollContainerRef={communityScrollRef} />
+            <CommunityGallery
+              state={communityState}
+              onChange={setCommunityState}
+              scrollContainerRef={communityScrollRef}
+              projectChoices={projects.map(({ id, name }) => ({ id, name }))}
+              onCreateProjectForInspiration={createProjectForCommunity}
+            />
           </main>
         ) : (
         <main className="workspace phase2-workspace">

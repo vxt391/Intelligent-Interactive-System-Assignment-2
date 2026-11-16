@@ -2322,3 +2322,24 @@ The implementation provides users with greater control over identifying, reviewi
 **Milestone 3.2 is considered complete for its planned scope.**
 
 The next development stage is **Milestone 3.3 — Connecting Saved Inspiration to Design Projects**, which will focus on transferring selected inspiration into a project through an explicit review and confirmation process.
+
+### Phase 3 — Milestone 3.3.1: Inspiration Project Selection
+
+**Status:** Completed — 10/10 manual integration checks passed.
+
+**Objective:** Enable users to explicitly select a destination business-card project when connecting saved Community inspiration.
+
+**Implementation:**
+
+- Added a Connect to Project action for saved inspiration.
+- Implemented an explicit project-selection dialog displaying existing projects.
+- Required users to select a destination rather than automatically choosing the active project.
+- Supported creating a new project from Community without automatically selecting it or leaving Community.
+- Added a provisional selection summary and the ability to change the destination.
+- Preserved existing Community inspiration and project data without performing any attribute transfer.
+
+**Testing:** All 10 checks in Test 3.3.1A passed in Google Chrome. Testing covered project selection, cancellation, Escape-key behaviour, changing destinations, creating projects and project-state preservation.
+
+**Limitations:** Selecting a project does not yet connect inspiration or update confirmed preferences. Attribute transfer, conflict resolution and final confirmation are reserved for Milestone 3.3.2.
+
+**Outcome:** Project selection is operational and ready for integration with the attribute-transfer workflow.
