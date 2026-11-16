@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
 import CommunityGallery, { createCommunityState } from './components/CommunityGallery';
+import { COMMUNITY_PROJECTS } from './data/communityProjects';
+import { getInspirationAttributes } from './data/inspirationAttributes';
+import { applyInspirationTransfer, makeTransferOptions, validateTransfer } from './utils/inspirationTransfer';
 import ProjectTabs from './components/ProjectTabs';
 import ModeSwitcher from './components/ModeSwitcher';
 import PromptComposer from './components/PromptComposer';
@@ -33,6 +36,7 @@ function createProject(id) {
     briefReview: null, // Proposed follow-up revisions; no changes until approval.
     directionRequest: null, // One-round new-direction conflict resolution only.
     preferenceEdit: null, // Unsaved edits to already confirmed preferences, scoped to this project.
+    inspirationReferences: [], // Confirmed Community artwork snapshots, separate from preferences.
     variationRequest: null, // Milestone 5.2: project-scoped modal decisions, never saved as preferences.
     approvalRequest: null, // Milestone 5.3: concept awaiting explicit final approval.
     approvedDesign: null, // Last explicitly approved concept, preserved while exploring.
@@ -96,6 +100,72 @@ function App() {
     setProjects((current) => [...current, createProject(id)]);
   }
 
+  // Phase 3.3.2: only final confirmation writes to the selected project. The
+  // original Community collection and other projects are not mutated.
+  function confirmInspirationTransfer(request) {
+    const artwork = COMMUNITY_PROJECTS.find((item) => item.id === request.artworkId);
+    const target = projects.find((item) => item.id === request.targetProjectId);
+    const savedIds = communityState.saved[request.artworkId] || [];
+    const savedAttributes = artwork
+      ? getInspirationAttributes(artwork.id).filter((item) => savedIds.includes(item.id)) : [];
+
+    if (!artwork || !target || !savedAttributes.length) {
+      setCommunityState((current) => ({ ...current, transferRequest: current.transferRequest
+        ? { ...current.transferRequest, error: 'The artwork, saved attributes or selected project is no longer available.' } : null }));
+      return;
+    }
+    const options = makeTransferOptions(artwork.id, savedAttributes);
+    const validation = validateTransfer({
+      options, selectedIds: request.selectedIds, resolutions: request.resolutions,
+      referenceOnly: request.referenceOnly === true,
+      projectPreferences: target.intentions.preferences,
+    });
+    if (validation.needsChoice || validation.mixedChoice) {
+      setCommunityState((current) => ({ ...current, transferRequest: current.transferRequest
+        ? { ...current.transferRequest, error: 'Select a supported attribute or explicitly choose a reference-only connection.' } : null }));
+      return;
+    }
+    if (validation.unresolved.length) {
+      setCommunityState((current) => ({ ...current, transferRequest: current.transferRequest
+        ? { ...current.transferRequest, error: 'Choose how to resolve every selected Avoid conflict.' } : null }));
+      return;
+    }
+    const transfer = applyInspirationTransfer(target, {
+      artwork, savedAttributes, selectedIds: request.selectedIds, resolutions: request.resolutions,
+      referenceOnly: request.referenceOnly === true,
+    });
+    if (transfer.error) {
+      setCommunityState((current) => ({ ...current, transferRequest: current.transferRequest
+        ? { ...current.transferRequest, error: transfer.error } : null }));
+      return;
+    }
+    setProjects((current) => current.map((project) => project.id === target.id
+      ? applyInspirationTransfer(project, {
+          artwork, savedAttributes, selectedIds: request.selectedIds, resolutions: request.resolutions,
+          referenceOnly: request.referenceOnly === true,
+        }).project
+      : project));
+    setCommunityState((current) => ({
+      ...current,
+      transferRequest: null,
+      connectionNotice: {
+        projectId: target.id, projectName: target.name,
+        artworkTitle: artwork.title, changesCount: transfer.summary.changes.length,
+        referenceOnly: validation.validSelected.length === 0,
+      },
+    }));
+    // Community remains open. View Project is always an optional action.
+  }
+
+  function viewConnectedProject(id) {
+    if (!projects.some((item) => item.id === id)) return;
+    setActiveId(id);
+    setActiveWorkspace('design');
+    setCommunityState((current) => ({ ...current, connectionNotice: null }));
+    setProjects((current) => current.map((project) => project.id === id
+      ? { ...project, mode: 'explore', ui: { ...project.ui, intentionsOpen: true } } : project));
+  }
+
   function closeProject(id) {
     const remaining = projects.filter((project) => project.id !== id);
     setProjects(remaining);
@@ -111,7 +181,7 @@ function App() {
 
     setProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.briefReview) return project;
-      const firstMessage = project.messages.length === 0;
+      const firstMessage = !project.messages.some((message) => message.role === 'user');
       const hasRecommendations = project.messages.some((message) => message.role === 'recommendations');
       const userMessage = {
         id: project.nextMessageId, role: 'user', text: submitted,
@@ -744,8 +814,10 @@ function App() {
               state={communityState}
               onChange={setCommunityState}
               scrollContainerRef={communityScrollRef}
-              projectChoices={projects.map(({ id, name }) => ({ id, name }))}
+              projectChoices={projects.map(({ id, name, intentions }) => ({ id, name, intentions }))}
               onCreateProjectForInspiration={createProjectForCommunity}
+              onConfirmInspirationTransfer={confirmInspirationTransfer}
+              onViewConnectedProject={viewConnectedProject}
             />
           </main>
         ) : (

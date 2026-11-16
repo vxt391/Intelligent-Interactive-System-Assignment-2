@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { COMMUNITY_CATEGORIES, COMMUNITY_PROJECTS, COMMUNITY_STYLES } from '../data/communityProjects';
 import { getInspirationAttributes } from '../data/inspirationAttributes';
 import ProjectSelectionDialog from './ProjectSelectionDialog';
+import InspirationTransferReview from './InspirationTransferReview';
 
 /**
  * Phase 3.2: project-independent creative browsing, detail pages and saved inspiration.
@@ -21,14 +22,16 @@ export const createCommunityState = () => ({
   saved: {}, // Explicitly confirmed inspiration, independent of projects.
   reviewOpen: false,
   removalId: null,
-  // Step 3.3.1 only: temporary destination selection; not a project connection.
-  transferRequest: null, // { artworkId, targetProjectId, stage: 'select' | 'ready' }
+  // Session-only transfer draft. No design project is edited until final confirmation.
+  transferRequest: null, // { artworkId, targetProjectId, stage, selectedIds, resolutions, referenceOnly }
+  connectionNotice: null, // Explicitly confirmed transfer success; does not redirect.
   scrollPositions: { gallery: 0, saved: 0 },
 });
 
 export default function CommunityGallery({
   state, onChange, scrollContainerRef,
   projectChoices = [], onCreateProjectForInspiration,
+  onConfirmInspirationTransfer, onViewConnectedProject,
 }) {
   const reviewHeadingRef = useRef(null);
   const titleRef = useRef(null);
@@ -39,7 +42,7 @@ export default function CommunityGallery({
   const {
     view, returnView, selectedProjectId,
     category, query, style, sort, showFilters,
-    drafts, saved, reviewOpen, removalId, scrollPositions, transferRequest,
+    drafts, saved, reviewOpen, removalId, scrollPositions, transferRequest, connectionNotice,
   } = state;
 
   const selectedProject = COMMUNITY_PROJECTS.find((item) => item.id === selectedProjectId);
@@ -137,19 +140,19 @@ export default function CommunityGallery({
     };
   });
 
-  // Only already-confirmed Community inspiration can start a project connection.
-  // This step intentionally DOES NOT transfer preferences, link an artwork, or
-  // generate recommendations. Those actions require a later review (Step 3.3.2).
+  // Only previously confirmed Community inspiration may enter the transfer workflow.
+  // Nothing in this component writes to project preferences directly.
   const startConnect = (artworkId) => {
     if (!(saved[artworkId]?.length > 0)) return;
     patch({
-      transferRequest: { artworkId, targetProjectId: null, stage: 'select' },
+      transferRequest: { artworkId, targetProjectId: null, stage: 'select', selectedIds: [], resolutions: {}, referenceOnly: false, error: null },
+      connectionNotice: null,
     });
   };
   const selectDestination = (targetProjectId) => onChange((prev) => ({
     ...prev,
     transferRequest: prev.transferRequest
-      ? { ...prev.transferRequest, targetProjectId, stage: 'select' }
+      ? { ...prev.transferRequest, targetProjectId, stage: 'select', resolutions: {}, referenceOnly: false, error: null }
       : null,
   }));
   const continueToReviewBoundary = () => onChange((prev) => {
@@ -157,15 +160,37 @@ export default function CommunityGallery({
     if (!request || request.stage !== 'select' ||
         !projectChoices.some((project) => project.id === request.targetProjectId) ||
         !(prev.saved[request.artworkId]?.length > 0)) return prev;
-    return { ...prev, transferRequest: { ...request, stage: 'ready' } };
+    return { ...prev, transferRequest: { ...request, stage: 'review', error: null } };
   });
   const backToProjectSelection = () => onChange((prev) => ({
     ...prev,
     transferRequest: prev.transferRequest
-      ? { ...prev.transferRequest, stage: 'select' }
+      ? { ...prev.transferRequest, stage: 'select', resolutions: {}, error: null }
       : null,
   }));
   const closeProjectPicker = () => patch({ transferRequest: null });
+  const toggleTransferAttribute = (sourceId) => onChange((prev) => {
+    const request = prev.transferRequest;
+    if (!request || request.stage !== 'review') return prev;
+    const selected = request.selectedIds || [];
+    const selectedIds = selected.includes(sourceId) ? selected.filter((id) => id !== sourceId) : [...selected, sourceId];
+    const resolutions = { ...(request.resolutions || {}) };
+    delete resolutions[sourceId];
+    return { ...prev, transferRequest: { ...request, selectedIds, resolutions, referenceOnly: false, error: null } };
+  });
+  const chooseReferenceOnly = (enabled) => onChange((prev) => {
+    const request = prev.transferRequest;
+    if (!request || request.stage !== 'review' || (request.selectedIds || []).length > 0) return prev;
+    return { ...prev, transferRequest: { ...request, referenceOnly: enabled, error: null } };
+  });
+  const resolveTransferConflict = (sourceId, resolution) => {
+    if (!['keep', 'replace', 'skip'].includes(resolution)) return;
+    onChange((prev) => {
+      const request = prev.transferRequest;
+      if (!request || request.stage !== 'review' || !request.selectedIds?.includes(sourceId)) return prev;
+      return { ...prev, transferRequest: { ...request, resolutions: { ...request.resolutions, [sourceId]: resolution }, error: null } };
+    });
+  };
   const transferArtwork = transferRequest
     ? COMMUNITY_PROJECTS.find((project) => project.id === transferRequest.artworkId)
     : null;
@@ -207,6 +232,23 @@ export default function CommunityGallery({
             </button>
           </div>
         </>
+      )}
+
+      {connectionNotice && (
+        <div className="phase3-connection-success" role="status">
+          <div>
+            <strong>{connectionNotice.referenceOnly
+              ? `✓ Artwork added as a visual reference to ${connectionNotice.projectName}`
+              : `✓ Inspiration connected to ${connectionNotice.projectName}`}</strong>
+            <p>{connectionNotice.referenceOnly
+              ? `“${connectionNotice.artworkTitle}” is linked for visual inspiration only. No design preferences were added or changed, and no new designs were generated.`
+              : `“${connectionNotice.artworkTitle}” is linked as a project reference. ${connectionNotice.changesCount} confirmed preference change(s) were applied. No designs were generated.`}</p>
+          </div>
+          <div className="phase3-connection-actions">
+            <button type="button" className="phase3-primary-action" onClick={() => onViewConnectedProject(connectionNotice.projectId)}>View Project</button>
+            <button type="button" className="phase3-secondary-action" onClick={() => patch({ connectionNotice: null })}>Dismiss</button>
+          </div>
+        </div>
       )}
 
       {view === 'gallery' && (
@@ -307,7 +349,7 @@ export default function CommunityGallery({
               <button type="button" onClick={showGallery}>Explore Community</button>
             </div>
           )}
-          <footer className="phase3-gallery-footer">Saved inspiration belongs to this session. Connect to Project lets you choose a destination; attribute review and final confirmation follow in Step 3.3.2.</footer>
+          <footer className="phase3-gallery-footer">Saved inspiration belongs to this session. Connect to Project opens an explicit review; only confirmed, supported preferences are applied to the selected design project.</footer>
         </>
       )}
 
@@ -389,7 +431,7 @@ export default function CommunityGallery({
         </div>
       )}
 
-      {transferRequest && transferArtwork && (saved[transferRequest.artworkId]?.length ?? 0) > 0 && (
+      {transferRequest?.stage === 'select' && transferArtwork && (saved[transferRequest.artworkId]?.length ?? 0) > 0 && (
         <ProjectSelectionDialog
           request={transferRequest}
           artwork={transferArtwork}
@@ -398,9 +440,31 @@ export default function CommunityGallery({
           projects={projectChoices}
           onSelectProject={selectDestination}
           onContinue={continueToReviewBoundary}
-          onBack={backToProjectSelection}
           onClose={closeProjectPicker}
           onCreateProject={onCreateProjectForInspiration}
+        />
+      )}
+      {transferRequest?.stage === 'review' && transferArtwork &&
+        projectChoices.some((project) => project.id === transferRequest.targetProjectId) &&
+        (saved[transferRequest.artworkId]?.length ?? 0) > 0 && (
+        <InspirationTransferReview
+          request={transferRequest}
+          artwork={transferArtwork}
+          savedAttributes={getInspirationAttributes(transferArtwork.id).filter((attribute) =>
+            saved[transferArtwork.id].includes(attribute.id))}
+          destination={projectChoices.find((project) => project.id === transferRequest.targetProjectId)}
+          onToggleAttribute={toggleTransferAttribute}
+          onResolveConflict={resolveTransferConflict}
+          onReferenceOnlyChange={chooseReferenceOnly}
+          onBack={backToProjectSelection}
+          onClose={closeProjectPicker}
+          onConfirm={() => onConfirmInspirationTransfer({
+            artworkId: transferRequest.artworkId,
+            targetProjectId: transferRequest.targetProjectId,
+            selectedIds: transferRequest.selectedIds || [],
+            resolutions: transferRequest.resolutions || {},
+            referenceOnly: transferRequest.referenceOnly === true,
+          })}
         />
       )}
 

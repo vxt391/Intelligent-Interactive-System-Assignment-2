@@ -2343,3 +2343,95 @@ The next development stage is **Milestone 3.3 — Connecting Saved Inspiration t
 **Limitations:** Selecting a project does not yet connect inspiration or update confirmed preferences. Attribute transfer, conflict resolution and final confirmation are reserved for Milestone 3.3.2.
 
 **Outcome:** Project selection is operational and ready for integration with the attribute-transfer workflow.
+
+### Phase 3 — Milestone 3.3.2: Inspiration Attribute Transfer and Conflict Resolution
+
+**Status:** Completed — 47/47 manual integration checks passed.
+
+#### Objective
+
+Implement a user-controlled workflow for connecting saved Community inspiration to business-card design projects. Users should be able to transfer supported design attributes into existing confirmed preferences, resolve conflicts explicitly, or connect an artwork as a visual reference without changing project preferences.
+
+#### Implementation
+
+**1. Attribute Transfer Review**
+
+- Integrated the existing project-selection workflow with a dedicated attribute-transfer review.
+- Displayed the selected artwork and destination project.
+- Introduced curated mappings between Community inspiration attributes and the existing business-card preference catalogue.
+- Distinguished supported actionable attributes from descriptive-only characteristics.
+- Allowed users to individually select supported attributes for transfer.
+
+**2. Preference Conflict Resolution**
+
+- Detected conflicts between selected inspiration attributes and existing confirmed project preferences.
+- Provided explicit per-attribute options:
+  - **Keep Existing:** Retain the existing confirmed preference.
+  - **Replace Existing:** Replace the conflicting preference with the transferred preference.
+  - **Skip Attribute:** Exclude the conflicting attribute from the transfer.
+- Prevented confirmation while selected conflicts remained unresolved.
+- Preserved unrelated confirmed preferences and allowed non-conflicting attributes to transfer independently.
+
+**3. Explicit Confirmation and State Integration**
+
+- Applied selected preference changes only after final confirmation.
+- Reused the existing project preference structure rather than introducing a separate preference system.
+- Recorded connected artwork references within the selected project's state.
+- Prevented duplicate confirmed preferences and project-reference records.
+- Supported connecting the same saved artwork to multiple projects independently.
+- Preserved the original Community saved inspiration without modification.
+- Kept users in Community after confirmation and provided an optional View Project action.
+- Prevented automatic recommendation generation.
+
+**4. Reference-Only Connection UX Refinement**
+
+An additional usability issue was identified during manual testing: the original implementation allowed users to confirm a connection without selecting any attributes, implicitly creating a reference-only connection.
+
+Although technically valid, this behaviour made the purpose and outcome of the confirmation unclear.
+
+The workflow was refined to:
+
+- Disable confirmation when no attributes or reference-only choice are selected.
+- Provide an explicit **Connect as visual reference only** option.
+- Enable **Connect Reference Only** only when users deliberately choose this option.
+- Keep normal attribute-transfer confirmation separate from reference-only confirmation.
+- Display a specific success message explaining that the artwork was connected without changing confirmed preferences.
+- Preserve cancellation, duplicate prevention and existing conflict-resolution behaviour.
+
+This refinement makes the system's actions more transparent and gives users clearer control over their intended outcome.
+
+**5. Continuity and Project Independence**
+
+- Preserved the Original Brief and Active Design Brief.
+- Preserved previously generated recommendation rounds.
+- Confirmed that new recommendation rounds can consider newly transferred confirmed preferences where supported.
+- Ensured each connection affects only the explicitly selected destination project.
+- Continued using session-only React state without persistent backend storage.
+
+#### Testing and Evaluation
+
+Manual integration testing was conducted in Google Chrome.
+
+| Test      | Focus                                                             | Result           |
+| --------- | ----------------------------------------------------------------- | ---------------- |
+| 3.3.2A    | Attribute transfer, review and confirmation                       | 12/12 passed     |
+| 3.3.2B    | Conflict detection and resolution                                 | 13/13 passed     |
+| 3.3.2C    | Repeated connections, project independence and regression testing | 12/12 passed     |
+| 3.3.2D    | Explicit reference-only connection UX refinement                  | 10/10 passed     |
+| **Total** | **Manual integration checks**                                     | **47/47 passed** |
+
+**Results:** All reported checks passed with no outstanding failures. The tests confirmed explicit preference transfer, conflict resolution, project independence, duplicate prevention, reference-only behaviour and preservation of existing design state.
+
+#### Limitations
+
+- Attribute mappings are curated and rule-based rather than generated through automated visual analysis.
+- All project and inspiration data remain session-only.
+- Linked artwork references are not yet displayed in a dedicated Project Inspiration section within Current Intentions.
+
+#### Outcome
+
+Milestone 3.3.2 successfully connects Community Inspiration with the existing design-preference system through transparent, user-confirmed attribute transfer and conflict resolution.
+
+The additional reference-only UX refinement strengthens user control by distinguishing the intention to transfer design characteristics from the intention to retain an artwork solely as a visual reference.
+
+**Next milestone:** Phase 3 — Milestone 3.3.3: Project Inspiration Display and Final Integration.

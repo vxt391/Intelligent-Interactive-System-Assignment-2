@@ -200,3 +200,51 @@
 .phase3-picker-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .phase3-picker-ready p { margin: 8px 0 0; color: #746a7f; line-height: 1.6; font-size: 12px; }
 @media (max-width: 540px) { .phase3-picker-source img { width: 60px; height: 60px; flex-basis: 60px; } .phase3-saved-actions { flex-direction: column; align-items: stretch; } }
+
+/* Phase 3.3.2 — explicit inspiration-to-preference review and non-blocking success. */
+.phase3-transfer-review { width: min(100%, 740px); }
+.phase3-transfer-intro { margin: 22px 0 12px; }
+.phase3-transfer-intro h3,
+.phase3-transfer-descriptive h3 { margin: 0 0 7px; font-size: 15px; color: #40334f; }
+.phase3-transfer-intro p, .phase3-transfer-description,
+.phase3-transfer-descriptive li { font-size: 12px; line-height: 1.6; color: #746b7e; }
+.phase3-transfer-list { display: flex; flex-direction: column; gap: 10px; }
+.phase3-transfer-item { border: 1px solid #e7e0ee; border-radius: 12px; padding: 13px 14px; background: #fff; }
+.phase3-transfer-item.is-selected { border-color: #b49bda; background: #fbf9fe; }
+.phase3-transfer-item-choice { display: flex; gap: 11px; align-items: flex-start; cursor: pointer; }
+.phase3-transfer-item-choice input { accent-color: #7050a6; margin-top: 3px; flex: none; }
+.phase3-transfer-item-choice > span { display: flex; flex-direction: column; min-width: 0; gap: 5px; }
+.phase3-transfer-item-choice strong { font-size: 13px; color: #41374c; }
+.phase3-transfer-item-choice small { font-size: 11px; color: #786e83; line-height: 1.5; }
+.phase3-transfer-existing { margin: 11px 0 0 26px; font-size: 11px; color: #6a5685; }
+.phase3-transfer-conflict { margin: 14px 0 0 25px; min-width: 0; border: 1px solid #e3c7cb; background: #fffafa; border-radius: 10px; padding: 12px; }
+.phase3-transfer-conflict legend { font-size: 12px; font-weight: 750; color: #8e4851; padding: 0 5px; }
+.phase3-transfer-conflict p { color: #815d61; font-size: 11px; margin: 0 0 11px; line-height: 1.5; }
+.phase3-transfer-resolution { display: flex; gap: 10px; align-items: flex-start; margin: 8px 0; cursor: pointer; }
+.phase3-transfer-resolution input { margin-top: 3px; accent-color: #7653a6; }
+.phase3-transfer-resolution span { display: flex; flex-direction: column; gap: 3px; }
+.phase3-transfer-resolution strong { font-size: 12px; color: #523d53; }
+.phase3-transfer-resolution small { color: #826e78; font-size: 11px; line-height: 1.4; }
+.phase3-reference-only-option { margin-top: 16px; padding: 14px 16px; border: 1px solid #ded5e9; background: #f9f7fc; border-radius: 12px; }
+.phase3-reference-only-choice { display: flex; align-items: flex-start; gap: 11px; cursor: pointer; }
+.phase3-reference-only-choice input { accent-color: #7050a6; margin-top: 3px; flex: none; }
+.phase3-reference-only-choice span { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.phase3-reference-only-choice strong { font-size: 13px; color: #41374c; }
+.phase3-reference-only-choice small { font-size: 11px; color: #786e83; line-height: 1.5; }
+.phase3-transfer-descriptive { margin-top: 18px; padding: 13px 16px; background: #f7f6f8; border-radius: 12px; }
+.phase3-transfer-descriptive ul { padding-left: 17px; margin: 8px 0 0; }
+.phase3-transfer-descriptive li { margin: 5px 0; }
+.phase3-transfer-descriptive li strong { color: #564e61; }
+.phase3-transfer-summary { background: #f8f5fc; border: 1px solid #e8dcf2; border-radius: 12px; margin-top: 18px; padding: 15px 17px; }
+.phase3-transfer-summary strong { color: #453555; font-size: 13px; }
+.phase3-transfer-summary p { margin: 8px 0 0; color: #655971; font-size: 11px; line-height: 1.6; }
+.phase3-transfer-error { color: #8e414c; background: #fff2f2; border-radius: 8px; padding: 10px; font-size: 12px; }
+.phase3-connection-success { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 0 0 22px; padding: 16px 18px; border: 1px solid #c9e2d4; background: #f6fbf8; border-radius: 12px; }
+.phase3-connection-success strong { color: #2c6345; font-size: 13px; }
+.phase3-connection-success p { font-size: 12px; line-height: 1.55; color: #557362; margin: 6px 0 0; }
+.phase3-connection-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 680px) {
+  .phase3-transfer-conflict { margin-left: 0; }
+  .phase3-transfer-review { padding: 18px; }
+  .phase3-connection-actions { width: 100%; }
+}
