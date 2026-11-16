@@ -20,7 +20,7 @@ import { mergeConfirmedPreferences, createPreferenceEdit, getPreferenceEditChang
 import { getDesignConcept, approveDesignProject } from './utils/designApproval';
 import { createActiveBrief, makeFollowUpReview, applyFollowUpReview } from './utils/followUpBrief';
 import RefinementWorkspace from './components/RefinementWorkspace';
-import { enterRefinement, editRefinement, undoRefinement } from './utils/refinementDraft';
+import { enterRefinement, editRefinement, undoRefinement, redoRefinement } from './utils/refinementDraft';
 import BriefUpdateDialog from './components/BriefUpdateDialog';
 import NewDirectionConflictDialog from './components/NewDirectionConflictDialog';
 import './App.css';
@@ -147,6 +147,11 @@ function App() {
   function undoRefinementChange() {
     setProjects((current) => current.map((project) => project.id === activeId
       ? undoRefinement(project) : project));
+  }
+
+  function redoRefinementChange() {
+    setProjects((current) => current.map((project) => project.id === activeId
+      ? redoRefinement(project) : project));
   }
 
   function newProject() {
@@ -992,6 +997,7 @@ function App() {
               onChange={updateRefinementDraft}
               onEdit={updateRefinementProperties}
               onUndo={undoRefinementChange}
+              onRedo={redoRefinementChange}
             />
           </main>
         ) : (

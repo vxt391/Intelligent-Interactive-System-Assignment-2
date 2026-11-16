@@ -196,3 +196,197 @@
   .phase4-conversation-opener-icon { font-size: 18px; }
   .phase4-conversation-opener-label { writing-mode: horizontal-tb; transform: none; }
 }
+
+/* Phase 4.2 — distinct canvas modes, spatial pointers, and linked conversation. */
+.phase4-canvas-actions { display: flex; align-items: center; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.phase4-tool-switch { display: flex; background: #eeedf4; border-radius: 9px; padding: 3px; gap: 3px; }
+.phase4-tool-switch button { border: 0; background: transparent; padding: 7px 10px; border-radius: 7px; color: #6a6678; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.phase4-tool-switch button.is-active { background: white; color: #584391; box-shadow: 0 1px 5px #2021381a; font-weight: 700; }
+.phase4-tool-switch button:focus-visible { outline: 2px solid #6652a1; outline-offset: 1px; }
+.phase4-business-card.is-point-mode { cursor: crosshair; }
+.phase4-business-card.is-point-mode .phase4-card-object { cursor: crosshair; touch-action: auto; }
+.phase4-card-object.is-draggable { touch-action: none; }
+.phase4-card-object.is-draggable:active { cursor: grabbing; }
+.phase4-pointer-pin { z-index: 10; position: absolute; transform: translate(-50%, -100%); width: 28px; height: 32px; display: flex; justify-content: center; align-items: center; color: white; background: #7357ac; border: 2px solid white; border-radius: 14px 14px 14px 2px; box-shadow: 0 2px 8px #17112c66; font-size: 12px; font-weight: 800; cursor: pointer; }
+.phase4-pointer-pin:hover { background: #4e338c; }
+.phase4-pointer-pin:focus-visible { outline: 3px solid #91d8ff; outline-offset: 3px; }
+.phase4-user-request { margin-top: 12px; padding: 12px; background: #f7f7fb; border: 1px solid #e6e0ee; border-radius: 10px; font-size: 12px; line-height: 1.5; }
+.phase4-user-request p { white-space: pre-wrap; overflow-wrap: anywhere; margin: 8px 0; }
+.phase4-request-meta { font-weight: 700; color: #514078; font-size: 11px; }
+.phase4-request-targets { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; }
+.phase4-recorded-target { border: 1px solid #dacff1; border-radius: 8px; background: #f0eafb; color: #4d3a80; padding: 3px 6px; font-size: 10px; }
+.phase4-request-status { padding-top: 7px; border-top: 1px solid #e8e3f0; color: #776f83; font-size: 11px; }
+.phase4-conversation-composer { flex: 0 0 auto; }
+.phase4-conversation-composer textarea { background: white; min-height: 74px; max-height: 140px; overflow-y: auto; resize: vertical; }
+.phase4-composer-targets { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-top: 10px; }
+.phase4-clear-pointers { font: inherit; font-size: 11px; color: #62508d; cursor: pointer; border: 0; background: transparent; padding: 4px 6px; }
+.phase4-composer-actions { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; }
+.phase4-composer-actions span { font-size: 11px; color: #73758b; }
+.phase4-composer-actions .phase4-primary { font-size: 12px; padding: 8px 10px; white-space: nowrap; }
+.phase4-composer-actions .phase4-primary:disabled { cursor: not-allowed; opacity: .5; }
+@media(max-width: 1200px) { .phase4-canvas-heading { flex-wrap: wrap; } .phase4-canvas-actions { width: 100%; justify-content: space-between; } }
+@media(max-width: 540px) { .phase4-canvas-actions { flex-wrap: wrap; } .phase4-canvas-board { padding: 14px 8px; } .phase4-pointer-pin { width: 26px; height: 30px; } }
+
+/* Phase 4.2 UX refinement — canvas-local zoom and two-way manual edit history. */
+.phase4-zoom-controls, .phase4-history-controls {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.phase4-zoom-controls {
+  border: 1px solid #dbd6e7;
+  background: #fff;
+  border-radius: 9px;
+  padding: 3px;
+}
+.phase4-zoom-controls button {
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #4b3a76;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 28px;
+  height: 30px;
+  padding: 3px 6px;
+  cursor: pointer;
+}
+.phase4-zoom-controls .phase4-zoom-level { min-width: 48px; font-size: 12px; }
+.phase4-zoom-controls button:hover:not(:disabled) { background: #f3effb; }
+.phase4-zoom-controls button:disabled { opacity: .35; cursor: not-allowed; }
+.phase4-zoom-controls button:focus-visible, .phase4-history-controls button:focus-visible {
+  outline: 2px solid #6652a1;
+  outline-offset: 2px;
+}
+.phase4-history-controls .phase4-outline-button { padding: 8px 10px; white-space: nowrap; }
+.phase4-business-card { flex: 0 0 auto; }
+/* Safe centering lets a 200%-zoom card scroll into view rather than crop its edges. */
+.phase4-canvas-board { justify-content: safe center; align-items: safe center; }
+@media (max-width: 1200px) {
+  .phase4-canvas-actions { gap: 6px; }
+  .phase4-history-controls .phase4-outline-button { padding: 7px 9px; }
+}
+
+
+/* Phase 4.2 visual-fidelity correction: Refine starts from the same
+   template composition as BusinessCardPreview, scaled by card width.
+   No changes to the Phase 2 preview component or its styles. */
+.phase4-business-card {
+  aspect-ratio: 1.6 / 1; /* Matches .business-card-preview */
+  container-type: inline-size;
+  overflow: hidden;
+}
+.phase4-card-object {
+  z-index: 2;
+  font-size: var(--object-size);
+  padding: 0;
+  line-height: 1.1;
+  border: 0;
+  outline: 2px dashed transparent;
+  outline-offset: 3px;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  max-width: 95%;
+}
+.phase4-card-object:hover, .phase4-card-object.is-selected {
+  border-color: transparent;
+  outline-color: #568dc0;
+}
+.phase4-card-object-logo { font-weight: 700; letter-spacing: -0.03em; }
+.phase4-style-minimal .phase4-card-object-logo { font-weight: 800; letter-spacing: 0.07em; }
+.phase4-style-expressive .phase4-card-object-logo { font-style: italic; }
+.phase4-card-object-name { font-weight: 700; letter-spacing: 0.09em; }
+.phase4-card-object-job { font-weight: 400; letter-spacing: 0.055em; }
+.phase4-card-object-contact { letter-spacing: 0; }
+.phase4-layout-dynamic .phase4-card-object-name,
+.phase4-layout-dynamic .phase4-card-object-job {
+  transform: translate(-100%, -50%);
+  text-align: right;
+}
+.phase4-brand-mark {
+  position: absolute; z-index: 2;
+  right: 5.2%; top: 8.3%;
+  border: 0; padding: 0; background: transparent;
+  font-family: inherit;
+  font-size: 7.83cqw;
+  line-height: 1;
+  color: inherit;
+  cursor: pointer;
+}
+.phase4-brand-mark:hover,
+.phase4-brand-mark[aria-pressed='true'] { outline: 2px dashed #568dc0; outline-offset: 3px; }
+.phase4-structure-divider {
+  position: absolute; z-index: 1;
+  left: 5.2%; right: 5.2%; top: 73.6%;
+  height: max(1px, 0.43cqw);
+  background: currentColor;
+  pointer-events: none;
+}
+.phase4-card-object-decorations {
+  z-index: 0;
+  border: 0; outline-offset: 2px;
+  font-size: 0;
+  overflow: visible;
+}
+.phase4-shape-fill { display: block; background: var(--decoration-color); pointer-events: none; }
+.phase4-decoration-stripe { transform: translate(-50%, -50%); width: var(--object-size); height: 100%; }
+.phase4-decoration-stripe .phase4-shape-fill { width: 100%; height: 100%; opacity: .85; }
+.phase4-decoration-circle { transform: translate(-50%, -50%); width: var(--object-size); height: var(--object-size); }
+.phase4-decoration-circle .phase4-shape-fill { width: 100%; height: 100%; border-radius: 50%; opacity: .64; }
+.phase4-decoration-leaf { transform: translate(-50%, -50%) rotate(-25deg); width: var(--object-size); height: calc(var(--object-size) * 1.263); }
+.phase4-decoration-leaf .phase4-shape-fill { width: 100%; height: 100%; border-radius: 90% 5% 75% 10%; opacity: .48; }
+.phase4-add-contact {
+  padding: 6px 9px;
+  background: #f5f1fb;
+  border: 1px solid #dfd4f1;
+  border-radius: 7px;
+  font-size: 12px;
+  color: #56417e;
+  cursor: pointer;
+  margin: 2px 0 9px;
+}
+.phase4-add-contact:hover { background: #ebe4f6; }
+/* Keep template typography proportional on narrow boards as well. */
+@media (max-width: 540px) {
+  .phase4-card-object-name, .phase4-card-object-logo {
+    font-size: var(--object-size) !important;
+  }
+}
+
+/* Phase 4.2 drag-completeness: the source concept's top-right glyph and
+   structured divider are editable canvas objects, not fixed overlays. */
+.phase4-card-object-decorations { z-index: 1; }
+.phase4-card-object-mark {
+  transform: translate(-100%, 0);
+  font-size: var(--object-size);
+  font-weight: 500;
+  line-height: 1;
+  z-index: 3;
+  cursor: grab;
+}
+.phase4-card-object-divider {
+  transform: translateY(-50%);
+  width: var(--object-size);
+  height: max(16px, 2.4cqw); /* generous drag hit target */
+  max-width: none;
+  z-index: 1;
+  overflow: visible;
+  color: inherit;
+  cursor: grab;
+}
+.phase4-card-object-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: max(1px, 0.43cqw);
+  transform: translateY(-50%);
+  background-color: currentColor;
+  pointer-events: none;
+}
+.phase4-card-object-mark.is-draggable:active,
+.phase4-card-object-divider.is-draggable:active { cursor: grabbing; }
+.phase4-business-card.is-point-mode .phase4-card-object-mark,
+.phase4-business-card.is-point-mode .phase4-card-object-divider { cursor: crosshair; }

@@ -2817,3 +2817,93 @@ Milestone 4.1 establishes a focused, responsive workspace for visually refining 
 The new layout improves the allocation of screen space between references, the interactive canvas and conversational controls, while preserving continuity with the existing Explore workflow.
 
 **Next milestone:** Phase 4.2 — Point-and-Describe Interaction and Object-Linked Refinement.
+
+### Phase 4 — Milestone 4.2: Point-and-Describe Interaction and Canvas Editing
+
+**Status:** Completed — manual Chrome integration and UX refinement tests passed.
+
+#### Objective
+
+Implement direct visual interaction within Intenta's Refinement Workspace, enabling users to point at specific locations or objects on a business-card design, associate these selections with natural-language instructions, and perform basic manual editing.
+
+#### Implementation
+
+**1. Point-and-Describe Interaction**
+
+- Introduced a dedicated Point Mode allowing users to click anywhere on the business-card canvas.
+- Implemented numbered pointer markers with recorded positions.
+- Associated pointers with underlying structured design objects where possible.
+- Supported multiple pointers and individually removable targets.
+- Displayed selected targets as chips in the AI Conversation panel.
+- Recorded refinement instructions and associated targets in conversation history.
+- Clearly distinguished recorded requests from changes actually applied to the design.
+
+**2. Direct Canvas Editing**
+
+- Preserved a separate Edit Mode for manual interaction.
+- Supported selecting and repositioning structured design elements through dragging.
+- Enabled basic property editing, including supported colours, text and sizes.
+- Maintained separation between pointer placement and object movement.
+- Preserved the original concept as an unchanged reference.
+
+**3. Canvas Zoom and Edit History**
+
+- Added canvas zoom using Ctrl + Plus and Ctrl + Minus keyboard shortcuts.
+- Implemented toolbar zoom controls supporting 50% to 200% scaling and a 100% reset.
+- Added Redo functionality alongside the existing Undo control.
+- Supported navigating backwards and forwards through manual editing history.
+- Cleared the redo branch when a new edit was made after Undo.
+- Preserved zoom and working design state across Explore / Refine navigation.
+
+**4. Visual Consistency Refinement**
+
+Manual testing identified differences between the original business-card previews and their editable representations, particularly in typography, decorative elements and layout.
+
+The initial refinement design model was updated to derive its appearance more closely from the selected concept rather than relying on generic default styles.
+
+The update improved consistency across Modern Minimal, Botanical Elegance and Creative Expression designs, including their wordmarks, typography, colours, decorations and alignment.
+
+**5. Draggable Decorative Elements**
+
+Further testing identified previously non-draggable elements, including decorative corner symbols and divider lines.
+
+These elements were incorporated into the editable object model where applicable, enabling selection, dragging and supported property adjustments.
+
+Undo/Redo and pointer targeting were extended to support these elements.
+
+#### Testing and Evaluation
+
+Manual integration and regression testing was conducted in Google Chrome.
+
+Testing covered:
+
+- Numbered pointer placement and removal.
+- Multiple object-linked targets and instruction recording.
+- Direct object selection and dragging.
+- Canvas zoom and pointer-coordinate consistency.
+- Undo/Redo behaviour.
+- Visual fidelity between original references and editable starting designs.
+- Draggable brand symbols, divider lines and decorative elements.
+- Preservation of design state across Explore / Refine navigation.
+- Responsive layout and existing functionality.
+
+**Results:** All reported Chrome checks passed following the UX refinements.
+
+**Automated verification:** The final implementation package passed 44/44 focused logic tests during preparation.
+
+#### Limitations
+
+- Conversational instructions are recorded but do not yet generate or apply refinement changes.
+- AI-assisted interpretation, change previews and confirmation are reserved for Phase 4.3.
+- The editor operates on predefined structured business-card objects rather than arbitrary image pixels.
+- Design and refinement state remain session-only.
+
+#### Outcome
+
+Milestone 4.2 establishes the core interaction mechanisms for visually grounded conversational refinement.
+
+Users can point to locations, select and manipulate design objects, and explicitly associate natural-language instructions with visual targets.
+
+The milestone provides the foundation for implementing reviewable conversational design changes in Phase 4.3.
+
+**Next milestone:** Phase 4.3 — Conversational Refinement, Change Preview and Confirmation.
