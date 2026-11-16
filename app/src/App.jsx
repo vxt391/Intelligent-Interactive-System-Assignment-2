@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import Sidebar from './components/Sidebar';
-import CommunityGallery from './components/CommunityGallery';
+import CommunityGallery, { createCommunityState } from './components/CommunityGallery';
 import ProjectTabs from './components/ProjectTabs';
 import ModeSwitcher from './components/ModeSwitcher';
 import PromptComposer from './components/PromptComposer';
@@ -60,6 +60,10 @@ function App() {
   const [activeId, setActiveId] = useState(1);
   // Navigation is global: Community is available even without a selected project.
   const [activeWorkspace, setActiveWorkspace] = useState('design');
+  // Community browsing and explicitly saved inspiration persist when the workspace unmounts.
+  // These are global session-only states, deliberately separate from any design project.
+  const [communityState, setCommunityState] = useState(createCommunityState);
+  const communityScrollRef = useRef(null);
   const nextProjectId = useRef(2);
 
   const activeProject = projects.find((project) => project.id === activeId);
@@ -727,7 +731,9 @@ function App() {
         />}
 
         {activeWorkspace === 'community' ? (
-          <main className="workspace phase3-workspace"><CommunityGallery /></main>
+          <main className="workspace phase3-workspace" ref={communityScrollRef}>
+            <CommunityGallery state={communityState} onChange={setCommunityState} scrollContainerRef={communityScrollRef} />
+          </main>
         ) : (
         <main className="workspace phase2-workspace">
           {activeProject ? (

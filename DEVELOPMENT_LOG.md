@@ -2109,3 +2109,216 @@ All 19 planned integration checks passed, with no unresolved failures reported.
 The milestone is considered complete for its planned implementation and testing scope.
 
 **Next milestone: Phase 3.2 — Inspiration Project Details**, focusing on detailed artwork viewing and allowing users to identify design characteristics that inspire them, without automatically modifying existing projects.
+
+## Phase 3 — Milestone 3.2: Inspiration Project Details and Saved Inspiration
+
+**Date:** 16 November 2026  
+**Status:** Completed — Implementation and integration testing passed
+
+### 1. Objective
+
+The objective of Milestone 3.2 was to extend the Community Inspiration Gallery developed in Milestone 3.1 by enabling users to explore individual creative projects, identify inspiring design characteristics and explicitly save their selections.
+
+This milestone supports the project's broader aim of helping users recognise and express their creative intentions through structured and visual interaction.
+
+The implementation maintains a clear separation between exploring inspiration, saving inspiration and applying inspiration to a design project.
+
+### 2. Implementation
+
+#### 2.1 Dedicated Project Detail View
+
+Implemented a dedicated Behance-inspired project detail view that opens when users select an artwork from the Community Gallery.
+
+The detail view includes:
+
+- A larger artwork preview.
+- Project title, category, style and description.
+- Curated design characteristics relevant to the artwork.
+- Navigation back to Explore or Saved Inspiration.
+
+The interface preserves browsing context, including search queries, category filters, style filters and sorting preferences.
+
+Users can access project details independently of any existing design project.
+
+#### 2.2 Structured Inspiration Attribute Selection
+
+Implemented interactive attribute selection within the project detail view.
+
+Each artwork provides a curated set of transferable design characteristics relating to the supported dimensions:
+
+- Colour
+- Typography
+- Layout
+- Decorations
+
+Users can select or deselect individual characteristics and view a counter showing the number of selected attributes.
+
+Selections are initially stored as unconfirmed drafts.
+
+This enables users to explore what they find appealing without immediately committing to those preferences.
+
+#### 2.3 Review and Confirmation
+
+Implemented a Review Inspiration dialog that allows users to inspect their selected attributes before saving.
+
+The review workflow supports:
+
+- Displaying selected attributes and their categories.
+- Removing individual attributes during review.
+- Returning to attribute selection without saving.
+- Explicitly confirming inspiration.
+
+Confirmed inspiration is stored separately from project-specific design preferences.
+
+No changes are made to a project's Original Brief, Active Design Brief or Current Intentions.
+
+#### 2.4 Saved Inspiration Collection
+
+Implemented a Saved Inspiration collection within the Community section.
+
+Users can:
+
+- View artworks they have explicitly saved.
+- Review confirmed design characteristics associated with each artwork.
+- Revisit saved artworks through their detail pages.
+- Modify previously saved attributes.
+- Remove saved inspiration through a confirmation dialog.
+
+Changes to existing inspiration require explicit confirmation. Unsaved edits do not overwrite previously confirmed selections.
+
+Removing an artwork from Saved Inspiration does not remove it from the Explore gallery.
+
+The collection also provides an appropriate empty state when no saved inspiration remains.
+
+#### 2.5 Community Navigation Refinement
+
+Following interface inspection, the Explore and Saved Inspiration views were refined to share a common Community page layout.
+
+Both sections now appear as adjacent tabs beneath the Community Inspiration heading.
+
+The revised implementation:
+
+- Maintains a consistent page heading and navigation structure.
+- Switches content within the Community interface.
+- Highlights the active tab.
+- Preserves Explore search and filtering state.
+- Retains dedicated detail pages for individual artworks.
+- Restores the appropriate Community tab when returning from a detail page.
+
+This refinement improved navigation consistency without changing the underlying inspiration-management functionality.
+
+#### 2.6 Project Independence and State Management
+
+Community inspiration state is maintained separately from design-project state.
+
+Saved artwork selections are stored in the current React application session and remain available when users switch between Community and the Design Workspace.
+
+Browsing, selecting, updating or removing inspiration does not automatically modify existing design requirements, confirmed preferences, recommendation rounds or approved designs.
+
+Connecting saved inspiration to a specific design project is reserved for Milestone 3.3.
+
+### 3. Main Files
+
+| File                                  | Responsibility                                                                                      |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `src/App.jsx`                         | Integrates Community state with application-level navigation and state management                   |
+| `src/components/CommunityGallery.jsx` | Implements artwork details, attribute selection, review, Saved Inspiration and Community navigation |
+| `src/data/inspirationAttributes.js`   | Defines curated transferable design characteristics                                                 |
+| `src/data/communityProjects.js`       | Provides existing gallery project metadata                                                          |
+| `src/Phase3.css`                      | Styles detail pages, attribute controls, review dialogs and responsive Community layouts            |
+
+The existing Phase 2 components and design-exploration workflows were preserved.
+
+### 4. Testing and Evaluation
+
+Manual functional and integration testing was conducted in Google Chrome.
+
+Three test scenarios were completed.
+
+| Test      | Functionality                                                                        | Result           |
+| --------- | ------------------------------------------------------------------------------------ | ---------------- |
+| 3.2A      | Project details, attribute selection, review, confirmation and tab navigation        | 13/13 passed     |
+| 3.2B      | Editing saved inspiration, removal, empty states and project independence            | 15/15 passed     |
+| 3.2C      | End-to-end workflow, responsive layouts, keyboard interaction and Phase 2 regression | 12/12 passed     |
+| **Total** | **40 individual checks**                                                             | **40/40 passed** |
+
+#### 4.1 Functional Testing
+
+Testing confirmed that users could open an artwork's detail page, select relevant characteristics, review their selections and explicitly confirm inspiration.
+
+The implementation correctly distinguished between unsaved drafts and confirmed selections.
+
+Users could revisit existing saved artwork, modify attributes and remove inspiration without affecting other saved projects.
+
+#### 4.2 Navigation and Interaction Continuity
+
+The revised Explore and Saved Inspiration tabs functioned correctly.
+
+The gallery preserved existing search and filtering state when users navigated between Community sections and artwork detail pages.
+
+Returning from an artwork detail page restored the appropriate tab.
+
+#### 4.3 Responsive and Keyboard Testing
+
+The gallery, project detail page and review dialog were tested at:
+
+- 1366 × 768 — Laptop
+- 1920 × 1080 — Desktop
+
+The interface remained usable at both tested viewport sizes.
+
+Essential Community controls were reachable through keyboard navigation, and the Escape key successfully closed the inspiration review dialog.
+
+#### 4.4 Integration and Regression Testing
+
+The complete workflow was tested:
+
+**Explore → Project Details → Select Attributes → Review Inspiration → Confirm → Saved Inspiration**
+
+The workflow completed without reported blocking errors.
+
+Returning to the Design Workspace preserved existing project information, including:
+
+- Conversation history.
+- Original Brief.
+- Active Design Brief.
+- Confirmed Current Intentions.
+- Previously approved designs.
+
+The existing Phase 2 Choose Next Step workflow also remained functional.
+
+### 5. Issues and Refinements
+
+A navigation inconsistency was identified during visual inspection: Saved Inspiration initially opened using a separate page layout rather than appearing alongside Explore within the Community interface.
+
+This was addressed by introducing a shared Community heading and adjacent Explore / Saved Inspiration tabs.
+
+The updated layout was subsequently verified through manual testing.
+
+No unresolved functional failures were reported after the final integration tests.
+
+### 6. Limitations
+
+**Curated content:** Community projects and their associated attributes use predefined sample data rather than dynamically retrieved community content.
+
+**Rule-based attribute descriptions:** The available inspiration characteristics are manually curated. The prototype does not use an AI model to automatically analyse artworks or infer their visual characteristics.
+
+**Session-only storage:** Saved inspiration is maintained in React memory. It is not persistently stored across browser refreshes or application restarts.
+
+**No project transfer yet:** Confirmed inspiration remains independent of design projects. Applying or transferring inspiration to a business-card project is reserved for Milestone 3.3.
+
+**Limited accessibility testing:** Keyboard navigation and Escape-key handling were manually checked, but comprehensive screen-reader testing and formal accessibility conformance evaluation have not yet been completed.
+
+**Limited usability evidence:** These tests establish functional behaviour under defined scenarios. They do not replace usability evaluation involving external participants.
+
+### 7. Outcome and Next Steps
+
+Milestone 3.2 successfully extended Community Inspiration from a visual browsing gallery into an interactive inspiration-discovery and management workflow.
+
+All **40 planned checks passed**, with no outstanding failures reported.
+
+The implementation provides users with greater control over identifying, reviewing and retaining design characteristics while maintaining separation from existing project intentions.
+
+**Milestone 3.2 is considered complete for its planned scope.**
+
+The next development stage is **Milestone 3.3 — Connecting Saved Inspiration to Design Projects**, which will focus on transferring selected inspiration into a project through an explicit review and confirmation process.
