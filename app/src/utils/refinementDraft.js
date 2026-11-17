@@ -1,3 +1,4 @@
+import { normaliseRefinementRotation } from './refinementRotation.js';
 import { getDesignConcept } from './designApproval.js';
 
 export function resolveRefinementConcept(project, preferApproved = false) {
@@ -137,37 +138,113 @@ export function enterRefinement(project, preferApproved = false) {
   };
 }
 
+// Object duplication and deletion are working-copy-only edits. Base objects are
+// hidden rather than removed so template migrations cannot recreate deleted
+// marks/dividers. Dynamic duplicates are removed entirely when deleted.
+export function refinementObjectKind(id, object) {
+  return object?.kind || String(id).replace(/-copy-\d+$/, '');
+}
+
+function validSelectedIds(ids, working) {
+  return (ids || []).filter((id) => id === 'background' || Boolean(working.objects?.[id] && working.objects[id].visible !== false));
+}
+
+function validPointers(pointers, working) {
+  return (pointers || []).filter((pointer) => pointer.objectId === 'background' || Boolean(working.objects?.[pointer.objectId] && working.objects[pointer.objectId].visible !== false));
+}
+
+function historySnapshot(draft) {
+  return {
+    working: JSON.parse(JSON.stringify(draft.working)),
+    selectedIds: [...(draft.selectedIds || [])],
+    pointers: JSON.parse(JSON.stringify(draft.pointers || [])),
+  };
+}
+
 export function editRefinement(project, operation) {
   const draft = project.refinement;
-  if (!draft || !operation) return project;
-  const snapshot = { working: JSON.parse(JSON.stringify(draft.working)) };
+  if (!draft || !operation || draft.pendingProposal) return project;
+  const snapshot = historySnapshot(draft);
   const working = JSON.parse(JSON.stringify(ensureMovableDesignDetails(draft.working)));
-  const ids = (draft.selectedIds || []).filter((id) => id === 'background' || working.objects[id]);
-  if (operation.key === 'background' && ids.includes('background')) working.background = operation.value;
-  if (['color', 'size'].includes(operation.key)) ids.forEach((id) => {
-    if (working.objects[id]) working.objects[id][operation.key] = operation.value;
-  });
-  if (operation.key === 'position' && working.objects[operation.id] && operation.value) {
-    const target = working.objects[operation.id];
-    const x = Number(operation.value.x);
-    const y = Number(operation.value.y);
-    if (Number.isFinite(x) && Number.isFinite(y)) {
-      target.x = Math.round(Math.min(operation.id === 'mark' ? 98 : 92, Math.max(2, x)) * 10) / 10;
-      target.y = Math.round(Math.min(92, Math.max(8, y)) * 10) / 10;
+  const ids = validSelectedIds(draft.selectedIds, working);
+  let selectedIds = ids;
+  let pointers = draft.pointers || [];
+
+  if (operation.key === 'duplicate' || operation.key === 'delete') {
+    const targets = [...new Set((operation.ids || ids).filter((id) =>
+      id !== 'background' && working.objects[id] && working.objects[id].visible !== false))];
+    if (!targets.length) return project;
+    if (operation.key === 'delete') {
+      for (const id of targets) {
+        if (working.objects[id].kind) delete working.objects[id];
+        else working.objects[id].visible = false;
+      }
+      selectedIds = ids.filter((id) => !targets.includes(id));
+      pointers = pointers.filter((p) => !targets.includes(p.objectId));
+    } else {
+      const created = [];
+      for (const id of targets) {
+        const source = working.objects[id];
+        const kind = refinementObjectKind(id, source);
+        let i = 1;
+        while (working.objects[`${kind}-copy-${i}`]) i += 1;
+        const copyId = `${kind}-copy-${i}`;
+        working.objects[copyId] = {
+          ...source, kind,
+          x: Math.round(Math.min(kind === 'mark' ? 98 : 92, Math.max(2, source.x + (source.x > 80 ? -4 : 4))) * 10) / 10,
+          y: Math.round(Math.min(92, Math.max(8, source.y + 4)) * 10) / 10,
+        };
+        created.push(copyId);
+      }
+      selectedIds = created;
     }
-  }
-  if (operation.key === 'visibility' && operation.id && working.objects[operation.id]) {
-    working.objects[operation.id].visible = Boolean(operation.value);
-  }
-  if (operation.key === 'text' && ids.length === 1 && working.objects[ids[0]]) {
-    working.objects[ids[0]].text = operation.value;
+  } else {
+    if (operation.key === 'background' && ids.includes('background')) working.background = operation.value;
+    if (['color', 'size'].includes(operation.key)) ids.forEach((id) => {
+      if (working.objects[id]) working.objects[id][operation.key] = operation.value;
+    });
+    // Rotation may be absolute (angle input / canvas handle) or relative
+    // (15-degree nudges). A batch of selected elements is one Undo step.
+    if (operation.key === 'rotation' || operation.key === 'rotationDelta') {
+      const targets = operation.id ? [operation.id] : ids;
+      const amount = Number(operation.value);
+      if (operation.value !== '' && operation.value != null && Number.isFinite(amount)) {
+        for (const id of targets) {
+          const object = working.objects[id];
+          if (!object || object.visible === false || !ids.includes(id)) continue;
+          const angle = normaliseRefinementRotation(operation.key === 'rotationDelta'
+            ? normaliseRefinementRotation(object.rotation) + amount : amount);
+          // Don't create a history entry merely by resetting an untouched 0° object.
+          if (angle !== normaliseRefinementRotation(object.rotation)) object.rotation = angle;
+        }
+      }
+    }
+    if (operation.key === 'position' && working.objects[operation.id] && operation.value) {
+      const target = working.objects[operation.id];
+      const x = Number(operation.value.x);
+      const y = Number(operation.value.y);
+      if (Number.isFinite(x) && Number.isFinite(y)) {
+        target.x = Math.round(Math.min(refinementObjectKind(operation.id, target) === 'mark' ? 98 : 92, Math.max(2, x)) * 10) / 10;
+        target.y = Math.round(Math.min(92, Math.max(8, y)) * 10) / 10;
+      }
+    }
+    if (operation.key === 'visibility' && operation.id && working.objects[operation.id]) {
+      working.objects[operation.id].visible = Boolean(operation.value);
+      if (!operation.value) {
+        selectedIds = ids.filter((id) => id !== operation.id);
+        pointers = pointers.filter((p) => p.objectId !== operation.id);
+      }
+    }
+    if (operation.key === 'text' && ids.length === 1 && working.objects[ids[0]]) {
+      working.objects[ids[0]].text = operation.value;
+    }
   }
   if (JSON.stringify(working) === JSON.stringify(draft.working)) return project;
   return { ...project, refinement: {
     ...draft,
     working,
-    selectedIds: operation.key === 'visibility' && operation.value === false
-      ? (draft.selectedIds || []).filter((id) => id !== operation.id) : draft.selectedIds,
+    selectedIds,
+    pointers,
     history: [...(draft.history || []).slice(-19), snapshot],
     future: [], // A new edit creates a new branch and invalidates Redo.
   } };
@@ -175,26 +252,30 @@ export function editRefinement(project, operation) {
 
 export function undoRefinement(project) {
   const draft = project.refinement;
-  if (!draft?.history?.length) return project;
+  if (!draft?.history?.length || draft.pendingProposal) return project;
   const last = draft.history[draft.history.length - 1];
-  const current = { working: JSON.parse(JSON.stringify(draft.working)) };
+  const working = ensureMovableDesignDetails(JSON.parse(JSON.stringify(last.working)));
   return { ...project, refinement: {
     ...draft,
-    working: ensureMovableDesignDetails(JSON.parse(JSON.stringify(last.working))),
+    working,
+    selectedIds: validSelectedIds(last.selectedIds ?? draft.selectedIds, working),
+    pointers: validPointers(last.pointers ?? draft.pointers, working),
     history: draft.history.slice(0, -1),
-    future: [...(draft.future || []).slice(-19), current],
+    future: [...(draft.future || []).slice(-19), historySnapshot(draft)],
   } };
 }
 
 export function redoRefinement(project) {
   const draft = project.refinement;
-  if (!draft?.future?.length) return project;
+  if (!draft?.future?.length || draft.pendingProposal) return project;
   const next = draft.future[draft.future.length - 1];
-  const current = { working: JSON.parse(JSON.stringify(draft.working)) };
+  const working = ensureMovableDesignDetails(JSON.parse(JSON.stringify(next.working)));
   return { ...project, refinement: {
     ...draft,
-    working: ensureMovableDesignDetails(JSON.parse(JSON.stringify(next.working))),
-    history: [...(draft.history || []).slice(-19), current],
+    working,
+    selectedIds: validSelectedIds(next.selectedIds ?? draft.selectedIds, working),
+    pointers: validPointers(next.pointers ?? draft.pointers, working),
+    history: [...(draft.history || []).slice(-19), historySnapshot(draft)],
     future: draft.future.slice(0, -1),
   } };
 }

@@ -61,9 +61,10 @@ export function extractRefinementOperations(instruction) {
 }
 
 function boundsForSize(id, object) {
-  if (id === 'divider') return [120, 650];
-  if (id === 'decorations') return [40, 520];
-  if (id === 'logo' || id === 'mark') return [8, 110];
+  const kind = object?.kind || String(id).replace(/-copy-\d+$/, '');
+  if (kind === 'divider') return [120, 650];
+  if (kind === 'decorations') return [40, 520];
+  if (kind === 'logo' || kind === 'mark') return [8, 110];
   return [8, 70];
 }
 
@@ -89,7 +90,7 @@ export function planRefinementChange(working, text, targets) {
         candidate.objects[id].size = Math.round(clamp(candidate.objects[id].size * operation.factor, min, max));
       } else if (operation.type === 'move') {
         const obj = candidate.objects[id];
-        obj.x = Math.round(clamp(obj.x + operation.dx, 2, id === 'mark' ? 98 : 92) * 10) / 10;
+        obj.x = Math.round(clamp(obj.x + operation.dx, 2, (obj.kind || id.replace(/-copy-\d+$/, '')) === 'mark' ? 98 : 92) * 10) / 10;
         obj.y = Math.round(clamp(obj.y + operation.dy, 8, 92) * 10) / 10;
       }
     }

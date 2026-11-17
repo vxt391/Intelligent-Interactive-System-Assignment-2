@@ -2982,3 +2982,102 @@ Extend Intenta's existing object-linked refinement workspace so users can descri
 #### Outcome
 
 Milestone 4.3 delivers Intenta's first complete **point/select → describe → preview → accept/reject** refinement loop. Users remain in control of whether generated proposals affect their working design, and approved changes integrate with the established canvas edit history. Phase 4.3 passed its final reported integration checks and is ready for a Git commit.
+
+### Phase 4 — Post-Milestone 4.3: Refinement Editor UX Enhancements
+
+**Status:** Completed — all reported manual Chrome checks passed; ready for Git commit.  
+**Date:** 17 November 2026  
+**Baseline:** The completed and committed Phase 4.3 Conversational Refinement implementation.
+
+#### Objective
+
+Improve the usability and practical usefulness of Intenta's Refine workspace after completing the point-and-describe, preview, and Accept/Reject workflow. The enhancements focus on object manipulation, efficient use of screen space, intuitive selection behaviour, and allowing users to download their finished designs. They extend the existing structured business-card editor without modifying the original selected concept or project-level confirmed preferences.
+
+#### Implementation
+
+**1. Delete selected design objects**
+
+- Added a **Delete** action to Quick Properties for one or multiple selected objects in Edit Mode.
+- Deleting several selected elements is recorded as a single Undo step; Undo restores them and Redo removes them again.
+- Standard template elements are removed from the visible working copy, while duplicated instances can be removed independently.
+- The card background is protected from deletion because it represents the artboard; background colour remains editable.
+- Delete is unavailable while a conversational refinement proposal awaits an Accept/Reject decision.
+
+**2. Duplicate selected design objects**
+
+- Added a **Duplicate** action supporting individual and multi-object selections.
+- Copies receive distinct object identifiers and are placed at a slight offset (approximately 4%) to distinguish them visually from their sources.
+- Duplicates preserve supported styling, text, sizes, and subsequent rotation, but can be selected, moved, edited, targeted by pointers, and deleted independently.
+- Multi-object duplication is grouped into one Undo/Redo history step. Duplicates can also be duplicated again without reusing object identities.
+- The background cannot be duplicated; duplication is unavailable while a proposal is pending.
+
+**3. Export completed business-card designs**
+
+- Added **Export** to the Design Canvas toolbar, with **Download PNG** and **Download SVG** options.
+- PNG exports provide a high-resolution raster image (approximately 1380 × 863 pixels); SVG exports retain scalable vector artwork.
+- Export uses the current accepted refinement working copy, including manual changes, accepted conversational changes, deletions, duplicates, and rotations.
+- Editor-only content — numbered pointers, selection outlines, rotation handles, panels, conversation messages, and zoom controls — is excluded from exported artwork.
+- Export is unavailable while a proposal is unresolved, ensuring that downloaded output corresponds to a clearly accepted version.
+- The browser downloads files directly to the user's computer. No backend, account, cloud-sharing service, or server upload is involved. **Export is not persistent project saving or hosted sharing.**
+
+**4. Compact and collapsible Quick Properties**
+
+- Reduced vertical padding and reorganised selected-object chips, Duplicate/Delete actions, contact-information controls, and property inputs into a more compact layout.
+- Added **Hide / Show** to collapse the properties area to a thin header and restore the editing controls when needed.
+- Collapsing Quick Properties preserves the current selection and working design; it only changes panel visibility.
+- Allowed controls to wrap or scroll at smaller viewport sizes rather than obscure the canvas, improving workspace use on laptop screens.
+
+**5. Click-away deselection**
+
+- In Edit Mode, clicking the grey dotted workspace **outside** the business-card artboard clears all current object selections.
+- Selection outlines and related target chips disappear without changing object properties, generating an Undo step, or removing existing numbered pointers.
+- Clicking inside the card continues to select its background for colour editing; Point Mode continues to place pointers inside the card and does not use grey-space clicks for selection changes.
+- Click-away selection clearing is disabled during an unresolved conversational proposal to preserve pending-change context.
+
+**6. Manual object rotation**
+
+- Added a draggable **rotation handle** for selected editable objects in Edit Mode. Holding **Shift** while dragging snaps rotation to 15-degree increments.
+- Added precise angle entry, **−15° / +15°** adjustments, and **Reset to 0°** in Quick Properties. Angles are normalised to the range −180° to 180°.
+- Supported rotation of text, brand symbols, dividers, and decorative objects where applicable. Multi-object angle nudges and reset operate as a single Undo step; the background remains non-rotatable.
+- Rotation drag is committed as one Undo step on release. Redo restores rotations, and starting a new edit after Undo clears the old redo branch.
+- Duplicated objects retain the source object's rotation while remaining independently rotatable.
+- Updated both PNG and SVG export rendering to reproduce object rotation, including vector decorative symbols, without exporting the editor's rotation handles.
+- Manual rotation does **not** imply support for rotation commands in the rule-based conversational refinement parser; supported conversational changes remain colour, size, and movement.
+
+#### Integration and Continuity
+
+- Retained the existing Explore / Refine navigation, original Starting Concept reference, selected concept, project-scoped working copy, and confirmed project preferences.
+- Preserved Point Mode pointers, object-linked conversation targets, proposal preview and Accept/Reject flow, drag-and-drop, zoom, and Undo/Redo.
+- Kept the References and AI Conversation panels independently collapsible.
+- Changes remain within the client-side prototype; no server-side persistence or new external service is introduced.
+
+**Implementation files affected across the three incremental UX updates:**
+
+- Updated: `app/src/components/RefinementWorkspace.jsx`, `app/src/Phase4.css`, `app/src/utils/refinementDraft.js`, `app/src/utils/refinementPointers.js`, `app/src/utils/refinementChanges.js`.
+- Added: `app/src/utils/refinementExport.js`, `app/src/utils/refinementSelection.js`, `app/src/utils/refinementRotation.js`.
+- Added tests: `app/tests/refinementActions.test.mjs`, `app/tests/refinementExport.test.mjs`, `app/tests/refinementSelection.test.mjs`, `app/tests/refinementRotation.test.mjs`.
+
+#### Testing and Evaluation
+
+**Automated tests (package preparation):** The final object-rotation package passed **98/98 Node.js logic tests**, including existing refinement tests and added tests for object actions, export, selection, and rotation. JSX and CSS parsing checks passed. PNG/SVG download smoke checks were performed during export-package preparation.
+
+**Chrome manual testing (user-reported):** All requested checks were reported as passed:
+
+- **Delete / Duplicate / Export:** 11/11 checks passed — independent object copies, multi-selection, reversible deletion, pointer targeting, proposal safety, local PNG/SVG downloads, and design/regression checks.
+- **Compact Quick Properties / click-away deselection:** 6/6 checks passed — reduced panel height, collapse/expand, clearing selected objects on grey-space clicks, background selection, pointer/proposal continuity, and regression checks.
+- **Object rotation:** 8/8 checks passed — drag handle, exact angles, snap and reset, Undo/Redo, various objects and design styles, duplicates, pending proposals, export fidelity, and responsive checks.
+
+**Total post-4.3 UX manual checks: 25/25 passed, with no outstanding issues reported.**
+
+#### Limitations
+
+- The editor operates on predefined, structured design objects; it is not a general-purpose graphics or raster-image editor.
+- Export files can be downloaded, but refinement projects still exist only in the current React session. Refresh-safe project persistence and hosted sharing links are not provided.
+- PNG/SVG output should be visually reviewed before distribution. Fonts may render differently on other computers, and professional printing features such as CMYK and bleed are not implemented.
+- Rotation is supported through manual editing controls, not natural-language rotation instructions.
+
+#### Outcome
+
+The post-Phase-4.3 enhancements make Intenta's Refinement Workspace a more complete and usable design editor. Users can remove, duplicate, rotate, and precisely adjust visual elements; quickly clear selections; reduce panel clutter; and export the accepted working design to local files. The enhancements preserve user control and project isolation while preparing the interface for later usability and accessibility evaluation.
+
+**Next step:** Commit these enhancements as one post-Phase-4.3 UX milestone, then proceed to focused UI/accessibility polish and evaluation preparation.

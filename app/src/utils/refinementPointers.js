@@ -11,6 +11,14 @@ export const REFINEMENT_OBJECT_LABELS = Object.freeze({
   decorations: 'Decorations',
 });
 
+export function refinementObjectLabel(id, objects = {}) {
+  if (REFINEMENT_OBJECT_LABELS[id]) return REFINEMENT_OBJECT_LABELS[id];
+  const kind = objects[id]?.kind || String(id).replace(/-copy-\d+$/, '');
+  const match = String(id).match(/-copy-(\d+)$/);
+  const label = REFINEMENT_OBJECT_LABELS[kind] || 'Design object';
+  return match ? `${label} copy ${match[1]}` : label;
+}
+
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 export function normaliseCardPoint(x, y) {
@@ -22,7 +30,7 @@ export function normaliseCardPoint(x, y) {
 
 export function addRefinementPointer(draft, { x, y, objectId = 'background' }) {
   if (!draft?.working) return draft;
-  const known = objectId === 'background' || Boolean(draft.working.objects?.[objectId]);
+  const known = objectId === 'background' || Boolean(draft.working.objects?.[objectId] && draft.working.objects[objectId].visible !== false);
   const targetId = known ? objectId : 'background';
   const id = draft.nextPointerId || 1;
   const position = normaliseCardPoint(x, y);
@@ -32,7 +40,7 @@ export function addRefinementPointer(draft, { x, y, objectId = 'background' }) {
       id: `pointer-${id}`,
       ...position,
       objectId: targetId,
-      label: REFINEMENT_OBJECT_LABELS[targetId] || 'Background',
+      label: refinementObjectLabel(targetId, draft.working.objects),
     }],
     nextPointerId: id + 1,
   };
@@ -53,7 +61,7 @@ export function recordRefinementRequest(draft) {
   const id = draft.nextRefinementMessageId || 1;
   const explicitPointers = draft.pointers || [];
   const selectedObjects = draft.toolMode === 'edit' && !explicitPointers.length
-    ? (draft.selectedIds || []).filter((selected) => selected === 'background' || Boolean(draft.working.objects[selected]))
+    ? (draft.selectedIds || []).filter((selected) => selected === 'background' || Boolean(draft.working.objects[selected] && draft.working.objects[selected].visible !== false))
     : [];
   const requestPins = explicitPointers.length ? explicitPointers : selectedObjects.map((selected) => {
     const object = draft.working.objects[selected];
@@ -62,7 +70,7 @@ export function recordRefinementRequest(draft) {
       x: object ? object.x : 50,
       y: object ? object.y : 50,
       objectId: selected,
-      label: REFINEMENT_OBJECT_LABELS[selected],
+      label: refinementObjectLabel(selected, draft.working.objects),
     };
   });
   const targets = requestPins.map((p, index) => ({

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import BusinessCardPreview from './BusinessCardPreview';
-import { ensureMovableDesignDetails } from '../utils/refinementDraft';
+import { ensureMovableDesignDetails, refinementObjectKind } from '../utils/refinementDraft';
 import {
-  REFINEMENT_OBJECT_LABELS as OBJECT_LABELS,
+  refinementObjectLabel,
   addRefinementPointer,
   removeRefinementPointer,
   clearRefinementPointers,
 } from '../utils/refinementPointers';
 import { proposeRefinementRequest, acceptRefinementProposal, rejectRefinementProposal } from '../utils/refinementChanges';
+import { exportRefinementSvg, exportRefinementPng } from '../utils/refinementExport';
+import { deselectRefinementOnBoard } from '../utils/refinementSelection';
+import { normaliseRefinementRotation, rotationPointerAngle, rotationFromPointer } from '../utils/refinementRotation';
 import { MIN_REFINEMENT_ZOOM, MAX_REFINEMENT_ZOOM, refinementZoomValue, nextRefinementZoom, refinementZoomShortcut } from '../utils/refinementZoom';
 
 const dragClamp = (value, lower, upper) => Math.min(upper, Math.max(lower, value));
@@ -15,9 +18,28 @@ const dragClamp = (value, lower, upper) => Math.min(upper, Math.max(lower, value
 export default function RefinementWorkspace({ project, onBack, onChange, onEdit, onUndo, onRedo }) {
   const draft = project.refinement;
   const cardRef = useRef(null);
+  const exportRef = useRef(null);
   const dragRef = useRef(null);
+  const rotateRef = useRef(null);
   const ignoreNextClickRef = useRef(false);
   const [dragPreview, setDragPreview] = useState(null);
+  const [rotationPreview, setRotationPreview] = useState(null);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const [propertiesExpanded, setPropertiesExpanded] = useState(true);
+
+  useEffect(() => { setExportOpen(false); setExportError(''); }, [project.id]);
+  useEffect(() => {
+    if (!exportOpen) return undefined;
+    const dismiss = (event) => {
+      if (event.type === 'keydown' && event.key === 'Escape') setExportOpen(false);
+      else if (event.type === 'pointerdown' && !exportRef.current?.contains(event.target)) setExportOpen(false);
+    };
+    document.addEventListener('pointerdown', dismiss);
+    document.addEventListener('keydown', dismiss);
+    return () => { document.removeEventListener('pointerdown', dismiss); document.removeEventListener('keydown', dismiss); };
+  }, [exportOpen]);
 
   // Hot-reload compatibility: previously opened session drafts may have an
   // unmovable icon / divider. Upgrade in place without resetting other edits.
@@ -63,6 +85,9 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
   const zoom = refinementZoomValue(draft.zoom);
   const selectedObjects = selectedIds.filter((id) => Boolean(working.objects[id] && working.objects[id].visible !== false));
   const first = selectedObjects.length === 1 ? working.objects[selectedObjects[0]] : null;
+  const firstRotation = first ? normaliseRefinementRotation(first.rotation) : 0;
+  const objectLabel = (id) => refinementObjectLabel(id, working.objects);
+  const objectKind = (id) => refinementObjectKind(id, working.objects[id]);
   const update = (patch) => onChange({ ...draft, ...patch });
   const toggle = (id) => { if (previewLocked) return; update({ selectedIds: selectedIds.includes(id)
     ? selectedIds.filter((value) => value !== id)
@@ -77,7 +102,7 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
     const object = working.objects[objectId];
     // Keyboard activation does not have a meaningful clientX/clientY: pin its object's centre.
     const fromKeyboard = event.detail === 0;
-    const x = fromKeyboard ? (objectId === 'mark' ? object?.x - 2 : objectId === 'divider' ? object?.x + 45 : object ? object.x + 5 : 50)
+    const x = fromKeyboard ? (objectKind(objectId) === 'mark' ? object?.x - 2 : objectKind(objectId) === 'divider' ? object?.x + 45 : object ? object.x + 5 : 50)
       : ((event.clientX - rectangle.left) / rectangle.width) * 100;
     const y = fromKeyboard ? (object ? object.y : 50)
       : ((event.clientY - rectangle.top) / rectangle.height) * 100;
@@ -104,7 +129,7 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
     const rectangle = card.getBoundingClientRect();
     if (!rectangle.width || !rectangle.height) return;
     moving.latest = { id,
-      x: dragClamp(moving.originalX + (event.clientX - moving.startX) * 100 / rectangle.width, 2, id === 'mark' ? 98 : 92),
+      x: dragClamp(moving.originalX + (event.clientX - moving.startX) * 100 / rectangle.width, 2, objectKind(id) === 'mark' ? 98 : 92),
       y: dragClamp(moving.originalY + (event.clientY - moving.startY) * 100 / rectangle.height, 8, 92),
     };
     setDragPreview(moving.latest);
@@ -123,9 +148,58 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
   };
   const cancelDrag = () => { dragRef.current = null; setDragPreview(null); };
 
+  const beginRotation = (event, id) => {
+    if (previewLocked || pointMode || selectedObjects.length !== 1 || event.button !== 0) return;
+    const cardRect = cardRef.current?.getBoundingClientRect();
+    const object = working.objects[id];
+    if (!cardRect || !object || object.visible === false) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const pivotX = cardRect.left + object.x * cardRect.width / 100;
+    const pivotY = cardRect.top + object.y * cardRect.height / 100;
+    rotateRef.current = {
+      id, pointerId: event.pointerId, pivotX, pivotY,
+      startAngle: rotationPointerAngle(event.clientX, event.clientY, pivotX, pivotY),
+      startRotation: normaliseRefinementRotation(object.rotation),
+      latest: normaliseRefinementRotation(object.rotation),
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+  const moveRotation = (event) => {
+    const active = rotateRef.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    const angle = rotationPointerAngle(event.clientX, event.clientY, active.pivotX, active.pivotY);
+    active.latest = rotationFromPointer(active.startRotation, active.startAngle, angle, event.shiftKey);
+    setRotationPreview({ id: active.id, angle: active.latest });
+  };
+  const finishRotation = (event) => {
+    const active = rotateRef.current;
+    if (!active || active.pointerId !== event.pointerId) return;
+    rotateRef.current = null;
+    setRotationPreview(null);
+    if (active.latest !== active.startRotation) onEdit({ key: 'rotation', id: active.id, value: active.latest });
+  };
+  const cancelRotation = () => { rotateRef.current = null; setRotationPreview(null); };
+
+  const performExport = async (format) => {
+    if (previewLocked || exportBusy) return;
+    setExportOpen(false);
+    setExportError('');
+    try {
+      if (format === 'svg') exportRefinementSvg(working, project.name || 'Intenta-design');
+      else {
+        setExportBusy(true);
+        await exportRefinementPng(working, project.name || 'Intenta-design');
+      }
+    } catch (error) {
+      setExportError(error?.message || 'Could not export the current design.');
+    } finally { setExportBusy(false); }
+  };
+
   const submitRequest = (event) => {
     event.preventDefault();
     if (!promptDraft.trim() || previewLocked) return;
+    setExportOpen(false);
     onChange(proposeRefinementRequest(draft));
   };
 
@@ -176,9 +250,30 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
             <button type="button" className="phase4-outline-button" onClick={onRedo}
               disabled={previewLocked || !draft.future?.length} title="Redo undone manual edit">↷ Redo</button>
           </div>
+          <div className="phase4-export-control" ref={exportRef}>
+            <button type="button" className="phase4-outline-button phase4-export-trigger"
+              aria-expanded={exportOpen} aria-haspopup="true" disabled={previewLocked || exportBusy}
+              title={previewLocked ? 'Accept or reject the proposal before exporting' : 'Download the current design to your computer'}
+              onClick={() => { setExportError(''); setExportOpen(!exportOpen); }}>
+              {exportBusy ? 'Exporting…' : '↓ Export ▾'}
+            </button>
+            {exportOpen && !previewLocked && <div className="phase4-export-menu">
+              <button type="button" onClick={() => performExport('png')}>Download PNG <small>High resolution · 1380 × 863</small></button>
+              <button type="button" onClick={() => performExport('svg')}>Download SVG <small>Vector · scalable artwork</small></button>
+              <p>No cloud upload. Only the current working card is exported.</p>
+            </div>}
+          </div>
         </div>
       </div>
-      <div className="phase4-canvas-board">
+      {exportError && <p className="phase4-export-error" role="alert">{exportError}</p>}
+      <div className="phase4-canvas-board" onClick={(event) => {
+        // Click-away clears object/background selection, not annotation pointers.
+        // Card clicks and proposal controls keep their existing interactions.
+        const clickedBlankSpace = event.target === event.currentTarget || event.target.classList?.contains('phase4-canvas-caption');
+        if (!clickedBlankSpace) return;
+        const nextDraft = deselectRefinementOnBoard(draft);
+        if (nextDraft !== draft) onChange(nextDraft);
+      }}>
         {previewLocked && <div className="phase4-preview-toolbar" role="status">
           <span><strong>{previewVisible ? 'Proposed change' : 'Current design'}</strong> · Nothing applied yet</span>
           <button type="button" onClick={() => update({ previewVisible: !previewVisible })}>
@@ -197,11 +292,13 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
         >
           {Object.entries(cardWorking.objects).filter(([, object]) => object.visible !== false).map(([id, object]) => {
             const position = dragPreview?.id === id ? dragPreview : object;
+            const kind = objectKind(id);
             return <button key={id} type="button"
               data-phase4-object-id={id}
-              className={`phase4-card-object phase4-card-object-${id} ${id === 'decorations' ? `phase4-decoration-${object.shape || 'stripe'}` : ''} ${!pointMode && !previewLocked && selectedIds.includes(id) ? 'is-selected' : ''} ${!pointMode && !previewLocked ? 'is-draggable' : ''}`}
-              style={{ left: `${position.x}%`, top: `${position.y}%`, color: object.color, '--object-size': `${object.size / 6.9}cqw`, '--decoration-color': object.color }}
-              aria-label={`${pointMode ? 'Place pointer on' : 'Select'} ${OBJECT_LABELS[id]}`} aria-pressed={!pointMode && selectedIds.includes(id)}
+              className={`phase4-card-object phase4-card-object-${kind} ${kind === 'decorations' ? `phase4-decoration-${object.shape || 'stripe'}` : ''} ${!pointMode && !previewLocked && selectedIds.includes(id) ? 'is-selected' : ''} ${!pointMode && !previewLocked ? 'is-draggable' : ''}`}
+              style={{ left: `${position.x}%`, top: `${position.y}%`, color: object.color, '--object-size': `${object.size / 6.9}cqw`, '--decoration-color': object.color,
+                '--object-rotation': `${rotationPreview?.id === id ? rotationPreview.angle : normaliseRefinementRotation(object.rotation)}deg` }}
+              aria-label={`${pointMode ? 'Place pointer on' : 'Select'} ${objectLabel(id)}`} aria-pressed={!pointMode && selectedIds.includes(id)}
               onPointerDown={(event) => beginDrag(event, id)}
               onPointerMove={(event) => moveDrag(event, id)}
               onPointerUp={(event) => finishDrag(event, id)}
@@ -212,9 +309,20 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
                 if (ignoreNextClickRef.current) { ignoreNextClickRef.current = false; return; }
                 if (pointMode) putPointer(event, id); else toggle(id);
               }}>
-              {id === 'decorations' ? <span className="phase4-shape-fill" aria-hidden="true" /> : object.text}
+              {kind === 'decorations' ? <span className="phase4-shape-fill" aria-hidden="true" /> : object.text}
             </button>;
           })}
+          {!pointMode && !previewLocked && first && <button type="button"
+            className="phase4-rotation-handle"
+            style={{ left: `clamp(16px, ${first.x}%, calc(100% - 16px))`,
+              top: `clamp(16px, calc(${first.y}% - 30px), calc(100% - 16px))` }}
+            aria-label={`Drag to rotate ${objectLabel(selectedObjects[0])}`}
+            title="Drag to rotate · Hold Shift to snap every 15°"
+            onPointerDown={(event) => beginRotation(event, selectedObjects[0])}
+            onPointerMove={moveRotation}
+            onPointerUp={finishRotation}
+            onPointerCancel={cancelRotation}
+            onClick={(event) => event.stopPropagation()}>↻</button>}
           {pointers.map((pointer, index) => <button key={pointer.id} type="button"
             className="phase4-pointer-pin"
             style={{ left: `${pointer.x}%`, top: `${pointer.y}%` }}
@@ -226,26 +334,66 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
         </div>
         <p className="phase4-canvas-caption">{previewLocked ? 'Compare proposed and current designs, then Accept or Reject in the conversation. Editing is paused until you decide.' : pointMode
           ? 'Click anywhere on the card to place numbered pointers. Click a pin or its chip to remove it; then describe your requested changes in AI Conversation.'
-          : 'Click objects to select them or drag to reposition. Switch to Point to place numbered annotations without moving objects.'}</p>
+          : 'Click objects to select or drag them. Use the ↻ handle or Rotate controls to turn a selected element. Point mode places annotations.'}</p>
       </div>
-      <div className="phase4-object-properties">
-        {!previewLocked && working.objects.contact?.visible === false && !pointMode && <button type="button" className="phase4-add-contact" onClick={() => onEdit({ key: 'visibility', id: 'contact', value: true })}>+ Add contact information to this design</button>}
-        <div className="phase4-properties-heading"><h3>Quick properties</h3><span>{pointMode ? 'Point & Describe mode' : selectedIds.length ? `${selectedIds.length} selected` : 'Choose an element on the card'}</span></div>
-        {previewLocked ? <p className="phase4-muted">Preview pending. Accept or reject it before making manual edits.</p> : pointMode ? <p className="phase4-muted">Pointers identify locations and objects; they do not edit the card. Use the chat panel to record a targeted instruction.</p>
-          : selectedIds.length > 0 ? <>
-            <div className="phase4-selected-targets">
-              {selectedIds.map((id) => <button key={id} type="button" className="phase4-target-chip" onClick={() => toggle(id)} aria-label={`Remove ${OBJECT_LABELS[id]} selection`}>{OBJECT_LABELS[id]} <span aria-hidden="true">×</span></button>)}
-            </div>
-            {selectedIds.includes('contact') && working.objects.contact?.visible !== false && <button type="button" className="phase4-add-contact" onClick={() => onEdit({ key: 'visibility', id: 'contact', value: false })}>Hide contact information</button>}
-            <div className="phase4-property-controls">
-              {selectedIds.includes('background') && <label>Background colour <input type="color" value={working.background} onChange={(e) => onEdit({ key: 'background', value: e.target.value })} /></label>}
-              {selectedObjects.length > 0 && <>
-                <label>Element colour <input type="color" value={first?.color || working.objects[selectedObjects[0]]?.color || '#000000'} onChange={(e) => onEdit({ key: 'color', value: e.target.value })}/></label>
-                <label>Size <input type="range" min={selectedObjects.includes('divider') ? 120 : selectedObjects.includes('decorations') ? 40 : 8} max={selectedObjects.includes('divider') ? 650 : selectedObjects.includes('decorations') ? 520 : selectedObjects.includes('logo') || selectedObjects.includes('mark') ? 110 : 70} value={first?.size || working.objects[selectedObjects[0]]?.size || 20} onChange={(e) => onEdit({ key: 'size', value: Number(e.target.value) })}/></label>
-                {first && !['decorations', 'divider'].includes(selectedObjects[0]) && <label className="phase4-text-property">Text <input type="text" value={first.text} onChange={(e) => onEdit({ key: 'text', value: e.target.value })} /></label>}
-              </>}
-            </div>
-          </> : <p className="phase4-muted">Select a text element or the background to change its properties. These edits affect only this project's working copy.</p>}
+      <div className={`phase4-object-properties ${propertiesExpanded ? '' : 'is-collapsed'}`}>
+        <div className="phase4-properties-heading">
+          <h3>Quick properties</h3>
+          <div className="phase4-properties-heading-tools">
+            <span>{pointMode ? 'Point & Describe mode' : selectedIds.length ? `${selectedIds.length} selected` : 'No selection'}</span>
+            <button type="button" className="phase4-properties-toggle" aria-expanded={propertiesExpanded}
+              aria-controls="phase4-properties-body"
+              aria-label={propertiesExpanded ? 'Collapse quick properties' : 'Expand quick properties'}
+              onClick={() => setPropertiesExpanded((open) => !open)}>
+              {propertiesExpanded ? '▾ Hide' : '▸ Show'}
+            </button>
+          </div>
+        </div>
+        <div className="phase4-properties-body" id="phase4-properties-body" hidden={!propertiesExpanded}>
+          {previewLocked ? <p className="phase4-muted">Preview pending. Accept or reject it before editing.</p>
+            : pointMode ? <p className="phase4-muted">Use pointers to mark the card, then describe your changes in AI Conversation.</p>
+            : <>
+              {(selectedIds.length > 0 || working.objects.contact?.visible === false) && <div className="phase4-properties-selection-row">
+                {selectedIds.length > 0 && <div className="phase4-selected-targets">
+                  {selectedIds.map((id) => <button key={id} type="button" className="phase4-target-chip" onClick={() => toggle(id)} aria-label={`Remove ${objectLabel(id)} selection`}>{objectLabel(id)} <span aria-hidden="true">×</span></button>)}
+                </div>}
+                {selectedObjects.length > 0 && <div className="phase4-selection-actions" role="group" aria-label="Selected element actions">
+                  <button type="button" className="phase4-outline-button" onClick={() => onEdit({ key: 'duplicate', ids: selectedObjects })}
+                    title="Make a movable copy of every selected element">⧉ Duplicate {selectedObjects.length > 1 ? `(${selectedObjects.length})` : ''}</button>
+                  <button type="button" className="phase4-outline-button phase4-delete-action" onClick={() => onEdit({ key: 'delete', ids: selectedObjects })}
+                    title="Remove selected elements from this working design. Undo to restore them.">✕ Delete {selectedObjects.length > 1 ? `(${selectedObjects.length})` : ''}</button>
+                </div>}
+                {selectedIds.includes('contact') && working.objects.contact?.visible !== false && <button type="button" className="phase4-add-contact" onClick={() => onEdit({ key: 'visibility', id: 'contact', value: false })}>Hide contact information</button>}
+                {working.objects.contact?.visible === false && <button type="button" className="phase4-add-contact" onClick={() => onEdit({ key: 'visibility', id: 'contact', value: true })}>+ Add contact information</button>}
+              </div>}
+              {selectedIds.length > 0 ? <div className="phase4-property-controls">
+                {selectedIds.includes('background') && <label>Background colour <input type="color" value={working.background} onChange={(e) => onEdit({ key: 'background', value: e.target.value })} /></label>}
+                {selectedObjects.length > 0 && <>
+                  <label>Element colour <input type="color" value={first?.color || working.objects[selectedObjects[0]]?.color || '#000000'} onChange={(e) => onEdit({ key: 'color', value: e.target.value })}/></label>
+                  <label>Size <input type="range" min={selectedObjects.some((id) => objectKind(id) === 'divider') ? 120 : selectedObjects.some((id) => objectKind(id) === 'decorations') ? 40 : 8} max={selectedObjects.some((id) => objectKind(id) === 'divider') ? 650 : selectedObjects.some((id) => objectKind(id) === 'decorations') ? 520 : selectedObjects.some((id) => ['logo', 'mark'].includes(objectKind(id))) ? 110 : 70} value={first?.size || working.objects[selectedObjects[0]]?.size || 20} onChange={(e) => onEdit({ key: 'size', value: Number(e.target.value) })}/></label>
+                  <div className="phase4-rotation-controls" role="group" aria-label="Rotate selected elements">
+                    <span>Rotate</span>
+                    <button type="button" title="Rotate 15° counter-clockwise" aria-label="Rotate selected elements 15 degrees counter-clockwise" onClick={() => onEdit({ key: 'rotationDelta', value: -15 })}>↶ 15°</button>
+                    <input type="number" aria-label="Rotation angle in degrees" min="-180" max="180" step="1"
+                      key={first ? `${selectedObjects[0]}-${firstRotation}` : 'mixed-rotation'}
+                      defaultValue={first ? firstRotation : ''} disabled={!first}
+                      placeholder={first ? '' : 'Mixed'}
+                      onBlur={(event) => {
+                        const raw = event.currentTarget.value.trim();
+                        if (raw !== '' && Number.isFinite(Number(raw))) onEdit({ key: 'rotation', value: Number(raw) });
+                      }}
+                      onKeyDown={(event) => { if (event.key === 'Enter') event.currentTarget.blur(); }} />
+                    <span>°</span>
+                    <button type="button" title="Rotate 15° clockwise" aria-label="Rotate selected elements 15 degrees clockwise" onClick={() => onEdit({ key: 'rotationDelta', value: 15 })}>15° ↷</button>
+                    <button type="button" title="Reset selected elements to 0°" onClick={() => onEdit({ key: 'rotation', value: 0 })}>Reset</button>
+                  </div>
+                  {first && !['decorations', 'divider'].includes(objectKind(selectedObjects[0])) && <label className="phase4-text-property">Text <input type="text" value={first.text} onChange={(e) => onEdit({ key: 'text', value: e.target.value })} /></label>}
+                </>}
+              </div> : working.objects.contact?.visible !== false
+                ? <p className="phase4-muted">Select an element to edit it. Click the grey canvas to clear a selection.</p>
+                : null}
+            </>}
+        </div>
       </div>
     </section>
 
@@ -280,12 +428,12 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
               <button type="button" className="phase4-outline-button" onClick={() => onChange(rejectRefinementProposal(draft))}>Reject</button>
             </div>}
           </div>)}
-          {!pointMode && selectedIds.length > 0 && <div className="phase4-selection-message">Editing: {selectedIds.map((id) => OBJECT_LABELS[id]).join(', ')}</div>}
+          {!pointMode && selectedIds.length > 0 && <div className="phase4-selection-message">Editing: {selectedIds.map((id) => objectLabel(id)).join(', ')}</div>}
         </div>
         <form className="phase4-conversation-composer" onSubmit={submitRequest}>
           <label htmlFor="phase4-prompt">Describe a refinement</label>
           {pointers.length > 0 && <div className="phase4-composer-targets" aria-label="Current pointer targets">
-            {pointers.map((pointer, index) => <button key={pointer.id} type="button" className="phase4-target-chip"
+          {pointers.map((pointer, index) => <button key={pointer.id} type="button" className="phase4-target-chip"
               disabled={previewLocked} onClick={() => onChange(removeRefinementPointer(draft, pointer.id))}
               aria-label={`Remove pointer ${index + 1}, ${pointer.label}`}>
               #{index + 1} {pointer.label} <span aria-hidden="true">×</span>
@@ -294,8 +442,8 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
           </div>}
           {!pointMode && !pointers.length && selectedIds.length > 0 && <div className="phase4-composer-targets" aria-label="Selected objects for instruction">
             {selectedIds.map((id, index) => <button key={id} type="button" className="phase4-target-chip" disabled={previewLocked}
-              onClick={() => toggle(id)} aria-label={`Remove ${OBJECT_LABELS[id]} selection from next request`}>
-              #{index + 1} {OBJECT_LABELS[id]} <span aria-hidden="true">×</span>
+              onClick={() => toggle(id)} aria-label={`Remove ${objectLabel(id)} selection from next request`}>
+              #{index + 1} {objectLabel(id)} <span aria-hidden="true">×</span>
             </button>)}
           </div>}
           <textarea id="phase4-prompt" value={promptDraft} disabled={previewLocked} onChange={(event) => update({ promptDraft: event.target.value })}
