@@ -2907,3 +2907,78 @@ Users can point to locations, select and manipulate design objects, and explicit
 The milestone provides the foundation for implementing reviewable conversational design changes in Phase 4.3.
 
 **Next milestone:** Phase 4.3 — Conversational Refinement, Change Preview and Confirmation.
+
+### Phase 4 — Milestone 4.3: Conversational Refinement, Change Preview and Confirmation
+
+**Status:** Completed — automated logic checks and user-reported Chrome integration tests passed.  
+**Date:** 17 November 2026
+
+#### Objective
+
+Extend Intenta's existing object-linked refinement workspace so users can describe edits in natural language, examine proposed changes before applying them, and explicitly accept or reject those changes. Preserve the original selected design, confirmed project intentions, prior recommendation history, and previous canvas-editing capabilities.
+
+#### Implementation
+
+**1. Deterministic conversational edit interpretation**
+
+- Added `app/src/utils/refinementChanges.js` to interpret a deliberately limited set of English refinement instructions without calling an external AI service.
+- Supported operations include changing object/background colour (named colours or six-digit hex codes), increasing/decreasing object size, and moving supported objects left, right, up, or down.
+- Supported compatible combinations of operations (e.g., change colour and increase size) and multiple selected targets in a single request.
+- Reused existing Edit Mode object selection and Point Mode pointers so each instruction is associated with the intended design objects or background.
+- Returned an explicit explanation for unsupported or incompatible requests instead of silently applying a partial or invented change. Background movement and resizing are intentionally unsupported.
+
+**2. Proposed change preview**
+
+- Introduced a proposal stage in the refinement conversation. A valid instruction creates a candidate design from the current working copy without modifying the accepted state.
+- Added the **Show current design / Show proposed change** comparison control on the canvas.
+- Displayed the targeted objects and proposed operations alongside the conversation request.
+- Limited the workspace to one unresolved proposal at a time; while a proposal is pending, direct editing and submitting additional requests are prevented. Zoom and preview comparison remain available.
+
+**3. Explicit acceptance, rejection, and history**
+
+- Added **Accept changes** and **Reject** actions for each pending proposal.
+- Accepting applies the candidate to the current working copy as one Undo step, preserving the existing Undo/Redo interaction.
+- Rejecting leaves the working copy unchanged.
+- Preserved request outcomes in conversation history as proposed, accepted, rejected, or unsupported, with explanatory status text.
+- Previously recorded Phase 4.2 requests remain historical; they are not retroactively interpreted or applied.
+
+**4. Integration and continuity**
+
+- Preserved original concept references and project-level confirmed preferences independently from the editable refinement copy.
+- Kept object dragging, multi-target selection, numbered pointers, canvas zoom, Undo/Redo, and independently collapsible References and AI Conversation panels.
+- Maintained project-scoped refinement data and existing Explore / Refine / Community navigation behaviour.
+- Retained session-only state with no new backend, persistence, or npm dependencies.
+
+**Implementation files:**
+
+- Updated: `app/src/components/RefinementWorkspace.jsx`, `app/src/Phase4.css`
+- Added: `app/src/utils/refinementChanges.js`, `app/tests/refinementChanges.test.mjs`
+
+#### Testing and Evaluation
+
+**Automated checks performed during package preparation:** 62/62 passed (44 prior refinement checks plus 18 new conversational-refinement tests). JSX and CSS parsing checks passed.
+
+**Chrome Test 4.3A — Core Conversational Refinement: 10/10 passed (user-reported).** Coverage included valid edit proposals, current/proposed comparison, rejection, acceptance with Undo/Redo, multi-object targets, top-right symbol targeting, background constraints, unsupported instructions, pending-proposal protection, and preservation of original project state.
+
+**Chrome Test 4.3B — Final Integration and Regression: 14/14 passed (user-reported).** Coverage included:
+
+- Modern Minimal, Botanical Elegance and Creative Expression visual styles.
+- Pointer targeting at 50%, 100%, and 150% zoom; dragging followed by conversational edits.
+- Undo/Redo history and redo-branch invalidation; collapsible panel state.
+- Isolation between separate projects and safe handling of pending proposals during navigation.
+- Accepted/rejected conversation history; Explore and Community regression checks.
+- Responsive layouts at 1366 × 768, 1920 × 1080, and 2560 × 1440.
+- Successful local `npm run build` and no Chrome Console errors reported.
+
+**Overall Phase 4.3 manual tests:** 24/24 passed, with no additional issues reported. No code corrections were indicated by the completed checks.
+
+#### Limitations
+
+- Conversational refinement is deterministic and rule-based, not a general-purpose LLM or image-generation editor.
+- Only a limited set of supported operations and structured business-card objects can be changed through instructions.
+- Arbitrary image/pixel edits, inserting new graphic objects from a prompt, open-ended text rewriting, and backend persistence/export are out of scope.
+- Working state remains limited to the current React session.
+
+#### Outcome
+
+Milestone 4.3 delivers Intenta's first complete **point/select → describe → preview → accept/reject** refinement loop. Users remain in control of whether generated proposals affect their working design, and approved changes integrate with the established canvas edit history. Phase 4.3 passed its final reported integration checks and is ready for a Git commit.

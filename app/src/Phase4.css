@@ -390,3 +390,20 @@
 .phase4-card-object-divider.is-draggable:active { cursor: grabbing; }
 .phase4-business-card.is-point-mode .phase4-card-object-mark,
 .phase4-business-card.is-point-mode .phase4-card-object-divider { cursor: crosshair; }
+
+/* Phase 4.3 — explicit change preview / approval, no phantom AI edits. */
+.phase4-preview-toolbar { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; padding:7px 11px; margin-bottom:12px; border:1px solid #aa9fd4; border-radius:9px; background:#f6f1ff; color:#4e3d7c; font-size:12px; }
+.phase4-preview-toolbar button { border:1px solid #9686c0; border-radius:7px; padding:5px 9px; color:#4b3975; background:white; cursor:pointer; font-weight:600; }
+.phase4-business-card.is-preview-locked { outline:2px dashed #8064b4; outline-offset:5px; }
+.phase4-business-card.is-preview-locked .phase4-card-object { pointer-events:none; }
+.phase4-business-card.is-preview-locked .phase4-pointer-pin { pointer-events:none; }
+.phase4-change-details { display:flex; gap:5px; flex-wrap:wrap; margin:9px 0; }
+.phase4-change-details span { font-size:10px; line-height:1.4; color:#563d91; border:1px solid #dbd0f4; padding:4px 7px; background:#f0ebff; border-radius:7px; }
+.phase4-status-proposed { color:#6443a3; font-weight:700; }
+.phase4-status-accepted { color:#19633b; font-weight:700; }
+.phase4-status-rejected, .phase4-status-unsupported { color:#935e35; font-weight:700; }
+.phase4-request-explanation { font-size:11px; color:#5f6171; line-height:1.5; }
+.phase4-proposal-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.phase4-proposal-actions button { padding:8px 10px; font-size:12px; }
+.phase4-tool-switch button:disabled, .phase4-target-chip:disabled, .phase4-clear-pointers:disabled { opacity:.5; cursor:not-allowed; }
+@media (max-width:540px) { .phase4-preview-toolbar { font-size:11px; } }
