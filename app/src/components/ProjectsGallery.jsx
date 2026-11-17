@@ -41,6 +41,7 @@ export default function ProjectsGallery({ projects, onResume, onNew, onImport, o
   const [deleteCandidateId, setDeleteCandidateId] = useState(null);
   const deleteDialogRef = useRef(null);
   const cancelDeleteRef = useRef(null);
+  const deleteTriggerRef = useRef(null);
   const deleteCandidate = projects.find((project) => project.id === deleteCandidateId);
 
   // Native modal dialog supplies focus trapping and Escape handling.
@@ -51,6 +52,22 @@ export default function ProjectsGallery({ projects, onResume, onNew, onImport, o
     cancelDeleteRef.current?.focus();
     return () => { if (dialog.open) dialog.close(); };
   }, [deleteCandidate?.id]);
+
+  // Restore focus to the visible menu trigger after cancelling. If the card
+  // was deleted, move focus to Search rather than leaving it on removed content.
+  useEffect(() => {
+    if (deleteCandidateId !== null || !deleteTriggerRef.current) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      const trigger = deleteTriggerRef.current;
+      if (trigger?.isConnected) {
+        trigger.focus();
+      } else {
+        document.querySelector('.phase5-projects-search input')?.focus();
+      }
+      deleteTriggerRef.current = null;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [deleteCandidateId]);
 
   function confirmDeleteProject() {
     if (!deleteCandidate) return;
@@ -98,11 +115,13 @@ export default function ProjectsGallery({ projects, onResume, onNew, onImport, o
       </div>
     </header>
 
-    <div className="phase5-project-save-state" role="status" aria-live="polite">
+    <div className="phase5-project-save-state">
       <span className={`phase5-project-status-dot is-${saveStatus}`} aria-hidden="true" />
-      {saveStatus === 'saved' ? 'Saved on this device' : saveStatus === 'saving' ? 'Saving project changes…'
-        : saveStatus === 'error' ? (saveMessage || 'Autosave failed: download a project backup.')
-          : 'Checking locally saved projects…'}
+      <span role="status" aria-live="polite" aria-atomic="true">
+        {saveStatus === 'saved' ? 'Saved on this device' : saveStatus === 'saving' ? 'Saving project changes…'
+          : saveStatus === 'error' ? (saveMessage || 'Autosave failed: download a project backup.')
+            : 'Checking locally saved projects…'}
+      </span>
       <span className="phase5-project-storage-note">Browser storage can be cleared. Download a project backup for safekeeping.</span>
     </div>
     {importError && <p className="phase5-project-import-error" role="alert">{importError}</p>}
@@ -123,7 +142,7 @@ export default function ProjectsGallery({ projects, onResume, onNew, onImport, o
         </select>
       </label>
     </div>
-    <div className="phase5-projects-result-title"><h2>All your work</h2><span>{visible.length} project{visible.length === 1 ? '' : 's'}</span></div>
+    <div className="phase5-projects-result-title"><h2>All your work</h2><span role="status" aria-live="polite" aria-atomic="true">{visible.length} project{visible.length === 1 ? '' : 's'}</span></div>
     {visible.length ? <div className="phase5-projects-grid">
       {visible.map((project) => <article key={project.id} className="phase5-project-card">
         <button type="button" className="phase5-project-art" onClick={() => onResume(project.id)}
@@ -135,13 +154,15 @@ export default function ProjectsGallery({ projects, onResume, onNew, onImport, o
             <span>{project.refinement?.original?.name || resolveRefinementConcept(project)?.concept?.name || 'Business-card project'}</span></div>
           <div className="phase5-project-card-actions">
             <button type="button" className="phase5-project-resume" onClick={() => onResume(project.id)}>Continue Editing ↗</button>
-            <button type="button" className="phase5-project-backup" title="Download an editable project backup" onClick={() => onBackup(project)}>↓ Backup</button>
+            <button type="button" className="phase5-project-backup" title="Download an editable project backup" aria-label={`Download editable backup of ${project.name}`} onClick={() => onBackup(project)}>↓ Backup</button>
             <details className="phase5-project-more">
               <summary aria-label={`More actions for ${project.name}`} title="Project actions">⋯</summary>
               <div className="phase5-project-more-menu">
                 <button type="button" className="phase5-project-delete-option"
                   onClick={(event) => {
-                    event.currentTarget.closest('details')?.removeAttribute('open');
+                    const details = event.currentTarget.closest('details');
+                    deleteTriggerRef.current = details?.querySelector('summary') || event.currentTarget;
+                    details?.removeAttribute('open');
                     setDeleteCandidateId(project.id);
                   }}>Delete project</button>
               </div>

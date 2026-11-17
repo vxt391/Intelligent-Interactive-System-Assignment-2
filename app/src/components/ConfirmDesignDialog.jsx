@@ -77,7 +77,8 @@ export default function ConfirmDesignDialog({ reference, onConfirm, onBack, onCl
               <p className="design-approval-note">
                 Confirming this design will record it as the approved concept for this project. You can return to exploration later.
                 Its individual attributes will <strong>not</strong> automatically become confirmed preferences.
-                Unsaved feedback remains untouched, and this in-memory prototype does not permanently save or export designs.
+                Unfinished feedback remains untouched. Project changes can be saved locally in this browser when autosave succeeds;
+                for an independent copy, download an editable project backup from Projects. Confirming does not export the card.
               </p>
             </>
           ) : (

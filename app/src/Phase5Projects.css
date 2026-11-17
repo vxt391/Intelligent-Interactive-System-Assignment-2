@@ -117,3 +117,19 @@
 }
 .phase5-back-to-projects:hover { background: #f4effc; border-color: #b8a6df; }
 .phase5-back-to-projects:focus-visible { outline: 3px solid #8f6dd0; outline-offset: 3px; }
+
+/* Phase 5.2A — focus visibility and more legible secondary text, without changing layout. */
+.phase5-projects-gallery .phase5-projects-search:focus-within {
+  border-color: #ab98d9;
+  box-shadow: 0 0 0 2px rgba(112, 83, 187, 0.14);
+}
+.phase5-projects-gallery .phase5-projects-search input:focus-visible { outline: none; }
+.phase5-projects-eyebrow { color: #67517e; }
+.phase5-projects-hero p:not(.phase5-projects-eyebrow),
+.phase5-projects-empty p { color: #665d70; }
+.phase5-project-storage-note { color: #625a6d; }
+.phase5-project-card-date { color: #685e73; }
+.phase5-project-card-meta { color: #695f73; }
+.phase5-projects-result-title span { color: #655b6d; }
+.phase5-projects-select { color: #63586d; }
+.phase5-project-placeholder small { color: #584b65; }

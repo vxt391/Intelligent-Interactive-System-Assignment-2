@@ -3229,3 +3229,47 @@ Improve keyboard accessibility and focus visibility across Intenta while keeping
 ### Outcome
 
 Phase 5.1 introduces practical keyboard access to Intenta's main workspaces and editable card objects without changing the established project or refinement workflows. The final prompt-focus refinement balances visible focus with the application's existing soft, rounded UI style.
+
+## 2026-11-17 — Phase 5.2B–5.2D: Desktop Density and Sidebar Refinement
+
+**Area:** Responsive UI polish / desktop navigation  
+**Status:** Visual refinement accepted; final 5.2B regression and Git commit pending
+
+### Context
+
+Phase 5.1 introduced keyboard-accessibility foundations, including visible focus treatment and reduced-motion support. Phase 5.2A completed an initial responsive review (8/8 user-reported Chrome checks passed). Phase 5.2B focused on making the desktop interface feel more compact and balanced without changing the design workflow.
+
+### Changes made
+
+- Retained the existing `Phase5.css` desktop app scaling at `zoom: 0.8`, with compensating `125vw` / `125dvh` shell dimensions so the UI fills the viewport.
+- Adjusted Explore conversation centring and the density/positioning of dialogs rendered outside the scaled app shell.
+- Kept the project tabs compact, preserving project-switching, close, add, and active-tab styling.
+- Preserved the normal-sidebar layout in Explore/Projects/Community while leaving the focused Refine workspace separate.
+- Iteratively refined the sidebar using desktop CSS overrides in `Phase5.css` (5.2C followed by 5.2D). Final accepted target dimensions (before the existing 80% app zoom):
+  - Sidebar width: **250px** on desktop; **235px** at viewport widths 900–1149px.
+  - Brand area height: **80px**; brand text **22px**.
+  - New Project minimum height: **47px**.
+  - Navigation minimum height: **48px**, label text **17px**.
+  - Reduced Recent Projects spacing and a more compact footer.
+- Kept the sidebar's visual style: purple accents, rounded navigation items, separately scrollable project/navigation area, and bottom-positioned User Account footer.
+- No changes were required in `Sidebar.jsx`; changes were CSS-only.
+
+### Verification and feedback
+
+- User reviewed the updated sidebar in Google Chrome on the Projects screen and confirmed: **“ok looks better”**.
+- This confirms the latest sidebar proportions were visually accepted; it does **not** by itself establish a complete responsive, accessibility, or feature regression pass for Phase 5.2B.
+- Earlier Phase 5.2A responsive checks: **8/8 passed** (separate milestone).
+
+### Remaining before commit
+
+1. Check the accepted layout at the planned laptop and large-monitor sizes; check narrower desktop widths and whether sidebar scrolling/footer anchoring remain correct with many projects.
+2. Smoke-test Explore, Projects, Community, and focused Refine navigation; project tabs; modal placement; and canvas pointer/drag interactions following the desktop zoom changes.
+3. Verify keyboard focus remains usable and no layout overflow or browser console errors appear.
+4. Consider consolidating superseded Phase 5.2C / 5.2D CSS overrides after verifying the final appearance, to avoid contradictory historical declarations.
+5. Update `DEVELOPMENT_LOG.md`, inspect `git diff`, and commit only after the final checks pass.
+
+**Suggested future commit message:** `style: refine desktop density and compact sidebar layout`
+
+### Next milestone
+
+Finish Phase 5.2 responsive regression and commit; then continue Phase 5.3 optional dark mode, followed by Phase 5.4 final usability/regression testing.
