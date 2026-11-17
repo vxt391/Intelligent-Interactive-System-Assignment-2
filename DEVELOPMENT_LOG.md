@@ -3081,3 +3081,82 @@ Improve the usability and practical usefulness of Intenta's Refine workspace aft
 The post-Phase-4.3 enhancements make Intenta's Refinement Workspace a more complete and usable design editor. Users can remove, duplicate, rotate, and precisely adjust visual elements; quickly clear selections; reduce panel clutter; and export the accepted working design to local files. The enhancements preserve user control and project isolation while preparing the interface for later usability and accessibility evaluation.
 
 **Next step:** Commit these enhancements as one post-Phase-4.3 UX milestone, then proceed to focused UI/accessibility polish and evaluation preparation.
+
+## Project Management & Persistence — Projects Gallery, Autosave, Resume and Deletion
+
+**Date:** 17 November 2026  
+**Status:** Implemented; Projects navigation and deletion confirmed in Chrome. Final cross-restart persistence and backup/import regression results should be recorded separately if/when verified.
+
+### Objective
+
+Allow Intenta users to keep unfinished or completed design projects, leave the design workspace, and return to continue work without having to re-create a brief, reselect a concept, or rebuild the editable card. Separate closing a project tab from deleting its saved project, and offer an editable local backup in addition to PNG/SVG artwork export.
+
+### Implementation
+
+**1. Dedicated Projects Gallery and navigation**
+
+- Activated the existing **Projects** item in the main sidebar, using the same navigation conventions and active-page styling as Home and Community.
+- Added a Projects gallery that can be browsed without an active project. Project cards display a visual preview of the current refined working copy when one exists, or the selected concept/placeholder when it does not.
+- Added project search, status filtering, sorting, and a **Continue Editing** action.
+- Preserved the compact Recent Projects shortcuts and the existing Explore / Refine and Community navigation.
+- Kept Refine's focused full-width layout, with the main sidebar hidden to prioritise canvas space.
+
+**2. Continue Editing and project continuity**
+
+- **Continue Editing** opens the selected project's appropriate previous stage: Explore Ideas for exploration-in-progress, or Refine Design for an existing refinement workspace.
+- Restores the saved project's brief and intention state, conversation and recommendation history, concept choice, and supported editable refinement state.
+- Retains independent project state when navigating among projects, Explore, Community and Refine.
+- Keeps the existing approval/confirmation rules: revisiting a project never silently approves a concept or accepts a pending proposed edit.
+
+**3. Local autosave and restoration**
+
+- Added a versioned application snapshot containing project data, active/open project identifiers, active workspace and separate Community state.
+- Implemented browser-local persistence using **IndexedDB**, with a `localStorage` fallback/emergency copy when available.
+- Added restoration of saved snapshots when the application starts and a save-status message such as **Saving…**, **Saved on this device**, or a warning when saving is unavailable.
+- Included working-copy attributes and object edits (positions, styles, rotations, duplicated/deleted elements), refinement conversations, pointer state and pending proposals within the supported snapshot structure.
+- Project tab **×** now closes the workspace tab without deleting its saved project. A closed project remains available through the Projects gallery.
+- **Limit:** These are local browser/device saves, not account-based cloud synchronisation or permanent storage guarantees. Clearing site data, storage restrictions, or changing the browser origin can affect recovery.
+
+**4. Editable project backup and import**
+
+- Added export of an editable project backup using the `.intenta.json` file format, separate from the existing PNG/SVG artwork exports.
+- Added import validation for the expected backup format/version and file-size limit; imported projects receive an independent project identity and can be edited separately.
+- Exposed project backup actions in the gallery and deletion confirmation flow.
+- Clarified that artwork exports cannot restore the editable project history.
+
+**5. Delete Project with confirmation**
+
+- Added a project-card **⋯ → Delete project** action.
+- The confirmation dialog identifies the project, explains the consequence, and provides **Cancel**, **Delete Project**, and an optional **Download project backup** action.
+- Cancelling or dismissing the dialog does not delete the project.
+- Confirmed deletion removes the chosen project from the local project collection, open tabs and project navigation, while retaining other projects and independent Community inspiration.
+- Deleting the last project shows the gallery's empty state and leaves **New Project** available.
+- Deleting a locally saved project does not erase previously downloaded backups or PNG/SVG files.
+
+**6. Return to Projects from Refine**
+
+- Added an explicit **← Back to Projects** arrow beside the project name in the focused Refine header.
+- The arrow opens the Projects gallery, restores the normal sidebar, and retains the centred Explore / Refine switcher.
+- Navigation does not alter the current project's refinement mode, design edits, approved choices, or pending conversational proposals. **Continue Editing** reopens the same project's workspace.
+
+### Implementation files
+
+- `app/src/App.jsx` — gallery routes, project state and autosave integration, resume, delete, and Refine header navigation.
+- `app/src/components/ProjectsGallery.jsx` — project cards, gallery actions, backup/import and deletion confirmation.
+- `app/src/components/Sidebar.jsx` — enables Projects navigation with appropriate active-state styling.
+- `app/src/Phase5Projects.css` — gallery and Refine back-navigation styling (filename reflects project chronology; this entry does not document accessibility work).
+- `app/src/utils/projectPersistence.js` — versioned browser snapshots, IndexedDB/localStorage fallback, editable project import/export.
+- `app/src/utils/projectGalleryLogic.js` — project display, state and deletion helpers.
+- `app/tests/projectPersistence.test.mjs`, `app/tests/projectGalleryLogic.test.mjs`, `app/tests/projectDeletion.test.mjs` — focused automated tests.
+
+### Verification
+
+- **Automated preparation checks:** 138/138 tests passed for the gallery/autosave package; 146/146 tests passed after the project-deletion package was added. Modified JSX and CSS also passed source-level parsing checks.
+- **Manual browser feedback:** Delete Project was reported working. The later Refine **Back to Projects** navigation checks were all reported passed (6/6), including returning through Continue Editing without losing refinement changes.
+- **Further final verification before declaring end-to-end persistence fully validated:** explicitly record a same-origin browser reload/restart recovery test, an unaccepted proposal restored as pending, editable backup/import round-trip, invalid backup rejection, and project isolation if these have not already been tested locally. Do not interpret automated unit tests alone as proof of these browser behaviours.
+
+### Outcome
+
+The Projects section now provides a dedicated place to find, resume, back up and delete design work. Users can exit refinement and return to their projects without approving or exporting a design. The solution is intentionally browser-local and remains separate from finished-artwork export.
+
+**Next:** Finish any outstanding persistence/backup browser regression checks, then document and commit this milestone as its own checkpoint.

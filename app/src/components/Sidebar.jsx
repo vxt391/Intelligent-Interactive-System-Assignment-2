@@ -1,8 +1,7 @@
-
 const navigation = [
   { icon: '⌂', label: 'Home', enabled: true },
   { icon: '◷', label: 'Running Tasks', enabled: false },
-  { icon: '▤', label: 'Projects', enabled: false },
+  { icon: '▤', label: 'Projects', enabled: true },
   { icon: '◎', label: 'Community', enabled: true },
   { icon: '▥', label: 'Library', enabled: false },
 ];
@@ -14,7 +13,9 @@ export default function Sidebar({
   onSelectProject,
   onHome,
   onCommunity,
+  onProjects,
   communityActive = false,
+  projectsActive = false,
 }) {
   return (
     <aside className="sidebar">
@@ -25,67 +26,59 @@ export default function Sidebar({
 
       <div className="sidebar-scroll">
         <button
+          type="button"
           className="new-project-button"
           onClick={onNewProject}
         >
           <span>＋</span> New Project
         </button>
 
-        <nav
-          className="sidebar-nav"
-          aria-label="Main navigation"
-        >
+        <nav className="sidebar-nav" aria-label="Main navigation">
           {navigation.map((item) => {
             const isActive =
-              (item.label === 'Home' && !communityActive) ||
-              (item.label === 'Community' && communityActive);
+              (item.label === 'Home' && !communityActive && !projectsActive) ||
+              (item.label === 'Community' && communityActive) ||
+              (item.label === 'Projects' && projectsActive);
 
             const handleClick =
               item.label === 'Home'
                 ? onHome
                 : item.label === 'Community'
                   ? onCommunity
-                  : undefined;
+                  : item.label === 'Projects'
+                    ? onProjects
+                    : undefined;
 
             return (
               <button
+                type="button"
                 key={item.label}
                 className={`nav-item ${isActive ? 'active' : ''}`}
                 disabled={!item.enabled}
-                title={
-                  !item.enabled
-                    ? 'Coming in a later phase'
-                    : ''
-                }
+                title={!item.enabled ? 'Coming in a later phase' : ''}
                 onClick={handleClick}
                 aria-current={isActive ? 'page' : undefined}
               >
                 <span className="nav-icon">{item.icon}</span>
                 {item.label}
-
-                {!item.enabled && (
-                  <span className="soon-dot" />
-                )}
+                {!item.enabled && <span className="soon-dot" />}
               </button>
             );
           })}
         </nav>
 
-        <div className="recent-heading">
-          Recent Projects
-        </div>
+        <div className="recent-heading">Recent Projects</div>
 
         <div className="recent-list">
           {projects.length === 0 ? (
-            <p className="empty-projects">
-              No projects yet
-            </p>
+            <p className="empty-projects">No projects yet</p>
           ) : (
             projects.map((project) => (
               <button
+                type="button"
                 key={project.id}
                 className={`recent-item ${
-                  project.id === activeId && !communityActive
+                  project.id === activeId && !communityActive && !projectsActive
                     ? 'selected'
                     : ''
                 }`}
@@ -100,20 +93,12 @@ export default function Sidebar({
       </div>
 
       <div className="sidebar-footer">
-        <button
-          className="footer-item"
-          disabled
-          title="Coming later"
-        >
+        <button type="button" className="footer-item" disabled title="Coming later">
           <span className="avatar">U</span>
           <span>User Account</span>
         </button>
 
-        <button
-          className="settings-button"
-          disabled
-          title="Coming later"
-        >
+        <button type="button" className="settings-button" disabled title="Coming later">
           ⚙
         </button>
       </div>

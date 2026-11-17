@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import ProjectsGallery from './components/ProjectsGallery';
+import { projectResumeMode, deleteSavedProject } from './utils/projectGalleryLogic';
+import { createAppSnapshot, downloadEditableProjectBackup, importedProjectCopy, loadSavedAppSnapshot, parseEditableProjectBackup, saveAppSnapshot, writeEmergencyBrowserBackup } from './utils/projectPersistence';
 import Sidebar from './components/Sidebar';
 import CommunityGallery, { createCommunityState } from './components/CommunityGallery';
 import { COMMUNITY_PROJECTS } from './data/communityProjects';
@@ -27,10 +30,14 @@ import './App.css';
 import './Phase2.css';
 import './Phase3.css';
 import './Phase4.css';
+import './Phase5Projects.css';
 
 function createProject(id) {
+  const now = new Date().toISOString();
   return {
     id,
+    createdAt: now,
+    updatedAt: now,
     name: `Project ${id}`,
     mode: 'explore',
     prompt: '',
@@ -70,19 +77,96 @@ function createProject(id) {
 
 function App() {
   const [projects, setProjects] = useState([createProject(1)]);
+  const [openProjectIds, setOpenProjectIds] = useState([1]);
+  const [storageReady, setStorageReady] = useState(false);
+  const [saveStatus, setSaveStatus] = useState('loading');
+  const [saveMessage, setSaveMessage] = useState('');
+  const latestSnapshotRef = useRef(null);
+  const writeQueueRef = useRef(Promise.resolve());
+
+  // A project remains saved even after its workspace tab is closed.
+  const changeProjects = (update) => setProjects((previous) => {
+    const next = typeof update === 'function' ? update(previous) : update;
+    if (!Array.isArray(next)) return previous;
+    const old = new Map(previous.map((project) => [project.id, project]));
+    const timestamp = new Date().toISOString();
+    return next.map((project) => {
+      if (old.get(project.id) === project) return project;
+      if (!old.has(project.id)) return project; // new/imported projects carry their own timestamps
+      return { ...project, updatedAt: timestamp };
+    });
+  });
   const [activeId, setActiveId] = useState(1);
   // Navigation is global: Community is available even without a selected project.
   const [activeWorkspace, setActiveWorkspace] = useState('design');
   // Contextual return path exists ONLY after a conversation's Explore Community action.
   const [communityReturnProjectId, setCommunityReturnProjectId] = useState(null);
-  // Community browsing and explicitly saved inspiration persist when the workspace unmounts.
-  // These are global session-only states, deliberately separate from any design project.
+  // Community browsing and saved inspiration are project-independent; both are included in browser autosave.
   const [communityState, setCommunityState] = useState(createCommunityState);
   const communityScrollRef = useRef(null);
   const nextProjectId = useRef(2);
 
   const activeProject = projects.find((project) => project.id === activeId);
   const returnProject = projects.find((project) => project.id === communityReturnProjectId);
+
+  // Load project snapshots before rendering the workspace. This avoids overwriting
+  // saved projects with the starter Project 1 on initial app mount.
+  useEffect(() => {
+    let cancelled = false;
+    loadSavedAppSnapshot().then((snapshot) => {
+      if (cancelled) return;
+      if (snapshot) {
+        setProjects(snapshot.projects);
+        setOpenProjectIds(snapshot.openProjectIds);
+        setActiveId(snapshot.activeId);
+        setActiveWorkspace(snapshot.activeWorkspace);
+        if (snapshot.communityState) setCommunityState(snapshot.communityState);
+        nextProjectId.current = snapshot.nextProjectId;
+      }
+      setStorageReady(true);
+      setSaveStatus(snapshot ? 'saved' : 'saving');
+    }).catch((error) => {
+      if (cancelled) return;
+      setStorageReady(true);
+      setSaveStatus('error');
+      setSaveMessage(`Could not load previous projects: ${error.message}`);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  // Save a complete, versioned project snapshot after changes. Persist the
+  // Community collection too; it is independent of projects but is user work.
+  // Serialise writes to prevent a slower older write from overwriting a newer one.
+  useEffect(() => {
+    if (!storageReady) return undefined;
+    const snapshot = createAppSnapshot({ projects, activeId, openProjectIds, activeWorkspace, communityState });
+    latestSnapshotRef.current = snapshot;
+    setSaveStatus('saving');
+    const timeout = window.setTimeout(() => {
+      writeQueueRef.current = writeQueueRef.current.catch(() => {}).then(() => saveAppSnapshot(snapshot));
+      writeQueueRef.current.then(() => {
+        if (latestSnapshotRef.current === snapshot) { setSaveStatus('saved'); setSaveMessage(''); }
+      }).catch((error) => {
+        if (latestSnapshotRef.current === snapshot) {
+          setSaveStatus('error'); setSaveMessage(error.message);
+        }
+      });
+    }, 280);
+    return () => window.clearTimeout(timeout);
+  }, [storageReady, projects, activeId, openProjectIds, activeWorkspace, communityState]);
+
+  // A synchronous local fallback protects the newest edit when the tab closes
+  // before the debounced IndexedDB transaction has finished.
+  useEffect(() => {
+    const backup = () => { if (latestSnapshotRef.current) writeEmergencyBrowserBackup(latestSnapshotRef.current); };
+    window.addEventListener('pagehide', backup);
+    const onVisibility = () => { if (document.visibilityState === 'hidden') backup(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('pagehide', backup);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, []);
 
   // Phase 3.4.1 diagnostic only: inspect detection in Chrome without rendering
   // a suggestion early. Available in Vite development builds, not production.
@@ -102,7 +186,7 @@ function App() {
   }, [projects]);
 
   function updateProject(changes) {
-    setProjects((current) =>
+    changeProjects((current) =>
       current.map((project) =>
         project.id === activeId ? { ...project, ...changes } : project
       )
@@ -115,18 +199,18 @@ function App() {
     if (!activeProject) return;
     if (mode === 'explore') { updateProject({ mode: 'explore' }); return; }
     if (mode === 'refine') {
-      setProjects((current) => current.map((project) => project.id === activeId
+      changeProjects((current) => current.map((project) => project.id === activeId
         ? enterRefinement(project) : project));
     }
   }
 
   function refineSelectedConcept() {
-    setProjects((current) => current.map((project) => project.id === activeId
+    changeProjects((current) => current.map((project) => project.id === activeId
       ? enterRefinement(project) : project));
   }
 
   function refineApprovedDesign() {
-    setProjects((current) => current.map((project) => project.id === activeId
+    changeProjects((current) => current.map((project) => project.id === activeId
       ? enterRefinement(project, true) : project));
   }
 
@@ -135,43 +219,89 @@ function App() {
   }
 
   function updateRefinementDraft(next) {
-    setProjects((current) => current.map((project) => project.id === activeId && project.refinement
+    changeProjects((current) => current.map((project) => project.id === activeId && project.refinement
       ? { ...project, refinement: next } : project));
   }
 
   function updateRefinementProperties(operation) {
-    setProjects((current) => current.map((project) => project.id === activeId
+    changeProjects((current) => current.map((project) => project.id === activeId
       ? editRefinement(project, operation) : project));
   }
 
   function undoRefinementChange() {
-    setProjects((current) => current.map((project) => project.id === activeId
+    changeProjects((current) => current.map((project) => project.id === activeId
       ? undoRefinement(project) : project));
   }
 
   function redoRefinementChange() {
-    setProjects((current) => current.map((project) => project.id === activeId
+    changeProjects((current) => current.map((project) => project.id === activeId
       ? redoRefinement(project) : project));
   }
 
   function newProject() {
     const id = nextProjectId.current++;
-    setProjects((current) => [...current, createProject(id)]);
+    changeProjects((current) => [...current, createProject(id)]);
+    setOpenProjectIds((current) => [...new Set([...current, id])]);
     setActiveId(id);
     setActiveWorkspace('design');
   }
 
   function selectProject(id) {
+    const project = projects.find((item) => item.id === id);
+    if (!project) return;
+    if (project.mode === 'refine' && projectResumeMode(project) !== 'refine') {
+      changeProjects((current) => current.map((item) => item.id === id ? { ...item, mode: 'explore' } : item));
+    }
+    setOpenProjectIds((current) => [...new Set([...current, id])]);
     setActiveId(id);
     setActiveWorkspace('design');
   }
+
+  function openProjectsGallery() {
+    setCommunityReturnProjectId(null);
+    setActiveWorkspace('projects');
+  }
+
+  async function importProjectBackup(raw) {
+    const source = parseEditableProjectBackup(raw);
+    const id = nextProjectId.current++;
+    changeProjects((current) => [...current, importedProjectCopy(source, id)]);
+    // Stay in Projects. The user explicitly chooses when to resume editing.
+  }
+
+  // Explicit deletion differs from closing a tab: the saved project is removed.
+  // A synchronous local backup helps prevent an immediate reload from reviving it
+  // before the normal debounced IndexedDB autosave completes.
+  function deleteProject(id) {
+    const result = deleteSavedProject({
+      projects, openProjectIds, activeId, communityReturnProjectId, communityState,
+    }, id);
+    if (!result.deleted) return;
+
+    const snapshot = createAppSnapshot({
+      projects: result.projects,
+      openProjectIds: result.openProjectIds,
+      activeId: result.activeId,
+      activeWorkspace: 'projects',
+      communityState: result.communityState,
+    });
+    writeEmergencyBrowserBackup(snapshot);
+
+    setProjects(result.projects);
+    setOpenProjectIds(result.openProjectIds);
+    setActiveId(result.activeId);
+    setCommunityReturnProjectId(result.communityReturnProjectId);
+    setCommunityState(result.communityState);
+    setActiveWorkspace('projects');
+  }
+
 
   // Phase 3.3.1: creating a destination from Community must not navigate away,
   // select the new project automatically, or modify another project's intentions.
   // The user must still explicitly choose the destination in the picker.
   function createProjectForCommunity() {
     const id = nextProjectId.current++;
-    setProjects((current) => [...current, createProject(id)]);
+    changeProjects((current) => [...current, createProject(id)]);
   }
 
   // Phase 3.3.2: only final confirmation writes to the selected project. The
@@ -213,7 +343,7 @@ function App() {
         ? { ...current.transferRequest, error: transfer.error } : null }));
       return;
     }
-    setProjects((current) => current.map((project) => project.id === target.id
+    changeProjects((current) => current.map((project) => project.id === target.id
       ? applyInspirationTransfer(project, {
           artwork, savedAttributes, selectedIds: request.selectedIds, resolutions: request.resolutions,
           referenceOnly: request.referenceOnly === true,
@@ -235,15 +365,16 @@ function App() {
     if (!projects.some((item) => item.id === id)) return;
     setCommunityReturnProjectId(null);
     setActiveId(id);
+    setOpenProjectIds((current) => [...new Set([...current, id])]);
     setActiveWorkspace('design');
     setCommunityState((current) => ({ ...current, connectionNotice: null }));
-    setProjects((current) => current.map((project) => project.id === id
+    changeProjects((current) => current.map((project) => project.id === id
       ? { ...project, mode: 'explore', ui: { ...project.ui, intentionsOpen: true, projectInspirationExpanded: true } } : project));
   }
 
   // Phase 3.4.2: the suggestion stays in history with a terminal status.
   function keepDesigningAfterSuggestion(messageId) {
-    setProjects((current) => current.map((project) => project.id === activeId
+    changeProjects((current) => current.map((project) => project.id === activeId
       ? resolveCommunitySuggestion(project, messageId, 'dismissed') : project));
   }
 
@@ -251,7 +382,7 @@ function App() {
     // Remember the exact originating project, not whichever project may later be active.
     setCommunityReturnProjectId(activeId);
     // Navigation occurs ONLY on this explicit button press.
-    setProjects((current) => current.map((project) => project.id === activeId
+    changeProjects((current) => current.map((project) => project.id === activeId
       ? resolveCommunitySuggestion(project, messageId, 'used') : project));
     setActiveWorkspace('community');
   }
@@ -259,7 +390,7 @@ function App() {
   function openCommunityFromSidebar() {
     // Unprompted gallery visits must not inherit an old return-to-conversation button.
     setCommunityReturnProjectId(null);
-    setProjects((current) => current.map((project) => project.id === activeId
+    changeProjects((current) => current.map((project) => project.id === activeId
       ? markActiveCommunitySuggestionsUsed(project) : project));
     setActiveWorkspace('community');
   }
@@ -279,16 +410,16 @@ function App() {
       ? { ...current, scrollPositions: { ...current.scrollPositions, [current.view]: scrollTop } }
       : current);
     setActiveId(destinationId);
+    setOpenProjectIds((current) => [...new Set([...current, destinationId])]);
     setActiveWorkspace('design');
     setCommunityReturnProjectId(null);
   }
 
+  // Closing a tab must not delete a project from the saved Projects gallery.
   function closeProject(id) {
-    const remaining = projects.filter((project) => project.id !== id);
-    setProjects(remaining);
-    if (activeId === id) {
-      setActiveId(remaining.length > 0 ? remaining[0].id : null);
-    }
+    const remaining = openProjectIds.filter((item) => item !== id);
+    setOpenProjectIds(remaining);
+    if (activeId === id) setActiveId(remaining.length ? remaining[0] : null);
   }
 
   function submitPrompt(text, originalText = text, submission = 'without-assistance') {
@@ -296,7 +427,7 @@ function App() {
     const original = originalText.trim();
     if (!submitted || !original) return;
 
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.briefReview) return project;
       const firstMessage = !project.messages.some((message) => message.role === 'user');
       const hasRecommendations = project.messages.some((message) => message.role === 'recommendations');
@@ -358,7 +489,7 @@ function App() {
   }
 
   function toggleBriefProposal(proposalId) {
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id !== activeId || !project.briefReview ? project : {
         ...project,
         briefReview: { ...project.briefReview, proposals: project.briefReview.proposals.map((item) =>
@@ -369,7 +500,7 @@ function App() {
 
   function resolveBriefProposal(proposalId, resolution) {
     if (resolution !== 'remove-avoid') return;
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id !== activeId || !project.briefReview ? project : {
         ...project,
         briefReview: { ...project.briefReview, proposals: project.briefReview.proposals.map((item) =>
@@ -379,13 +510,13 @@ function App() {
   }
 
   function confirmBriefUpdates() {
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id === activeId ? applyFollowUpReview(project) : project
     ));
   }
 
   function cancelBriefUpdates() {
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id !== activeId || !project.briefReview ? project : {
         ...project, briefReview: null,
         messages: [...project.messages, { id: project.nextMessageId, role: 'prototype',
@@ -396,7 +527,7 @@ function App() {
   }
 
   function selectConcept(conceptId, recommendationMessageId) {
-    setProjects((current) =>
+    changeProjects((current) =>
       current.map((project) => {
         if (project.id !== activeId) return project;
         const recommendation = project.messages.find(
@@ -424,7 +555,7 @@ function App() {
   // Each recommendation round has its own draft. Switching rounds must never
   // replace or silently confirm feedback still unfinished in an earlier round.
   function toggleDraftAttribute(recommendationMessageId, conceptId, attribute) {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId) return project;
       const recommendation = project.messages.find((message) =>
         message.id === recommendationMessageId && message.role === 'recommendations'
@@ -455,7 +586,7 @@ function App() {
 
   function rateDraftAttribute(recommendationMessageId, attributeId, sentiment) {
     if (!['like', 'avoid', 'unsure'].includes(sentiment)) return;
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId) return project;
       const draft = project.feedbackDrafts[recommendationMessageId];
       if (!draft) return project;
@@ -474,7 +605,7 @@ function App() {
   }
 
   function removeDraftAttribute(recommendationMessageId, attributeId) {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId) return project;
       const draft = project.feedbackDrafts[recommendationMessageId];
       if (!draft) return project;
@@ -493,7 +624,7 @@ function App() {
   // Confirm only explicitly rated attributes from the specific source round.
   // Unrated choices and other rounds' drafts remain untouched.
   function confirmDraftPreferences(recommendationMessageId) {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId) return project;
       const draft = project.feedbackDrafts[recommendationMessageId];
       if (!draft) return project;
@@ -580,7 +711,7 @@ function App() {
   }
 
   function exploreNewDirections() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.directionRequest || project.briefReview) return project;
       const conflicts = getBriefPreferenceConflicts({
         originalBrief: project.activeBrief?.submittedText || project.intentions.initialBrief,
@@ -593,14 +724,14 @@ function App() {
 
   function resolveNewDirectionConflict(resolution) {
     if (!['respect-brief', 'respect-preferences'].includes(resolution)) return;
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id !== activeId || !project.directionRequest ? project
         : generateNewDirections(project, resolution, project.directionRequest.conflicts)
     ));
   }
 
   function cancelNewDirectionConflict() {
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id === activeId ? { ...project, directionRequest: null } : project
     ));
   }
@@ -623,7 +754,7 @@ function App() {
   }
 
   function startVariations() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.variationRequest) return project;
       const { selectedConceptId, selectedConceptMessageId } = project.exploration;
       const found = findVariationReference(project, selectedConceptMessageId, selectedConceptId);
@@ -641,7 +772,7 @@ function App() {
 
   function toggleVariationDimension(dimension) {
     if (!VARIATION_DIMENSIONS.some((item) => item.id === dimension)) return;
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.variationRequest?.stage !== 'configure') return project;
       const req = project.variationRequest;
       return {
@@ -657,7 +788,7 @@ function App() {
   }
 
   function closeVariationRequest() {
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id === activeId ? { ...project, variationRequest: null } : project
     ));
   }
@@ -714,7 +845,7 @@ function App() {
   }
 
   function prepareVariations() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.variationRequest?.stage !== 'configure') return project;
       const req = project.variationRequest;
       const found = findVariationReference(project, req.messageId, req.conceptId);
@@ -741,7 +872,7 @@ function App() {
 
   function resolveVariationConflict(choice) {
     if (!['respect', 'keep-reference'].includes(choice)) return;
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.variationRequest?.stage !== 'conflicts') return project;
       const req = { ...project.variationRequest, conflictResolution: choice };
       if (unfinishedFeedbackCount(project)) return {
@@ -752,7 +883,7 @@ function App() {
   }
 
   function continueVariationsWithoutFeedback() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.variationRequest?.stage !== 'feedback') return project;
       return generateVariationRound(project, project.variationRequest);
     }));
@@ -762,7 +893,7 @@ function App() {
   // Milestone 5.3: provisional selection never approves a concept. The review
   // request is scoped to the current project and to an exact historic round.
   function startDesignApproval() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.explorationComplete || project.approvalRequest) return project;
       const { selectedConceptId: conceptId, selectedConceptMessageId: messageId } = project.exploration;
       if (!getDesignConcept(project.messages, messageId, conceptId)) return project;
@@ -771,13 +902,13 @@ function App() {
   }
 
   function cancelDesignApproval() {
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id === activeId ? { ...project, approvalRequest: null } : project
     ));
   }
 
   function confirmDesignApproval() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId) return project;
       const approved = approveDesignProject(project);
       approved.refinementHandoffDismissed = false;
@@ -791,7 +922,7 @@ function App() {
   }
 
   function resumeExploration() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || !project.explorationComplete) return project;
       return {
         ...project,
@@ -809,7 +940,7 @@ function App() {
 
   // Milestone 4.3: begin a separate editing transaction. Nothing confirmed changes yet.
   function beginPreferenceEdit() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || project.preferenceEdit || project.intentions.preferences.length === 0) {
         return project;
       }
@@ -823,7 +954,7 @@ function App() {
 
   function changePreferenceEdit(attributeId, sentiment) {
     if (!['like', 'avoid', 'unsure'].includes(sentiment)) return;
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || !project.preferenceEdit) return project;
       return {
         ...project,
@@ -838,7 +969,7 @@ function App() {
   }
 
   function togglePreferenceRemoval(attributeId) {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || !project.preferenceEdit) return project;
       return {
         ...project,
@@ -853,13 +984,13 @@ function App() {
   }
 
   function cancelPreferenceEdit() {
-    setProjects((current) => current.map((project) =>
+    changeProjects((current) => current.map((project) =>
       project.id === activeId ? { ...project, preferenceEdit: null } : project
     ));
   }
 
   function savePreferenceEdit() {
-    setProjects((current) => current.map((project) => {
+    changeProjects((current) => current.map((project) => {
       if (project.id !== activeId || !project.preferenceEdit) return project;
       const { preferences, changes } = applyPreferenceEdits(
         project.intentions.preferences,
@@ -934,6 +1065,8 @@ function App() {
 
   const focusedRefine = activeWorkspace === 'design' && activeProject?.mode === 'refine';
 
+  if (!storageReady) return <div className="phase5-projects-loading" role="status">Loading your saved Intenta projects…</div>;
+
   return (
     <div className={`app-shell ${focusedRefine ? 'phase4-focused-shell' : ''}`}>
       {!focusedRefine && <Sidebar
@@ -944,18 +1077,33 @@ function App() {
         onHome={() => { setActiveWorkspace('design'); updateProject({ mode: 'explore' }); }}
         onCommunity={openCommunityFromSidebar}
         communityActive={activeWorkspace === 'community'}
+        onProjects={openProjectsGallery}
+        projectsActive={activeWorkspace === 'projects'}
       />}
 
       <div className={`main-area ${focusedRefine ? 'phase4-main-area' : ''}`}>
         {activeWorkspace === 'design' && !focusedRefine && <ProjectTabs
-          projects={projects}
+          projects={projects.filter((project) => openProjectIds.includes(project.id))}
           activeId={activeId}
           onSelect={selectProject}
           onClose={closeProject}
           onNew={newProject}
         />}
 
-        {activeWorkspace === 'community' ? (
+        {activeWorkspace === 'projects' ? (
+          <main className="workspace phase5-projects-workspace">
+            <ProjectsGallery
+              projects={projects}
+              onNew={newProject}
+              onResume={selectProject}
+              onImport={importProjectBackup}
+              onBackup={downloadEditableProjectBackup}
+              onDelete={deleteProject}
+              saveStatus={saveStatus}
+              saveMessage={saveMessage}
+            />
+          </main>
+        ) : activeWorkspace === 'community' ? (
           <main className="workspace phase3-workspace" ref={communityScrollRef}>
             {returnProject && (
               <nav className="phase3-return-bar" aria-label="Return to design conversation">
@@ -986,10 +1134,19 @@ function App() {
           <main className="phase4-workspace">
             <div className="phase4-workspace-header">
               <div className="phase4-header-start">
-                <strong>Intenta <span className="phase4-header-muted">/ {activeProject.name}</span></strong>
+                <button
+                  type="button"
+                  className="phase5-back-to-projects"
+                  title="Back to Projects"
+                  aria-label="Back to Projects"
+                  onClick={openProjectsGallery}
+                >
+                  <span aria-hidden="true">←</span>
+                </button>
+                <button type="button" className="phase5-project-header-link" title="Open your Projects gallery" onClick={openProjectsGallery}>Intenta <span className="phase4-header-muted">/ {activeProject.name}</span></button>
               </div>
               <ModeSwitcher mode="refine" onChange={changeDesignMode} />
-              <span className="phase4-header-caption">Refine · Session-only working copy</span>
+              <span className="phase4-header-caption">{saveStatus === 'saved' ? 'Saved on this device' : saveStatus === 'saving' ? 'Saving…' : 'Save unavailable · Back up your project'}</span>
             </div>
             <RefinementWorkspace
               project={activeProject}

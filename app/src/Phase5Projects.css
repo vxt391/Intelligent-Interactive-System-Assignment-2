@@ -1,0 +1,119 @@
+/* Projects gallery: isolated styles; does not replace Phase 2, 3, or 4. */
+.phase5-projects-workspace { overflow-y: auto; overflow-x: hidden; background: #fff; }
+.phase5-projects-gallery { width: min(1300px, 100%); margin: 0 auto; padding: 33px clamp(18px, 3.2vw, 46px) 60px; box-sizing: border-box; color: #2b2533; }
+.phase5-projects-hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin-bottom: 20px; }
+.phase5-projects-eyebrow { font-size: 11px; font-weight: 750; color: #8a79a2; letter-spacing: .12em; margin: 0 0 7px; }
+.phase5-projects-hero h1 { margin: 0 0 7px; font-size: clamp(25px, 2.5vw, 36px); line-height: 1.2; letter-spacing: -.03em; }
+.phase5-projects-hero p:not(.phase5-projects-eyebrow) { margin: 0; color: #817889; font-size: 13px; line-height: 1.55; }
+.phase5-projects-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
+.phase5-projects-hero button, .phase5-projects-empty button { border-radius: 10px; font: inherit; font-size: 12px; font-weight: 720; padding: 11px 14px; cursor: pointer; }
+.phase5-projects-primary { background: #6d55af; color: white; border: 1px solid #6d55af; }
+.phase5-projects-secondary { background: white; color: #66518d; border: 1px solid #ded4ee; }
+.phase5-project-file-input { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
+.phase5-project-save-state { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin: 6px 0 20px; color: #655f72; font-size: 12px; }
+.phase5-project-status-dot { width: 7px; height: 7px; flex: none; border-radius: 50%; background: #bbb3c8; }
+.phase5-project-status-dot.is-saved { background: #3b906d; }
+.phase5-project-status-dot.is-error { background: #ba4a58; }
+.phase5-project-storage-note { color: #928a9b; margin-left: 10px; font-size: 11px; }
+.phase5-project-import-error { color: #a93446; font-size: 13px; }
+.phase5-projects-filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 26px; }
+.phase5-projects-search { flex: 1 1 240px; display: flex; gap: 9px; align-items: center; border: 1px solid #dfdbe5; background: #faf9fc; border-radius: 11px; padding: 0 12px; }
+.phase5-projects-search > span { color: #847794; font-size: 23px; }
+.phase5-projects-search input { width: 100%; min-width: 0; padding: 12px 0; background: none; font: inherit; font-size: 13px; border: none; outline: none; }
+.phase5-projects-select { display: flex; gap: 8px; align-items: center; color: #7d7489; font-size: 11px; }
+.phase5-projects-select select { border: 1px solid #dfdbe5; background: white; color: #453d50; border-radius: 9px; padding: 11px 9px; font: inherit; font-size: 12px; }
+.phase5-projects-result-title { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.phase5-projects-result-title h2 { margin: 0; font-size: 16px; }
+.phase5-projects-result-title span { font-size: 12px; color: #89818e; }
+.phase5-projects-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 19px; }
+.phase5-project-card { min-width: 0; border: 1px solid #e9e5ed; background: white; border-radius: 13px; overflow: hidden; transition: box-shadow .15s ease; }
+.phase5-project-card:hover { box-shadow: 0 7px 25px #32284312; }
+.phase5-project-art { display: block; cursor: pointer; padding: 17px; border: 0; width: 100%; background: #f3f0f6; aspect-ratio: 1.43 / 1; overflow: hidden; }
+.phase5-project-art-image { display: block; object-fit: contain; max-width: 100%; max-height: 100%; width: 100%; height: 100%; border-radius: 5px; box-shadow: 0 3px 16px #00000013; }
+.phase5-project-art-concept { display: flex; justify-content: center; align-items: center; height: 100%; }
+.phase5-project-art-concept .business-card-preview { width: 100%; max-width: none; min-height: 0; height: auto; aspect-ratio: 1.6 / 1; }
+.phase5-project-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 8px; padding: 20px; box-sizing: border-box; background: linear-gradient(120deg, #e9e2f6, #f8eff3); color: #655180; overflow: hidden; }
+.phase5-project-placeholder > span { font-size: 32px; }
+.phase5-project-placeholder strong { font-size: 16px; overflow-wrap: anywhere; }
+.phase5-project-placeholder small { color: #8c7e9b; line-height: 1.5; max-height: 3em; overflow: hidden; }
+.phase5-project-card-info { padding: 14px; }
+.phase5-project-card-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.phase5-project-card-title h3 { margin: 0 0 8px; font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.phase5-project-card-date { flex: 0 0 auto; font-size: 10px; color: #9991a0; }
+.phase5-project-card-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; color: #8b8093; font-size: 11px; }
+.phase5-project-card-meta span:first-child { color: #69518c; font-weight: 700; }
+.phase5-project-card-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.phase5-project-resume { flex: 1 1 auto; border: 1px solid #d8ceeb; background: #f7f3fe; color: #604497; border-radius: 8px; padding: 9px 12px; font: inherit; font-weight: 720; font-size: 11px; cursor: pointer; }
+.phase5-project-backup { border: none; background: transparent; color: #6f6480; padding: 9px 4px; font: inherit; font-size: 11px; cursor: pointer; }
+.phase5-project-resume:hover, .phase5-projects-secondary:hover { background: #eee7fb; }
+.phase5-projects-empty { display: flex; align-items: center; flex-direction: column; text-align: center; padding: 55px 20px; background: #faf8fc; border: 1px dashed #e3d9ed; border-radius: 12px; }
+.phase5-projects-empty > span { font-size: 32px; color: #9a8bbe; }
+.phase5-projects-empty h3 { margin: 8px 0; font-size: 18px; }
+.phase5-projects-empty p { color: #817889; font-size: 13px; }
+.phase5-project-header-link { display: inline-block; text-align: left; border: 0; background: transparent; font: inherit; font-weight: 750; cursor: pointer; padding: 4px 0; color: #273047; }
+.phase5-project-header-link .phase4-header-muted { font-weight: 500; }
+.phase5-projects-gallery button:focus-visible, .phase5-projects-gallery input:focus-visible, .phase5-projects-gallery select:focus-visible, .phase5-project-header-link:focus-visible { outline: 3px solid #8f6dd0; outline-offset: 3px; }
+@media (max-width: 1150px) { .phase5-projects-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 700px) { .phase5-projects-grid { grid-template-columns: minmax(0,1fr); } .phase5-projects-hero { align-items: stretch; } .phase5-projects-hero-actions { width: 100%; } .phase5-project-storage-note { margin-left: 0; flex-basis: 100%; } }
+@media (prefers-reduced-motion: reduce) { .phase5-project-card { transition: none; } }
+
+.phase5-projects-loading { display:flex; align-items:center; justify-content:center; min-height:100vh; font: 500 15px/1.5 Arial,sans-serif; color:#655180; background:#faf9fc; }
+
+
+/* Explicit deletion: keep destructive actions out of the primary card CTA. */
+.phase5-project-more { position: relative; flex: 0 0 auto; }
+.phase5-project-more > summary { display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border: 1px solid #e7e0ed; background: #fff;
+  border-radius: 8px; color: #625775; cursor: pointer; font-size: 20px; line-height: 1;
+  list-style: none; user-select: none; }
+.phase5-project-more > summary::-webkit-details-marker { display: none; }
+.phase5-project-more[open] > summary, .phase5-project-more > summary:hover { background: #f6f1fb; }
+.phase5-project-more-menu { position: absolute; z-index: 11; right: 0; bottom: calc(100% + 5px);
+  width: 158px; padding: 4px; background: white; border: 1px solid #e5dce9;
+  border-radius: 9px; box-shadow: 0 10px 32px #2b1c3d24; }
+.phase5-project-delete-option { display: block; border: none; background: none; width: 100%;
+  padding: 10px 11px; border-radius: 6px; text-align: left; color: #a5293b;
+  cursor: pointer; font: inherit; font-weight: 650; font-size: 12px; }
+.phase5-project-delete-option:hover { background: #fff1f2; }
+.phase5-project-more > summary:focus-visible, .phase5-project-delete-option:focus-visible { outline: 3px solid #8f6dd0; outline-offset: 2px; }
+
+.phase5-project-delete-dialog { box-sizing: border-box; width: min(440px, calc(100vw - 36px));
+  border: 1px solid #eadfe8; border-radius: 15px; padding: 0; color: #2b2533;
+  box-shadow: 0 18px 70px #19102830; }
+.phase5-project-delete-dialog::backdrop { background: #1c162b99; }
+.phase5-delete-content { padding: 25px; display: flex; flex-direction: column; gap: 12px; }
+.phase5-delete-icon { display: grid; place-items: center; width: 34px; height: 34px;
+  border-radius: 50%; background: #ffedf0; color: #9e263a; font-size: 18px; font-weight: 800; }
+.phase5-delete-content h2 { font-size: 19px; line-height: 1.3; margin: 0; }
+.phase5-delete-content p { margin: 0; font-size: 13px; line-height: 1.6; color: #635b6b; }
+.phase5-delete-content p strong { color: #312a38; overflow-wrap: anywhere; }
+.phase5-delete-content .phase5-delete-backup-note { color: #82748a; font-size: 12px; }
+.phase5-delete-backup { align-self: flex-start; padding: 7px 0; border: none;
+  color: #64459b; background: none; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.phase5-delete-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+.phase5-delete-dialog-actions button { padding: 10px 15px; border-radius: 9px; font: inherit;
+  font-size: 12px; font-weight: 730; cursor: pointer; }
+.phase5-delete-cancel { background: #fff; color: #554763; border: 1px solid #dfd4e9; }
+.phase5-delete-confirm { background: #b63148; color: white; border: 1px solid #b63148; }
+.phase5-delete-confirm:hover { background: #9e2339; }
+.phase5-project-delete-dialog button:focus-visible { outline: 3px solid #8f6dd0; outline-offset: 3px; }
+@media (max-width: 520px) { .phase5-delete-content { padding: 18px; } .phase5-delete-dialog-actions { flex-direction: column-reverse; } .phase5-delete-dialog-actions button { width: 100%; } }
+
+/* Explicit navigation from focused Refine mode to the saved Projects gallery. */
+.phase5-back-to-projects {
+  flex: 0 0 auto;
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ded8ec;
+  border-radius: 9px;
+  background: #fff;
+  color: #654fa1;
+  font: inherit;
+  font-size: 19px;
+  cursor: pointer;
+}
+.phase5-back-to-projects:hover { background: #f4effc; border-color: #b8a6df; }
+.phase5-back-to-projects:focus-visible { outline: 3px solid #8f6dd0; outline-offset: 3px; }
