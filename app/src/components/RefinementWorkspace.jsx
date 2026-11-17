@@ -11,6 +11,7 @@ import { proposeRefinementRequest, acceptRefinementProposal, rejectRefinementPro
 import { exportRefinementSvg, exportRefinementPng } from '../utils/refinementExport';
 import { deselectRefinementOnBoard } from '../utils/refinementSelection';
 import { normaliseRefinementRotation, rotationPointerAngle, rotationFromPointer } from '../utils/refinementRotation';
+import { keyboardObjectNudge } from '../utils/refinementKeyboard';
 import { MIN_REFINEMENT_ZOOM, MAX_REFINEMENT_ZOOM, refinementZoomValue, nextRefinementZoom, refinementZoomShortcut } from '../utils/refinementZoom';
 
 const dragClamp = (value, lower, upper) => Math.min(upper, Math.max(lower, value));
@@ -266,7 +267,17 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
         </div>
       </div>
       {exportError && <p className="phase4-export-error" role="alert">{exportError}</p>}
-      <div className="phase4-canvas-board" onClick={(event) => {
+      <div className="phase4-canvas-board" onKeyDown={(event) => {
+        // Escape clears selections while keyboard focus is on the canvas, without
+        // modifying pointer annotations or committed design changes.
+        if (event.key !== 'Escape' || previewLocked) return;
+        const nextDraft = deselectRefinementOnBoard(draft);
+        if (nextDraft !== draft) {
+          event.preventDefault();
+          event.stopPropagation();
+          onChange(nextDraft);
+        }
+      }} onClick={(event) => {
         // Click-away clears object/background selection, not annotation pointers.
         // Card clicks and proposal controls keep their existing interactions.
         const clickedBlankSpace = event.target === event.currentTarget || event.target.classList?.contains('phase4-canvas-caption');
@@ -299,6 +310,15 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
               style={{ left: `${position.x}%`, top: `${position.y}%`, color: object.color, '--object-size': `${object.size / 6.9}cqw`, '--decoration-color': object.color,
                 '--object-rotation': `${rotationPreview?.id === id ? rotationPreview.angle : normaliseRefinementRotation(object.rotation)}deg` }}
               aria-label={`${pointMode ? 'Place pointer on' : 'Select'} ${objectLabel(id)}`} aria-pressed={!pointMode && selectedIds.includes(id)}
+              aria-keyshortcuts={!pointMode && !previewLocked ? 'ArrowUp ArrowDown ArrowLeft ArrowRight' : undefined}
+              onKeyDown={(event) => {
+                if (previewLocked || pointMode || event.repeat) return;
+                const nextPosition = keyboardObjectNudge(working.objects[id], event, kind);
+                if (!nextPosition) return;
+                event.preventDefault();
+                event.stopPropagation();
+                onEdit({ key: 'position', id, value: nextPosition });
+              }}
               onPointerDown={(event) => beginDrag(event, id)}
               onPointerMove={(event) => moveDrag(event, id)}
               onPointerUp={(event) => finishDrag(event, id)}
@@ -335,6 +355,8 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
         <p className="phase4-canvas-caption">{previewLocked ? 'Compare proposed and current designs, then Accept or Reject in the conversation. Editing is paused until you decide.' : pointMode
           ? 'Click anywhere on the card to place numbered pointers. Click a pin or its chip to remove it; then describe your requested changes in AI Conversation.'
           : 'Click objects to select or drag them. Use the ↻ handle or Rotate controls to turn a selected element. Point mode places annotations.'}</p>
+        {!pointMode && !previewLocked && selectedObjects.length > 0 &&
+          <p className="phase5-keyboard-hint">Keyboard: focus an object and use Arrow keys to move it 1%, Shift + Arrow for 5%, or Escape to deselect.</p>}
       </div>
       <div className={`phase4-object-properties ${propertiesExpanded ? '' : 'is-collapsed'}`}>
         <div className="phase4-properties-heading">

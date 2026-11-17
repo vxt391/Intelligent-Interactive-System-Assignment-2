@@ -1,0 +1,59 @@
+/* Phase 5.1 — keyboard accessibility foundations. Imported after Phase 2–4 styles. */
+.phase5-skip-link {
+  position: fixed;
+  z-index: 12000;
+  top: 10px;
+  left: 12px;
+  transform: translateY(-180%);
+  padding: 11px 15px;
+  background: #fff;
+  border: 2px solid #5137a3;
+  border-radius: 9px;
+  color: #33236d;
+  font: 700 14px/1.35 system-ui, sans-serif;
+  box-shadow: 0 4px 16px #10152b3d;
+}
+.phase5-skip-link:focus-visible { transform: translateY(0); outline: 3px solid #9c87e8; outline-offset: 2px; }
+/* The skip destination is programmatically focused, without a distracting outline around the full page. */
+#intenta-main-content:focus { outline: none; }
+.app-shell :where(button, a, input, select, textarea, [role="button"], [tabindex="0"]):focus-visible {
+  outline: 3px solid #6a4cc0;
+  outline-offset: 3px;
+}
+/* The card itself can be dark: keep the focus indicator perceptible on all templates. */
+.phase4-business-card .phase4-card-object:focus-visible,
+.phase4-business-card .phase4-rotation-handle:focus-visible,
+.phase4-business-card .phase4-pointer-pin:focus-visible {
+  outline: 3px solid #a5e1ff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px #20324e;
+}
+.phase5-keyboard-hint {
+  max-width: 620px;
+  margin: 5px auto 0;
+  color: #475269;
+  font-size: 12px;
+  line-height: 1.45;
+  text-align: center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-shell *, .app-shell *::before, .app-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Phase 5.1 UX refinement — text entry should retain keyboard focus without
+   drawing an intrusive square box inside the rounded prompt composer.
+   The parent :focus-within is the visible focus affordance for this field. */
+.app-shell .prompt-box .prompt-textarea:focus,
+.app-shell .prompt-box .prompt-textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+.app-shell .prompt-box:focus-within {
+  border-color: #ab98d9;
+  box-shadow: 0 0 0 2px rgba(112, 83, 187, 0.13);
+}

@@ -31,6 +31,7 @@ import './Phase2.css';
 import './Phase3.css';
 import './Phase4.css';
 import './Phase5Projects.css';
+import './Phase5.css';
 
 function createProject(id) {
   const now = new Date().toISOString();
@@ -1069,6 +1070,7 @@ function App() {
 
   return (
     <div className={`app-shell ${focusedRefine ? 'phase4-focused-shell' : ''}`}>
+      <a className="phase5-skip-link" href="#intenta-main-content">Skip to main workspace</a>
       {!focusedRefine && <Sidebar
         projects={projects}
         activeId={activeId}
@@ -1091,7 +1093,7 @@ function App() {
         />}
 
         {activeWorkspace === 'projects' ? (
-          <main className="workspace phase5-projects-workspace">
+          <main id="intenta-main-content" tabIndex={-1} className="workspace phase5-projects-workspace">
             <ProjectsGallery
               projects={projects}
               onNew={newProject}
@@ -1104,7 +1106,7 @@ function App() {
             />
           </main>
         ) : activeWorkspace === 'community' ? (
-          <main className="workspace phase3-workspace" ref={communityScrollRef}>
+          <main id="intenta-main-content" tabIndex={-1} className="workspace phase3-workspace" ref={communityScrollRef}>
             {returnProject && (
               <nav className="phase3-return-bar" aria-label="Return to design conversation">
                 <div className="phase3-return-bar-inner">
@@ -1131,7 +1133,7 @@ function App() {
             />
           </main>
         ) : focusedRefine ? (
-          <main className="phase4-workspace">
+          <main id="intenta-main-content" tabIndex={-1} className="phase4-workspace">
             <div className="phase4-workspace-header">
               <div className="phase4-header-start">
                 <button
@@ -1158,7 +1160,7 @@ function App() {
             />
           </main>
         ) : (
-        <main className="workspace phase2-workspace">
+        <main id="intenta-main-content" tabIndex={-1} className="workspace phase2-workspace">
           {activeProject ? (
             <>
               <div className="workspace-toolbar">

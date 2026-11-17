@@ -3160,3 +3160,72 @@ Allow Intenta users to keep unfinished or completed design projects, leave the d
 The Projects section now provides a dedicated place to find, resume, back up and delete design work. Users can exit refinement and return to their projects without approving or exporting a design. The solution is intentionally browser-local and remains separate from finished-artwork export.
 
 **Next:** Finish any outstanding persistence/backup browser regression checks, then document and commit this milestone as its own checkpoint.
+
+## Phase 5 — Milestone 5.1: Keyboard Accessibility Foundations
+
+**Date:** 17 November 2026  
+**Status:** Implemented; focused automated verification passed. Prompt-focus visual refinement confirmed in Chrome. Full Phase 5.1 manual accessibility/regression checklist not yet explicitly reported as completed.
+
+### Objective
+
+Improve keyboard accessibility and focus visibility across Intenta while keeping the existing Explore, Community, Projects Gallery, and full-width Refine Design workflows intact. Enable users to reposition editable card elements without a mouse and respect reduced-motion preferences.
+
+### Implementation
+
+**1. Skip navigation**
+
+- Added a **Skip to main workspace** link for keyboard users, revealed when it receives keyboard focus.
+- Linked the control to the visible main workspace, covering **Explore Ideas, Community, Projects Gallery, and Refine Design**.
+- Made the destination programmatically focusable so users can bypass repeated navigation controls.
+
+**2. Focus visibility and input-focus refinement**
+
+- Introduced visible `:focus-visible` indicators for interactive controls across the application.
+- Applied a contrasting focus treatment to selectable business-card elements on dark card backgrounds.
+- After a visual review in Chrome, refined the Explore prompt composer: removed the intrusive square purple focus outline from the inner textarea, while retaining a subtle **rounded focus indicator** on its surrounding composer container.
+- Kept the skip link and other useful keyboard-focus indicators; the prompt adjustment is CSS-only and does not change input behaviour.
+
+**3. Keyboard editing in Refine Design**
+
+- Added arrow-key movement for a **focused editable object in Edit Mode**: **Arrow keys** move it by 1 percentage point of canvas position; **Shift + Arrow** moves it by 5 percentage points.
+- Applied the same positioning boundaries used by pointer-based dragging.
+- Integrated keyboard edits with the existing **Undo/Redo** history and ignored held-key auto-repeat to avoid flooding the history.
+- Added **Escape** to clear object selection while focus is within the canvas, without deleting pointers or modifying the artwork.
+- Disabled keyboard movement in Point Mode and while a conversational change proposal is pending.
+- Provided a short contextual keyboard hint within the refinement workspace.
+
+**4. Reduced-motion support**
+
+- Added a `prefers-reduced-motion: reduce` CSS rule to minimise nonessential animations and transitions when requested by the operating system.
+
+**5. Compatibility with existing functionality**
+
+- Integrated the keyboard update against the **Projects-compatible** application version, retaining Projects Gallery, local autosave/restore, project deletion and **Back to Projects** navigation.
+- Kept existing manual drag, rotate, point-and-describe, conversational change previews, object actions and export functionality in scope for regression testing; they were not redesigned for this milestone.
+- Kept existing canvas zoom shortcuts separate from the new object movement shortcuts.
+
+### Changed files
+
+- `app/src/App.jsx` — skip-navigation link, focusable main workspace and Phase 5 stylesheet import.
+- `app/src/components/RefinementWorkspace.jsx` — keyboard interaction and hint for canvas objects.
+- `app/src/Phase5.css` — focus visibility, reduced-motion rules and revised soft/rounded prompt focus.
+- `app/src/utils/refinementKeyboard.js` — bounded keyboard object movement logic.
+- `app/tests/refinementKeyboard.test.mjs` — movement, modifiers, boundary and immutability tests.
+
+### Verification and feedback
+
+- **28/28 focused keyboard and Projects regression tests** passed in the reconstructed development source during package preparation.
+- React JSX syntax checks and CSS parsing passed during preparation.
+- Chrome screenshot review identified an undesirable square outline inside the rounded design-prompt input.
+- A targeted CSS adjustment was applied, and the user confirmed the revised focus appearance was **better**.
+- **Not yet claimed:** completion of the full Phase 5.1 Chrome checklist, cross-screen accessibility checks, or a complete WCAG audit. These require separate confirmation.
+
+### Limitations and follow-up
+
+- Keyboard-controlled rotation, broader dialog focus management/focus traps, screen-reader review and systematic colour-contrast evaluation are not included in Phase 5.1.
+- Optional dark mode remains a separate, lower-priority Phase 5 milestone.
+- Once the full local accessibility regression checklist passes, Phase 5.1 can be marked as fully verified and committed to Git.
+
+### Outcome
+
+Phase 5.1 introduces practical keyboard access to Intenta's main workspaces and editable card objects without changing the established project or refinement workflows. The final prompt-focus refinement balances visible focus with the application's existing soft, rounded UI style.
