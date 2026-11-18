@@ -110,6 +110,6 @@ I defined the project scope and wireframes, selected the interaction requirement
 - [`app/src/utils/`](app/src/utils/) — Recommendation, refinement and project-management logic.
 - [`app/tests/`](app/tests/) — Focused automated tests.
 - [`DEVELOPMENT_LOG.md`](DEVELOPMENT_LOG.md) — Development decisions, revisions, checks and known limitations.
-- [`docs/initial-sketches/`](PATH_TO_YOUR_SKETCHES) — Initial interface sketches documenting early design concepts and layout decisions.
+- [`docs/initial-sketches/`](docs/initial-sketches/) — Initial interface sketches documenting early design concepts and layout decisions.
 
 **Security:** No API keys are required.
