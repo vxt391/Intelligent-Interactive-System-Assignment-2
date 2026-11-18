@@ -47,11 +47,11 @@ export default function ProjectsGallery({ projects, onResume, onNew, onImport, o
   // Native modal dialog supplies focus trapping and Escape handling.
   useEffect(() => {
     const dialog = deleteDialogRef.current;
-    if (!deleteCandidate || !dialog) return undefined;
+    if (deleteCandidateId === null || !dialog) return undefined;
     if (!dialog.open) dialog.showModal();
     cancelDeleteRef.current?.focus();
     return () => { if (dialog.open) dialog.close(); };
-  }, [deleteCandidate?.id]);
+  }, [deleteCandidateId]);
 
   // Restore focus to the visible menu trigger after cancelling. If the card
   // was deleted, move focus to Search rather than leaving it on removed content.

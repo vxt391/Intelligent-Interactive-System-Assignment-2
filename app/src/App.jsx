@@ -3,7 +3,8 @@ import ProjectsGallery from './components/ProjectsGallery';
 import { projectResumeMode, deleteSavedProject } from './utils/projectGalleryLogic';
 import { createAppSnapshot, downloadEditableProjectBackup, importedProjectCopy, loadSavedAppSnapshot, parseEditableProjectBackup, saveAppSnapshot, writeEmergencyBrowserBackup } from './utils/projectPersistence';
 import Sidebar from './components/Sidebar';
-import CommunityGallery, { createCommunityState } from './components/CommunityGallery';
+import CommunityGallery from './components/CommunityGallery';
+import { createCommunityState } from './utils/communityState';
 import { COMMUNITY_PROJECTS } from './data/communityProjects';
 import { getInspirationAttributes } from './data/inspirationAttributes';
 import { applyInspirationTransfer, makeTransferOptions, validateTransfer } from './utils/inspirationTransfer';
@@ -142,8 +143,8 @@ function App() {
     if (!storageReady) return undefined;
     const snapshot = createAppSnapshot({ projects, activeId, openProjectIds, activeWorkspace, communityState });
     latestSnapshotRef.current = snapshot;
-    setSaveStatus('saving');
     const timeout = window.setTimeout(() => {
+      setSaveStatus('saving');
       writeQueueRef.current = writeQueueRef.current.catch(() => {}).then(() => saveAppSnapshot(snapshot));
       writeQueueRef.current.then(() => {
         if (latestSnapshotRef.current === snapshot) { setSaveStatus('saved'); setSaveMessage(''); }
@@ -1151,6 +1152,7 @@ function App() {
               <span className="phase4-header-caption">{saveStatus === 'saved' ? 'Saved on this device' : saveStatus === 'saving' ? 'Saving…' : 'Save unavailable · Back up your project'}</span>
             </div>
             <RefinementWorkspace
+              key={activeProject.id}
               project={activeProject}
               onBack={() => changeDesignMode('explore')}
               onChange={updateRefinementDraft}

@@ -30,7 +30,6 @@ export default function RefinementWorkspace({ project, onBack, onChange, onEdit,
   const [exportError, setExportError] = useState('');
   const [propertiesExpanded, setPropertiesExpanded] = useState(true);
 
-  useEffect(() => { setExportOpen(false); setExportError(''); }, [project.id]);
   useEffect(() => {
     if (!exportOpen) return undefined;
     const dismiss = (event) => {

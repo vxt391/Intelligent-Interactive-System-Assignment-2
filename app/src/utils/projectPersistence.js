@@ -125,7 +125,7 @@ export async function saveAppSnapshot(snapshot) {
     return { saved: true, method: 'indexeddb' };
   } catch (error) {
     if (fallbackSaved) return { saved: true, method: 'browser-backup' };
-    throw new Error(`The project could not be saved on this device: ${error.message}`);
+    throw new Error(`The project could not be saved on this device: ${error.message}`, { cause: error });
   }
 }
 

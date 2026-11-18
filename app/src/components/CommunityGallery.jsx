@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { COMMUNITY_CATEGORIES, COMMUNITY_PROJECTS, COMMUNITY_STYLES } from '../data/communityProjects';
 import { getInspirationAttributes } from '../data/inspirationAttributes';
 import ProjectSelectionDialog from './ProjectSelectionDialog';
@@ -9,24 +9,6 @@ import InspirationTransferReview from './InspirationTransferReview';
  * All state lives in App so switching to the Design Workspace does not discard it.
  * No confirmed project preferences or design briefs are read or changed here.
  */
-export const createCommunityState = () => ({
-  view: 'gallery', // gallery | detail | saved
-  returnView: 'gallery',
-  selectedProjectId: null,
-  category: 'Discover',
-  query: '',
-  style: 'All styles',
-  sort: 'featured',
-  showFilters: false,
-  drafts: {}, // Unsaved attribute selections scoped by artwork ID.
-  saved: {}, // Explicitly confirmed inspiration, independent of projects.
-  reviewOpen: false,
-  removalId: null,
-  // Session-only transfer draft. No design project is edited until final confirmation.
-  transferRequest: null, // { artworkId, targetProjectId, stage, selectedIds, resolutions, referenceOnly }
-  connectionNotice: null, // Explicitly confirmed transfer success; does not redirect.
-  scrollPositions: { gallery: 0, saved: 0 },
-});
 
 export default function CommunityGallery({
   state, onChange, scrollContainerRef,
@@ -65,7 +47,7 @@ export default function CommunityGallery({
     return sort === 'az' ? [...matches].sort((a, b) => a.title.localeCompare(b.title)) : matches;
   }, [category, query, style, sort]);
 
-  const patch = (changes) => onChange((prev) => ({ ...prev, ...changes }));
+  const patch = useCallback((changes) => onChange((prev) => ({ ...prev, ...changes })), [onChange]);
   const clearFilters = () => patch({ category: 'Discover', query: '', style: 'All styles', sort: 'featured' });
 
   const saveScroll = (newView, id = null) => {
@@ -112,7 +94,7 @@ export default function CommunityGallery({
     };
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [reviewOpen, removalId]);
+  }, [reviewOpen, removalId, patch]);
 
   const toggleDraft = (id) => onChange((prev) => {
     const current = prev.drafts[selectedProjectId] ?? prev.saved[selectedProjectId] ?? [];
