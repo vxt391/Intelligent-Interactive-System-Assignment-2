@@ -3273,3 +3273,93 @@ Phase 5.1 introduced keyboard-accessibility foundations, including visible focus
 ### Next milestone
 
 Finish Phase 5.2 responsive regression and commit; then continue Phase 5.3 optional dark mode, followed by Phase 5.4 final usability/regression testing.
+
+# Intenta — DEVELOPMENT_LOG.md Addition
+
+## Phase 5.4 — Final Regression Testing and Prototype Stabilisation
+
+**Date:** 18 November 2026  
+**Status:** Completed — developer-reported manual Chrome checks: **30/30 PASS**  
+**Scope:** Phase 5.4A (functional), 5.4B (accessibility/keyboard), and 5.4C (edge cases/state consistency)
+
+### Objective
+
+Verify that the integrated Intenta React prototype remains usable and consistent following the final responsive UI refinements. Focus on project isolation, confirmed user intentions, exploration, Community Inspiration, and object-linked refinement without introducing new feature scope.
+
+### Test environment and methodology
+
+- Application: locally running Intenta React prototype in Google Chrome.
+- Method: manual, scenario-based testing by the developer using the existing prototype.
+- Browser keyboard navigation and DevTools were included in the planned accessibility- and runtime-oriented checks.
+- Results below are **reported manual outcomes**, not automated test-suite measurements or a formal WCAG conformance audit.
+- Exact browser version, operating-system version, and viewport measurements for this Phase 5.4 run were not recorded.
+
+### 5.4A — Core functional regression (10/10 PASS)
+
+| #   | Test                                                  | Result |
+| --- | ----------------------------------------------------- | ------ |
+| 1   | Project creation                                      | PASS   |
+| 2   | Project switching and preservation of project data    | PASS   |
+| 3   | Explore recommendations                               | PASS   |
+| 4   | Design-attribute feedback and preference confirmation | PASS   |
+| 5   | Explore New Directions and retained history           | PASS   |
+| 6   | Explore Variations                                    | PASS   |
+| 7   | Use This Design and return to exploration             | PASS   |
+| 8   | Community browsing and navigation                     | PASS   |
+| 9   | Saved Inspiration and project connection              | PASS   |
+| 10  | Object-linked Refine workflow                         | PASS   |
+
+### 5.4B — Accessibility and keyboard regression (10/10 PASS)
+
+| #   | Test                                            | Result |
+| --- | ----------------------------------------------- | ------ |
+| 1   | Keyboard navigation order                       | PASS   |
+| 2   | Visible keyboard focus                          | PASS   |
+| 3   | Keyboard activation                             | PASS   |
+| 4   | Dialog keyboard accessibility                   | PASS   |
+| 5   | Focus restoration                               | PASS   |
+| 6   | Keyboard-based Explore interactions             | PASS   |
+| 7   | Community keyboard accessibility                | PASS   |
+| 8   | Refine keyboard accessibility                   | PASS   |
+| 9   | Text readability and browser zoom               | PASS   |
+| 10  | Error/feedback accessibility and runtime checks | PASS   |
+
+### 5.4C — Edge cases and state consistency (10/10 PASS)
+
+| #   | Test                                                       | Result |
+| --- | ---------------------------------------------------------- | ------ |
+| 1   | Project isolation across multiple projects                 | PASS   |
+| 2   | Handling of unconfirmed feedback                           | PASS   |
+| 3   | Conflict resolution for Explore Variations                 | PASS   |
+| 4   | Cancel/return without unintended changes                   | PASS   |
+| 5   | Community browsing without an active project               | PASS   |
+| 6   | Inspiration transfer conflicts and explicit choices        | PASS   |
+| 7   | Reference-only inspiration connection                      | PASS   |
+| 8   | Contextual Community suggestion after repeated uncertainty | PASS   |
+| 9   | Completed-design continuity                                | PASS   |
+| 10  | Final cross-workspace visual/runtime stability             | PASS   |
+
+### Outcome and evaluation
+
+- **30 of 30 planned manual checks passed** across the three final regression batches.
+- No failing behaviour was reported in these batches, and no further code fixes were identified from their outcomes.
+- The scenarios support a claim of prototype stability for the _tested_ interactions, but they do not establish that the product is bug-free or independently accessibility-certified.
+- Particular attention was paid to user control: feedback is not applied without confirmation, conflict resolution is explicit, and Community Inspiration is not an automatic redirect.
+
+### Known scope and limitations
+
+- The prototype is a local React demonstration, not a deployed or production-grade service.
+- Session-scoped project/inspiration state should not be described as persistent storage across browser refreshes unless separately implemented and verified.
+- Simulated/rule-based recommendation behaviours should not be represented as live generative AI or external production integrations unless separately implemented.
+- Optional Phase 5.3 **Dark Mode has been deferred** to a possible future enhancement; it is not part of the tested implementation.
+- The tests above are developer-reported manual checks. They are not a substitute for a separate usability study with participants, if required by the assignment.
+
+### Close-out actions
+
+1. Review `PROTOTYPE_SPECIFICATION.md` against the implemented prototype and describe deferred/non-functional features accurately.
+2. Run a fresh production build (`npm run build` from the `app` directory) and record the result **after** execution.
+3. Check `git status` and review changed files before staging.
+4. Commit documentation updates and any final changes; push to the remote GitLab repository.
+5. Save screenshots and a brief test-evidence summary for the assignment/report as appropriate.
+
+**Milestone decision:** Close Phase 5.4 manual regression testing as **PASS (30/30)**. Proceed to final documentation and submission preparation.
